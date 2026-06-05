@@ -1,0 +1,22 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs/temp
+*.log
+tmp/
+temp/
+
+# Local exports
+*.bak
+*.backup
+frame-model*.json
+*.json
+
+# Generated / archived local output
+APP-COPY 2/
+PDF PRINT/
+RC-FRAME/
+SCREENSHOT/
+x2L-3X316.jpg

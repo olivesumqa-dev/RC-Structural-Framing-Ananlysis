@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StrucForge 2D Frame App v6</title>
+  <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
+  <link rel="stylesheet" href="styles.css?v=23" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-logo-wrap">
+        <img class="topbar-logo" src="assets/LOGO-STRUCF.png?v=2" alt="StrucForge Structural Design Studio" />
+      </div>
+      <div class="topbar-brand">
+        <div class="topbar-title">STRUCFORGE 2D FRAME ANALYSIS</div>
+      </div>
+      <div class="topbar-right">
+        <div class="header-controls">
+          <label class="topbar-control">
+            <span>Text</span>
+            <select id="fontScaleSelect" aria-label="Text size">
+              <option value="0.75">Small</option>
+              <option value="1" selected>Medium</option>
+              <option value="1.25">Large</option>
+              <option value="1.5">XL</option>
+            </select>
+          </label>
+          <details class="legend-menu">
+            <summary>Legend</summary>
+            <div class="legend-content">
+            <div><strong>UDL</strong> - Uniformly distributed load, kN/m</div>
+            <div><strong>P</strong> - Point load, kN</div>
+            <div><strong>SW</strong> - Beam/column self weight, kN/m</div>
+            <div><strong>DL+SW</strong> - Dead load plus automatic beam self weight</div>
+            <div><strong>V</strong> - Shear force diagram, kN</div>
+            <div><strong>M</strong> - Bending moment diagram, kN-m</div>
+            <div><strong>E</strong> - Elastic modulus, MPa</div>
+            <div><strong>A</strong> - Area, mm2</div>
+            <div><strong>I</strong> - Moment of inertia, mm4</div>
+            <div><strong>DL</strong> - Dead load</div>
+            <div><strong>SDL</strong> - Superimposed dead load</div>
+            <div><strong>LL</strong> - Live load</div>
+            <div><strong>WL</strong> - Wind load</div>
+            <div><strong>EQ</strong> - Earthquake load</div>
+            <div><strong>EQL</strong> - Earthquake lateral load</div>
+            <div><strong>Fx</strong> - Horizontal nodal force, kN</div>
+            <div><strong>Fy</strong> - Vertical nodal force, kN</div>
+            <div><strong>Mz</strong> - Nodal moment about z-axis, kN-m; positive is CCW</div>
+            <div><strong>CW</strong> - Clockwise moment rotation</div>
+            <div><strong>CCW</strong> - Counter-clockwise moment rotation</div>
+            <div><strong>R1</strong> - Start support reaction, kN</div>
+            <div><strong>R2</strong> - End support reaction, kN</div>
+            <div><strong>L</strong> - Member span or length, m</div>
+            <div><strong>Grid</strong> - Column line designation</div>
+            <div><strong>EL</strong> - Elevation level, m</div>
+            <div><strong>Fixed</strong> - Restrained translation and rotation</div>
+            <div><strong>Pinned</strong> - Restrained translation, free rotation</div>
+            <div><strong>Roller</strong> - One-direction translational restraint</div>
+            <div><strong>kN</strong> - Kilonewton</div>
+            <div><strong>kN-m</strong> - Kilonewton-meter</div>
+            <div><strong>MPa</strong> - Megapascal</div>
+            <div><strong>mm2</strong> - Square millimeter</div>
+            <div><strong>mm4</strong> - Fourth power millimeter</div>
+            </div>
+          </details>
+          <div class="header-theme-icons" id="themeButtons" aria-label="Color scheme">
+            <button type="button" class="theme-icon theme-sun active" data-theme-choice="olive_saffron" title="Olive / Saffron" aria-label="Olive / Saffron"></button>
+            <button type="button" class="theme-icon theme-moon" data-theme-choice="mauve_neutral" title="Mauve Neutral" aria-label="Mauve Neutral"></button>
+            <button type="button" class="theme-icon theme-newmoon" data-theme-choice="green_teal" title="Green / Teal" aria-label="Green / Teal"></button>
+          </div>
+        </div>
+        <div class="header-disclaimer">Disclaimer: Calculations must be checked and approved by a licensed Structural or Civil Engineer.</div>
+      </div>
+    </header>
+
+    <div class="workspace">
+    <aside class="panel">
+      <h1>StrucForge 2D Frame</h1>
+      <button id="newDesign" class="new-design-btn" type="button">New Design</button>
+      <section>
+        <h2>Project Header</h2>
+        <label>Project title</label>
+        <input id="projectTitle" value="Frame Analysis" />
+        <label>Project owner</label>
+        <input id="projectOwner" value="" />
+        <label>Project location</label>
+        <input id="projectLocation" value="" />
+        <label>Designed by</label>
+        <input id="designedBy" value="" />
+      </section>
+
+<section>
+        <h2>1. Grid</h2>
+        <label>V-grid positions from left, m</label>
+        <input id="vPositions" value="0,3,6,9" />
+        <label>H-grid elevations from bottom, m</label>
+        <input id="hPositions" value="0,3,6,9" />
+        <button id="generateGrid">Generate Grid</button>
+        <button id="resetView">Reset View</button>
+      </section>
+
+      <section>
+        <h2>2. Model / Selection</h2>
+        <p class="hint">
+          Node: click grid intersection. Create Member: click two nodes/intersections. Select Member: click member line. Ctrl/Shift + click adds more members.
+        </p>
+        <button id="modeNode">Node Mode</button>
+        <button id="modeMember">Create Member Mode</button>
+        <button id="modeSelect">Select Member Mode</button>
+        <button id="modeSupport">Support Mode</button>
+        <button id="clearSelection">Clear Selection</button>
+
+        <label>Support Type</label>
+        <select id="supportType">
+          <option value="Fixed">Fixed</option>
+          <option value="Pinned">Pinned</option>
+          <option value="Roller Y">Roller Y</option>
+          <option value="Roller X">Roller X</option>
+        </select>
+
+        <div class="row">
+          <button id="undoBtn">Undo</button>
+          <button id="clearAll">Clear</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>3. Save / Load Records</h2>
+        <label>Record name</label>
+        <input id="recordName" value="Frame 1" />
+        <div class="row">
+          <button id="saveBtn">Save</button>
+          <button id="saveAsBtn">Save As</button>
+        </div>
+
+        <label>Saved records</label>
+        <select id="savedRecords"></select>
+        <div class="row">
+          <button id="deleteRecordBtn">Delete</button>
+        </div>
+        <div class="row">
+          <button id="exportJson">Export JSON</button>
+          <button id="importJsonBtn">Load File</button>
+        </div>
+        <input id="importJsonFile" type="file" accept=".json,application/json" hidden />
+      </section>
+
+      <section>
+        <h2>4. Member Properties</h2>
+        <label>Beam width b, mm</label>
+        <input id="beamWidth" value="300" readonly />
+        <label>Beam height h, mm</label>
+        <input id="beamHeight" value="500" readonly />
+        <label>Column width b, mm</label>
+        <input id="columnWidth" value="400" readonly />
+        <label>Column height h, mm</label>
+        <input id="columnHeight" value="400" readonly />
+        <label>Beam dimension label</label>
+        <input id="beamDim" value="300x500 mm" readonly />
+        <label>Column dimension label</label>
+        <input id="colDim" value="400x400 mm" readonly />
+        <label>Material E, MPa</label>
+        <input id="matE" value="200000" readonly />
+        <label>Area A, mm²</label>
+        <input id="secA" value="300000" readonly />
+        <label>Inertia I, mm⁴</label>
+        <input id="secI" value="8e9" readonly />
+        <button id="assignSelectedProps" disabled>Auto Assigned</button>
+      </section>
+
+      <section>
+        <h2>5. Loads</h2>
+        <label>Load Case</label>
+        <select id="loadCase">
+          <option>DL</option>
+          <option>SDL</option>
+          <option>LL</option>
+          <option>P</option>
+          <option>WL</option>
+          <option>EQL</option>
+        </select>
+
+        <label>Load Type</label>
+        <select id="loadType">
+          <option value="node">Node P Load</option>
+          <option value="member_udl">Member UDL</option>
+          <option value="member_point">Member Point Load</option>
+        </select>
+
+        <div id="nodeLoadInputs">
+          <label>Horizontal P load Px, kN</label><input id="fx" value="0" />
+          <label>Vertical P load Py, kN</label><input id="fy" value="-10" />
+          <label>Mz, kN-m</label><input id="mz" value="0" />
+        </div>
+
+        <div id="memberUdlInputs">
+          <label>w, kN/m downward</label><input id="wudl" value="10" />
+        </div>
+
+        <div id="memberPointInputs">
+          <label>Point load P, kN downward</label><input id="pload" value="20" />
+          <label>Location from left/start node, m</label><input id="ploadX" value="1.5" />
+        </div>
+
+        <button id="assignNodeLoad">Assign to Node</button>
+        <button id="assignLoad">Assign Selected Load</button>
+        <button id="assignPointLoad">Add Point Load to Selected Member(s)</button>
+      </section>
+
+      <section>
+        <h2>6. Analysis</h2>
+        <button id="calculateBtn">Calculate</button>
+        <button id="showDiagramBtn" type="button">Show/Hide S&amp;M Diagram</button>
+        <button id="toggleLoadsBtn" type="button">Show/Hide Loading</button>
+        <div class="row">
+          <button id="printPdfBtn" type="button">Print PDF</button>
+          <button id="printLocalBtn" type="button">Print Local</button>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <div class="toolbar">
+        <button id="deleteSelectedBtn" class="toolbar-icon-btn" type="button" title="Delete selected" aria-label="Delete selected">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-1 0v14H9V6m-2 0h10"/></svg>
+        </button>
+        <span id="modeLabel">Mode: Node</span>
+        <span id="selectedLabel">Selected: none</span>
+        <span id="statusLabel">Ready</span>
+      </div>
+      <div class="member-props-table" id="memberPropsTable">
+        <div class="member-props-title">Member Properties / Results</div>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Type</th><th>b</th><th>h</th><th>A</th><th>I</th><th>E</th><th>SW kN/m</th><th>DL+SW kN/m</th><th>V kN</th><th>M kN-m</th><th>Rx kN</th><th>Ry kN</th><th>Rz kN-m</th><th>Px kN</th><th>Py kN</th><th>Mz kN-m</th></tr>
+          </thead>
+          <tbody id="memberPropsBody">
+            <tr><td colspan="17">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <canvas id="canvas" width="1500" height="950"></canvas>
+    </main>
+    </div>
+  </div>
+  <div id="printPages" class="print-pages" aria-hidden="true"></div>
+
+  <script src="solver.js?v=13"></script>
+  <script src="app.js?v=39"></script>
+</body>
+</html>
