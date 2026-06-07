@@ -1641,7 +1641,7 @@ function printHeaderHtml() {
   const disclaimerLine2 = "by a licensed Structural or Civil Engineer.";
   return `
     <div class="print-header">
-      <img class="print-logo" src="assets/LOGO-STRUCF2.png" alt="StrucForge Structural Design Studio" />
+      <img class="print-logo" src="assets/LOGO-STRUCF.png?v=3" alt="StrucForge Structural Design Studio" />
       <div class="print-header-main">
         <div class="print-date">${escapeHtml(printedAt.toLocaleDateString())}, ${escapeHtml(printedAt.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}))}</div>
         <h1>${escapeHtml(title)}</h1>
