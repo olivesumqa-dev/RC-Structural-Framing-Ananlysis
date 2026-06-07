@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StrucForge 2D Frame App v6</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=24" />
+  <link rel="stylesheet" href="styles.css?v=25" />
 </head>
 <body>
   <div class="app">
@@ -71,8 +71,8 @@
             <button type="button" class="theme-icon theme-newmoon" data-theme-choice="green_teal" title="Green / Teal" aria-label="Green / Teal"></button>
           </div>
         </div>
-        <a class="tutorial-link" href="https://www.strucforge.com/Beginners%20Tutorials.docx" target="_blank" rel="noopener">Beginners Tutorials</a>
-        <div class="header-disclaimer">Disclaimer: Calculations must be checked and approved by a licensed Structural or Civil Engineer.</div>
+        <button class="tutorial-link" id="tutorialToggle" type="button" aria-controls="tutorialDrawer" aria-expanded="false">Beginners Tutorials</button>
+        <div class="header-disclaimer"><span>Disclaimer: Calculations must be checked and approved</span><span>by a licensed Structural or Civil Engineer.</span></div>
       </div>
     </header>
 
@@ -246,9 +246,41 @@
     </main>
     </div>
   </div>
+  <aside class="tutorial-drawer" id="tutorialDrawer" aria-label="Beginners Tutorials" aria-hidden="true">
+    <button class="tutorial-drawer-tab" id="tutorialDrawerTab" type="button" aria-label="Show Beginners Tutorials">Tutorials</button>
+    <div class="tutorial-drawer-panel">
+      <div class="tutorial-drawer-head">
+        <h2>Beginners Tutorials</h2>
+        <button class="tutorial-close" id="tutorialClose" type="button" aria-label="Hide Beginners Tutorials">x</button>
+      </div>
+      <div class="tutorial-drawer-content">
+        <h3>Start A New Frame</h3>
+        <ol>
+          <li>Click <strong>New Design</strong> to clear the drawing area.</li>
+          <li>Enter vertical grid positions in meters, such as <strong>0,3,6,9</strong>.</li>
+          <li>Enter horizontal levels in meters, such as <strong>0,1.5,4.5</strong>.</li>
+          <li>Click <strong>Generate Grid</strong>.</li>
+          <li>Use <strong>Node Mode</strong> and click grid intersections to create nodes.</li>
+          <li>Use <strong>Create Member Mode</strong> and click two nodes to create a beam or column.</li>
+          <li>Use <strong>Support Mode</strong>, choose the support type, then click base nodes.</li>
+          <li>Select members before assigning UDL or point loads.</li>
+          <li>Select a node before assigning node P loads or nodal moments.</li>
+          <li>Click <strong>Calculate</strong> to update reactions, member results, and diagrams.</li>
+          <li>Use <strong>Show/Hide Loading</strong> to simplify the drawing view.</li>
+          <li>Use <strong>Print PDF</strong> or <strong>Print Local</strong> for report output.</li>
+        </ol>
+        <h3>Load Notes</h3>
+        <p><strong>DL</strong>, <strong>SDL</strong>, <strong>LL</strong>, <strong>WL</strong>, and <strong>EQL</strong> can be assigned as load cases. Beam and column self weight stays active in computation even when self-weight graphics are hidden.</p>
+        <h3>Checking Notes</h3>
+        <p>Always review supports, load direction, member sizes, and reaction balance before using results for design documentation.</p>
+        <h3>Important</h3>
+        <p>This tool is for modeling assistance. Final structural calculations must be checked and approved by a licensed Structural or Civil Engineer.</p>
+      </div>
+    </div>
+  </aside>
   <div id="printPages" class="print-pages" aria-hidden="true"></div>
 
   <script src="solver.js?v=13"></script>
-  <script src="app.js?v=42"></script>
+  <script src="app.js?v=43"></script>
 </body>
 </html>

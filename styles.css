@@ -50,13 +50,13 @@ canvas{background:#fff;display:block;width:100%;cursor:crosshair}
 .member-props-table tbody tr:nth-child(even){background:#f6f6f6}
 .member-props-table tbody tr:hover{background:#fff4df}
 .member-name-input{width:58px;min-width:58px;border:1px solid #999;border-radius:3px;padding:2px 3px;font:inherit;background:#fff;color:#000}
-@media(max-width:900px){.workspace{flex-direction:column}.panel{width:100%;flex:0 0 38vh;border-right:0;border-bottom:1px solid var(--line)}.topbar{height:104px;grid-template-columns:150px auto minmax(230px,1fr);gap:10px;padding:10px 16px}.topbar-logo{height:74px}.topbar-title{font-size:13px}.header-disclaimer{font-size:8px;line-height:1.25}#canvas{width:max(100%,1100px);height:max(520px,52vh);min-height:520px}.toolbar{overflow:auto}.member-props-table{top:56px;width:230px;overflow:hidden}.member-props-table:hover,.member-props-table:focus-within{width:min(760px,calc(100% - 28px));max-height:calc(100vh - 104px);overflow:auto}}
+@media(max-width:900px){.workspace{flex-direction:column}.panel{width:100%;flex:0 0 38vh;border-right:0;border-bottom:1px solid var(--line)}.topbar{height:104px;grid-template-columns:150px auto minmax(230px,1fr);gap:10px;padding:10px 16px}.topbar-logo{height:74px}.topbar-title{font-size:13px}.header-disclaimer{font-size:9px;line-height:1.18}.header-disclaimer span{width:260px}.tutorial-drawer{top:104px}#canvas{width:max(100%,1100px);height:max(520px,52vh);min-height:520px}.toolbar{overflow:auto}.member-props-table{top:56px;width:230px;overflow:hidden}.member-props-table:hover,.member-props-table:focus-within{width:min(760px,calc(100% - 28px));max-height:calc(100vh - 104px);overflow:auto}}
 
 .topbar-right{justify-self:end;display:flex;flex-direction:column;align-items:flex-end;gap:7px;min-width:0;max-width:430px}
-.tutorial-link{color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.5);border-radius:4px;padding:3px 9px;font-size:11px;font-weight:700;text-decoration:none;line-height:1.2}
+.tutorial-link{color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.5);border-radius:4px;padding:3px 9px;font-size:11px;font-weight:700;text-decoration:none;line-height:1.2;cursor:pointer}
 .tutorial-link:hover{border-color:var(--accent-2);background:rgba(255,255,255,.2);color:var(--accent-2)}
 .tutorial-link:active{border-color:var(--accent);background:var(--accent);color:#000}
-.header-disclaimer{max-width:430px;text-align:center;color:#fff;font-size:10px;line-height:1.25;font-weight:700}
+.header-disclaimer{max-width:430px;text-align:center;color:#fff;font-size:11px;line-height:1.18;font-weight:700;display:flex;flex-direction:column;align-items:center}.header-disclaimer span{display:block;width:390px;max-width:100%}
 .header-controls{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto;min-width:0}
 .topbar-control{display:flex;align-items:center;gap:6px;color:var(--topbar-text);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
 .topbar-control select{height:26px;border:1px solid rgba(255,255,255,.55);border-radius:4px;background:rgba(255,255,255,.1);color:#fff;padding:2px 6px;font-size:11px}
@@ -80,11 +80,13 @@ canvas{background:#fff;display:block;width:100%;cursor:crosshair}
 .theme-moon::before{width:10px;height:10px;border-radius:50%;background:var(--accent-2)}
 .theme-moon::after{width:9px;height:9px;border-radius:50%;background:var(--topbar);left:58%;top:45%}
 .theme-newmoon::before{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.tutorial-drawer{position:fixed;right:0;top:104px;bottom:0;z-index:40;display:flex;align-items:stretch;transform:translateX(calc(100% - 36px));transition:transform .18s ease;pointer-events:none}.tutorial-drawer.open,.tutorial-drawer:hover,.tutorial-drawer:focus-within{transform:translateX(0)}.tutorial-drawer.open{pointer-events:auto}.tutorial-drawer-tab{pointer-events:auto;width:36px;border:1px solid var(--line);border-right:0;background:var(--topbar);color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em;writing-mode:vertical-rl;text-orientation:mixed;cursor:pointer}.tutorial-drawer-tab:hover{background:var(--accent);color:#000}.tutorial-drawer-panel{pointer-events:auto;width:min(430px,calc(100vw - 36px));background:#fff;color:#000;border-left:1px solid #000;box-shadow:-4px 0 14px rgba(0,0,0,.2);display:flex;flex-direction:column;min-height:0}.tutorial-drawer-head{height:46px;flex:0 0 46px;display:flex;align-items:center;gap:10px;padding:0 8px 0 14px;border-bottom:1px solid #000;background:#f7f6f4}.tutorial-drawer-head h2{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.05em}.tutorial-close{margin-left:auto;width:30px;height:30px;border:1px solid #000;border-radius:4px;background:#fff;color:#000;font-size:16px;line-height:1;cursor:pointer}.tutorial-close:hover{background:var(--accent-2)}.tutorial-close:active{background:var(--accent)}.tutorial-drawer-content{overflow:auto;padding:14px 18px 24px;font-size:13px;line-height:1.45}.tutorial-drawer-content h3{margin:14px 0 7px;font-size:13px;text-transform:uppercase;letter-spacing:.05em}.tutorial-drawer-content h3:first-child{margin-top:0}.tutorial-drawer-content ol{padding-left:21px;margin:0}.tutorial-drawer-content li{margin:5px 0}.tutorial-drawer-content p{margin:0 0 10px}
+@media(max-width:900px){.header-disclaimer{font-size:9px;line-height:1.18}.header-disclaimer span{width:260px}.tutorial-drawer{top:104px}}
 .print-pages{display:none}
 @media print{
   @page{size:landscape;margin:.28in}
   html,body{height:auto;background:#fff}
-  body.print-ready .app{display:none!important}
+  body.print-ready .app{display:none!important} body.print-ready .tutorial-drawer{display:none!important}
   body.print-ready .print-pages{display:block;color:#000;font-family:Arial,Helvetica,sans-serif}
   .print-page{break-after:page;page-break-after:always;min-height:7.35in}
   .print-page:last-child{break-after:auto;page-break-after:auto}

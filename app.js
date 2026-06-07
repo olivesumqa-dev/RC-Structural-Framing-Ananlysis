@@ -30,6 +30,22 @@ let didPan = false;
 let lastPan = null;
 let currentFileHandle = null;
 const filePickerSupported = "showSaveFilePicker" in window;
+const tutorialDrawer = document.getElementById("tutorialDrawer");
+const tutorialToggle = document.getElementById("tutorialToggle");
+const tutorialClose = document.getElementById("tutorialClose");
+const tutorialDrawerTab = document.getElementById("tutorialDrawerTab");
+function setTutorialDrawer(open) {
+  if (!tutorialDrawer) return;
+  tutorialDrawer.classList.toggle("open", open);
+  tutorialDrawer.setAttribute("aria-hidden", open ? "false" : "true");
+  tutorialToggle?.setAttribute("aria-expanded", open ? "true" : "false");
+}
+tutorialToggle?.addEventListener("click", () => setTutorialDrawer(!tutorialDrawer?.classList.contains("open")));
+tutorialClose?.addEventListener("click", () => setTutorialDrawer(false));
+tutorialDrawerTab?.addEventListener("click", () => setTutorialDrawer(!tutorialDrawer?.classList.contains("open")));
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") setTutorialDrawer(false);
+});
 
 function themeColor(name, fallback) { return getComputedStyle(document.body).getPropertyValue(name).trim() || fallback; }
 function setTheme(name, remember = true) {
@@ -1004,19 +1020,21 @@ function escapeHtml(value) {
 function drawNodes() {
   for (const n of model.nodes) {
     const p = toCanvas(n.x, n.y);
+    const nodeLabel = String(n.id);
+    const nodeRadius = scaled(nodeLabel.length > 2 ? 9 : 8);
     ctx.beginPath();
-    ctx.arc(p.x, p.y, scaled(10), 0, Math.PI*2);
+    ctx.arc(p.x, p.y, nodeRadius, 0, Math.PI*2);
     ctx.fillStyle = model.selectedNode?.id === n.id || model.selectedNodes.includes(n.id) ? "#f59e0b" : "#fff";
     ctx.fill();
     ctx.strokeStyle = annotationColor();
-    ctx.lineWidth = scaled(2);
+    ctx.lineWidth = Math.max(0.9, scaled(1.35));
     ctx.stroke();
 
     ctx.fillStyle = annotationColor();
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    setScaledFont(12);
-    ctx.fillText(String(n.id), p.x, p.y + scaled(1));
+    setScaledFont(nodeLabel.length > 2 ? 7.5 : 8.5);
+    ctx.fillText(nodeLabel, p.x, p.y + scaled(0.5));
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
