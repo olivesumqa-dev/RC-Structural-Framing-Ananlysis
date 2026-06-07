@@ -1165,10 +1165,10 @@ function openArrowHead(x, y, angle, color, head=8, width=2) {
 
 function drawMomentArrow(cx, cy, value, color, widthScale = 1) {
   const positive = value >= 0;
-  const radius = scaled(20);
-  const start = positive ? -Math.PI * 0.25 : Math.PI * 1.25;
-  const end = positive ? Math.PI * 1.35 : -Math.PI * 0.35;
-  const steps = 30;
+  const radius = scaled(12);
+  const start = positive ? -Math.PI * 0.1 : Math.PI * 1.1;
+  const end = positive ? Math.PI * 0.4 : Math.PI * 0.6;
+  const steps = 10;
   let previous = null;
   let last = null;
 
@@ -1516,13 +1516,13 @@ function saveRecord() {
   status(`Saved "${name}" to browser records.`);
 }
 
-function loadProjectPackage(data, sourceName) {
+function loadProjectPackage(data, sourceName, options = {}) {
   const payload = normalizeModelPayload(data);
   if (!payload.model || typeof payload.model !== "object") {
     throw new Error("Invalid frame model JSON.");
   }
 
-  pushHistory();
+  if (options.pushHistory !== false) pushHistory();
   Object.assign(model, payload.model);
   if (payload.view) {
     zoom = Number(payload.view.zoom) || 1;
@@ -1548,6 +1548,19 @@ function loadProjectPackage(data, sourceName) {
   prepareCanvasSizes();
   draw();
   status(`Loaded ${sourceName || "JSON file"}.`);
+}
+
+async function loadDefaultProject() {
+  try {
+    const response = await fetch("Frame%209.json", {cache: "no-store"});
+    if (!response.ok) throw new Error("Default model not found.");
+    const data = await response.json();
+    currentFileHandle = null;
+    loadProjectPackage(data, "Frame 9.json", {pushHistory: false});
+    recordName.value = "Frame 9";
+  } catch (err) {
+    status("Ready. Default Frame 9 model was not loaded.");
+  }
 }
 
 function loadRecord() {
@@ -2272,6 +2285,7 @@ window.addEventListener("load", () => {
   document.querySelectorAll("[data-theme-choice]").forEach(btn => btn.classList.toggle("active", btn.dataset.themeChoice === document.body.dataset.theme));
   prepareCanvasSizes();
   draw();
+  loadDefaultProject();
 });
 
 window.addEventListener("resize", () => {

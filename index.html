@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StrucForge 2D Frame App v6</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=23" />
+  <link rel="stylesheet" href="styles.css?v=24" />
 </head>
 <body>
   <div class="app">
@@ -30,39 +30,39 @@
           <details class="legend-menu">
             <summary>Legend</summary>
             <div class="legend-content">
-            <div><strong>UDL</strong> - Uniformly distributed load, kN/m</div>
-            <div><strong>P</strong> - Point load, kN</div>
-            <div><strong>SW</strong> - Beam/column self weight, kN/m</div>
-            <div><strong>DL+SW</strong> - Dead load plus automatic beam self weight</div>
-            <div><strong>V</strong> - Shear force diagram, kN</div>
-            <div><strong>M</strong> - Bending moment diagram, kN-m</div>
-            <div><strong>E</strong> - Elastic modulus, MPa</div>
             <div><strong>A</strong> - Area, mm2</div>
-            <div><strong>I</strong> - Moment of inertia, mm4</div>
+            <div><strong>CCW</strong> - Counter-clockwise moment rotation</div>
+            <div><strong>CW</strong> - Clockwise moment rotation</div>
             <div><strong>DL</strong> - Dead load</div>
-            <div><strong>SDL</strong> - Superimposed dead load</div>
-            <div><strong>LL</strong> - Live load</div>
-            <div><strong>WL</strong> - Wind load</div>
+            <div><strong>DL+SW</strong> - Dead load plus automatic beam self weight</div>
+            <div><strong>E</strong> - Elastic modulus, MPa</div>
+            <div><strong>EL</strong> - Elevation level, m</div>
             <div><strong>EQ</strong> - Earthquake load</div>
             <div><strong>EQL</strong> - Earthquake lateral load</div>
+            <div><strong>Fixed</strong> - Restrained translation and rotation</div>
             <div><strong>Fx</strong> - Horizontal nodal force, kN</div>
             <div><strong>Fy</strong> - Vertical nodal force, kN</div>
-            <div><strong>Mz</strong> - Nodal moment about z-axis, kN-m; positive is CCW</div>
-            <div><strong>CW</strong> - Clockwise moment rotation</div>
-            <div><strong>CCW</strong> - Counter-clockwise moment rotation</div>
-            <div><strong>R1</strong> - Start support reaction, kN</div>
-            <div><strong>R2</strong> - End support reaction, kN</div>
-            <div><strong>L</strong> - Member span or length, m</div>
             <div><strong>Grid</strong> - Column line designation</div>
-            <div><strong>EL</strong> - Elevation level, m</div>
-            <div><strong>Fixed</strong> - Restrained translation and rotation</div>
-            <div><strong>Pinned</strong> - Restrained translation, free rotation</div>
-            <div><strong>Roller</strong> - One-direction translational restraint</div>
+            <div><strong>I</strong> - Moment of inertia, mm4</div>
             <div><strong>kN</strong> - Kilonewton</div>
             <div><strong>kN-m</strong> - Kilonewton-meter</div>
+            <div><strong>L</strong> - Member span or length, m</div>
+            <div><strong>LL</strong> - Live load</div>
+            <div><strong>M</strong> - Bending moment diagram, kN-m</div>
             <div><strong>MPa</strong> - Megapascal</div>
             <div><strong>mm2</strong> - Square millimeter</div>
             <div><strong>mm4</strong> - Fourth power millimeter</div>
+            <div><strong>Mz</strong> - Nodal moment about z-axis, kN-m; positive is CCW</div>
+            <div><strong>P</strong> - Point load, kN</div>
+            <div><strong>Pinned</strong> - Restrained translation, free rotation</div>
+            <div><strong>R1</strong> - Start support reaction, kN</div>
+            <div><strong>R2</strong> - End support reaction, kN</div>
+            <div><strong>Roller</strong> - One-direction translational restraint</div>
+            <div><strong>SDL</strong> - Superimposed dead load</div>
+            <div><strong>SW</strong> - Beam/column self weight, kN/m</div>
+            <div><strong>UDL</strong> - Uniformly distributed load, kN/m</div>
+            <div><strong>V</strong> - Shear force diagram, kN</div>
+            <div><strong>WL</strong> - Wind load</div>
             </div>
           </details>
           <div class="header-theme-icons" id="themeButtons" aria-label="Color scheme">
@@ -71,6 +71,7 @@
             <button type="button" class="theme-icon theme-newmoon" data-theme-choice="green_teal" title="Green / Teal" aria-label="Green / Teal"></button>
           </div>
         </div>
+        <a class="tutorial-link" href="https://www.strucforge.com/Beginners%20Tutorials.docx" target="_blank" rel="noopener">Beginners Tutorials</a>
         <div class="header-disclaimer">Disclaimer: Calculations must be checked and approved by a licensed Structural or Civil Engineer.</div>
       </div>
     </header>
@@ -248,6 +249,6 @@
   <div id="printPages" class="print-pages" aria-hidden="true"></div>
 
   <script src="solver.js?v=13"></script>
-  <script src="app.js?v=39"></script>
+  <script src="app.js?v=41"></script>
 </body>
 </html>

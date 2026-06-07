@@ -13,6 +13,7 @@ temp/
 *.backup
 frame-model*.json
 *.json
+!Frame 9.json
 
 # Generated / archived local output
 APP-COPY 2/
