@@ -1574,10 +1574,10 @@ async function loadDefaultProject() {
     if (!response.ok) throw new Error("Default model not found.");
     const data = await response.json();
     currentFileHandle = null;
-    loadProjectPackage(data, "Frame 9.json", {pushHistory: false});
-    recordName.value = "Frame 9";
+    loadProjectPackage(data, "Default Sample Project", {pushHistory: false});
+    recordName.value = "Default Sample Project";
   } catch (err) {
-    status("Ready. Default Frame 9 model was not loaded.");
+    status("Ready. Default sample project was not loaded.");
   }
 }
 
