@@ -477,11 +477,11 @@ function prepareCanvasSizes() {
 }
 
 function annotationColor() {
-  return "#000";
+  return themeColor("--dimension", "#000");
 }
 
 function loadAnnotationColor() {
-  return "#dc2626";
+  return themeColor("--load", "#dc2626");
 }
 
 function viewScale() {
@@ -659,6 +659,8 @@ function draw() {
   mainLabelBoxes = [];
   resizeCanvasToDisplaySize(canvas);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = themeColor("--surface", "#fff");
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   setScaledFont(12);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
