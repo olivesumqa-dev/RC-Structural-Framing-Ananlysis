@@ -1572,7 +1572,7 @@ function loadProjectPackage(data, sourceName, options = {}) {
 
 async function loadDefaultProject() {
   try {
-    const response = await fetch("Frame%209.json", {cache: "no-store"});
+    const response = await fetch("Sample%20Project.json", {cache: "no-store"});
     if (!response.ok) throw new Error("Default model not found.");
     const data = await response.json();
     currentFileHandle = null;

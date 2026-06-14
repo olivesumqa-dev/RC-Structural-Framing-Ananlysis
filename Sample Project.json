@@ -1,0 +1,800 @@
+{
+  "app": "StrucForge 2D Frame Analysis",
+  "version": 9,
+  "savedAt": "2026-06-14T08:26:39.593Z",
+  "theme": "mauve_neutral",
+  "view": {
+    "zoom": 0.9644827157714757,
+    "pan": {
+      "x": -383.4462973001352,
+      "y": -40.52127396423663
+    },
+    "fontScale": 1,
+    "loadsVisible": true
+  },
+  "project": {
+    "title": "Dela Cruz Residence",
+    "owner": "Mr. Juan dela Cruz",
+    "location": "Pagadian City",
+    "designedBy": "Engr. Oliver A. Sumampong"
+  },
+  "model": {
+    "v": [
+      0,
+      5,
+      10,
+      15
+    ],
+    "h": [
+      0,
+      1.5,
+      4.5,
+      7.5,
+      10.5,
+      13.5
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": 2,
+        "x": 5,
+        "y": 0
+      },
+      {
+        "id": 3,
+        "x": 10,
+        "y": 0
+      },
+      {
+        "id": 4,
+        "x": 15,
+        "y": 0
+      },
+      {
+        "id": 5,
+        "x": 0,
+        "y": 1.5
+      },
+      {
+        "id": 6,
+        "x": 5,
+        "y": 1.5
+      },
+      {
+        "id": 7,
+        "x": 10,
+        "y": 1.5
+      },
+      {
+        "id": 8,
+        "x": 15,
+        "y": 1.5
+      },
+      {
+        "id": 9,
+        "x": 0,
+        "y": 4.5
+      },
+      {
+        "id": 10,
+        "x": 5,
+        "y": 4.5
+      },
+      {
+        "id": 11,
+        "x": 10,
+        "y": 4.5
+      },
+      {
+        "id": 12,
+        "x": 15,
+        "y": 4.5
+      },
+      {
+        "id": 13,
+        "x": 0,
+        "y": 7.5
+      },
+      {
+        "id": 14,
+        "x": 5,
+        "y": 7.5
+      },
+      {
+        "id": 15,
+        "x": 10,
+        "y": 7.5
+      },
+      {
+        "id": 16,
+        "x": 15,
+        "y": 7.5
+      },
+      {
+        "id": 17,
+        "x": 0,
+        "y": 10.5
+      },
+      {
+        "id": 18,
+        "x": 5,
+        "y": 10.5
+      },
+      {
+        "id": 19,
+        "x": 10,
+        "y": 10.5
+      },
+      {
+        "id": 20,
+        "x": 15,
+        "y": 10.5
+      },
+      {
+        "id": 21,
+        "x": 0,
+        "y": 13.5
+      },
+      {
+        "id": 22,
+        "x": 5,
+        "y": 13.5
+      },
+      {
+        "id": 23,
+        "x": 10,
+        "y": 13.5
+      },
+      {
+        "id": 24,
+        "x": 15,
+        "y": 13.5
+      }
+    ],
+    "members": [
+      {
+        "id": 5,
+        "i": 21,
+        "j": 22,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 6,
+        "i": 22,
+        "j": 23,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 7,
+        "i": 23,
+        "j": 24,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 11,
+        "i": 18,
+        "j": 22,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 13,
+        "i": 19,
+        "j": 23,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 15,
+        "i": 20,
+        "j": 24,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 16,
+        "i": 17,
+        "j": 18,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 17,
+        "i": 18,
+        "j": 19,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 18,
+        "i": 19,
+        "j": 20,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 22,
+        "i": 16,
+        "j": 20,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 24,
+        "i": 14,
+        "j": 18,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 26,
+        "i": 15,
+        "j": 19,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 30,
+        "i": 10,
+        "j": 14,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 32,
+        "i": 11,
+        "j": 15,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 34,
+        "i": 12,
+        "j": 16,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 35,
+        "i": 1,
+        "j": 5,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 1.5,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 37,
+        "i": 2,
+        "j": 6,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 1.5,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 38,
+        "i": 6,
+        "j": 10,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 39,
+        "i": 3,
+        "j": 7,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 1.5,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 40,
+        "i": 7,
+        "j": 11,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 41,
+        "i": 4,
+        "j": 8,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 1.5,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 42,
+        "i": 8,
+        "j": 12,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 43,
+        "i": 5,
+        "j": 6,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 44,
+        "i": 6,
+        "j": 7,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 45,
+        "i": 7,
+        "j": 8,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 46,
+        "i": 9,
+        "j": 10,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 47,
+        "i": 10,
+        "j": 11,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 48,
+        "i": 11,
+        "j": 12,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 49,
+        "i": 13,
+        "j": 14,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 50,
+        "i": 14,
+        "j": 15,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 51,
+        "i": 15,
+        "j": 16,
+        "type": "Beam",
+        "dim": "300x500 mm",
+        "width": 300,
+        "height": 500,
+        "length": 5,
+        "E": 200000,
+        "A": 150000,
+        "I": 3125000000
+      },
+      {
+        "id": 52,
+        "i": 5,
+        "j": 9,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 53,
+        "i": 9,
+        "j": 13,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 54,
+        "i": 13,
+        "j": 17,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      },
+      {
+        "id": 55,
+        "i": 17,
+        "j": 21,
+        "type": "Column",
+        "dim": "400x400 mm",
+        "width": 400,
+        "height": 400,
+        "length": 3,
+        "E": 200000,
+        "A": 160000,
+        "I": 2133333333.3333333
+      }
+    ],
+    "supports": {
+      "1": "Fixed",
+      "2": "Fixed",
+      "3": "Fixed",
+      "4": "Fixed"
+    },
+    "loads": [
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 43,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 44,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 45,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 48,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 47,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 46,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 49,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 50,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 51,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 18,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 17,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 16,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 5,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 6,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 7,
+        "w": 35
+      },
+      {
+        "kind": "node",
+        "case": "P",
+        "node": 21,
+        "fx": 14,
+        "fy": 0,
+        "mz": 0
+      },
+      {
+        "kind": "node",
+        "case": "P",
+        "node": 17,
+        "fx": 14,
+        "fy": 0,
+        "mz": 0
+      },
+      {
+        "kind": "node",
+        "case": "P",
+        "node": 13,
+        "fx": 14,
+        "fy": 0,
+        "mz": 0
+      },
+      {
+        "kind": "node",
+        "case": "P",
+        "node": 9,
+        "fx": 14,
+        "fy": 0,
+        "mz": 0
+      },
+      {
+        "kind": "node",
+        "case": "P",
+        "node": 5,
+        "fx": 14,
+        "fy": 0,
+        "mz": 0
+      },
+      {
+        "kind": "member_udl",
+        "case": "WL",
+        "member": 52,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "WL",
+        "member": 53,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "WL",
+        "member": 54,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "EQL",
+        "member": 52,
+        "w": 25
+      },
+      {
+        "kind": "member_udl",
+        "case": "EQL",
+        "member": 53,
+        "w": 25
+      },
+      {
+        "kind": "member_udl",
+        "case": "EQL",
+        "member": 54,
+        "w": 25
+      }
+    ],
+    "selectedNodes": [],
+    "selectedMemberIds": [
+      52,
+      53,
+      54
+    ],
+    "selectedNode": null,
+    "mode": "select",
+    "nextNode": 25,
+    "nextMember": 56
+  }
+}
