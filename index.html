@@ -14,21 +14,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=32" />
+  <link rel="stylesheet" href="styles.css?v=34" />
 </head>
 <body>
   <div class="app">
+
     <header class="topbar">
       <div class="topbar-logo-wrap">
-        <img class="topbar-logo" src="assets/LOGO-STRUCF.png?v=3" alt="StrucForge Structural Design Studio" />
+        <img class="topbar-logo" src="assets/LOGO-STRUCF.png?v=4" alt="StrucForge Structural Design Studio" />
+      </div>
+      <div class="topbar-project">
+        <div class="topbar-project-heading">Project Header</div>
+        <label><span>Project Title</span><input id="projectTitle" value="Frame Analysis" /></label>
+        <label><span>Project Location</span><input id="projectLocation" value="" /></label>
+        <label><span>Project Owner</span><input id="projectOwner" value="" /></label>
       </div>
       <div class="topbar-brand">
-        <div class="topbar-title">RC STRUCTURAL FRAME ANALYSIS</div>
+        <div class="topbar-title">R.C. FRAME ANALYSIS</div>
+        <div class="topbar-subtitle">Reinforced Concrete - Structural Frame Analysis</div>
       </div>
       <div class="topbar-right">
+        <div class="header-disclaimer"><strong>Disclaimer:</strong><span>Calculations must be checked and</span><span>approved by a licensed Structural or Civil Engineer.</span></div>
         <div class="header-controls">
           <label class="topbar-control">
-            <span>Text</span>
+            <span>Text Size</span>
             <select id="fontScaleSelect" aria-label="Text size">
               <option value="0.75">Small</option>
               <option value="1" selected>Medium</option>
@@ -74,32 +83,18 @@
             <div><strong>WL</strong> - Wind load</div>
             </div>
           </details>
-          <div class="header-theme-icons" id="themeButtons" aria-label="Color scheme">
-            <button type="button" class="theme-icon theme-sun active" data-theme-choice="olive_saffron" title="Olive / Saffron" aria-label="Olive / Saffron"></button>
-            <button type="button" class="theme-icon theme-moon" data-theme-choice="mauve_neutral" title="Mauve Neutral" aria-label="Mauve Neutral"></button>
-            <button type="button" class="theme-icon theme-newmoon" data-theme-choice="green_teal" title="Green / Teal" aria-label="Green / Teal"></button>
-          </div>
         </div>
-        <div class="header-disclaimer"><span>Disclaimer: Calculations must be checked and approved</span><span>by a licensed Structural or Civil Engineer.</span></div>
+      </div>
+      <div class="day-night-options" aria-label="Day and night theme options">
+        <button id="dayThemeBtn" class="topbar-theme-toggle day-theme-option" type="button" title="Day theme" aria-label="Day theme"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/><circle cx="12" cy="12" r="4"/></svg></button>
+        <button id="nightThemeBtn" class="topbar-theme-toggle night-theme-option" type="button" title="Night theme" aria-label="Night theme"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 15.5A7 7 0 0 1 8.5 6.5a7.5 7.5 0 1 0 9 9z"/></svg></button>
       </div>
     </header>
 
     <div class="workspace">
     <aside class="panel">
-      <h1>StrucForge 2D Frame</h1>
+      <h1>StrucForge RC Frame</h1>
       <button id="newDesign" class="new-design-btn" type="button">New Design</button>
-      <section>
-        <h2>Project Header</h2>
-        <label>Project title</label>
-        <input id="projectTitle" value="Frame Analysis" />
-        <label>Project owner</label>
-        <input id="projectOwner" value="" />
-        <label>Project location</label>
-        <input id="projectLocation" value="" />
-        <label>Designed by</label>
-        <input id="designedBy" value="" />
-      </section>
-
 <section>
         <h2>1. Grid</h2>
         <label>V-grid positions from left, m</label>
@@ -231,11 +226,22 @@
     </aside>
 
     <main>
+
       <div class="toolbar">
-        <button id="deleteSelectedBtn" class="toolbar-icon-btn" type="button" title="Delete selected" aria-label="Delete selected">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-1 0v14H9V6m-2 0h10"/></svg>
-        </button>
         <span id="modeLabel">Mode: Node</span>
+        <div class="tool-icon-group" aria-label="Application tools">
+          <button id="toolbarDeleteBtn" class="toolbar-icon-btn app-tool-icon delete-tool-icon" type="button" title="Delete" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-1 0v14H9V6m-2 0h10"/></svg></button>
+          <button id="toolbarSaveBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Save" aria-label="Save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 17h8"/></svg></button>
+          <button id="toolbarSaveAsBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Save As" aria-label="Save As"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 17h5M16 13l4 4m0-4l-4 4"/></svg></button>
+          <button id="toolbarImportBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Import" aria-label="Import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M12 4v11m0 0l-4-4m4 4l4-4M5 7h4M15 7h4"/></svg></button>
+          <button id="toolbarExportBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Export" aria-label="Export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M12 15V4m0 0L8 8m4-4l4 4M5 7h4M15 7h4"/></svg></button>
+          <button id="toolbarOpenBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Open File" aria-label="Open File"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3zM3 9h18"/></svg></button>
+          <button id="toolbarPrintBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Print" aria-label="Print"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"/></svg></button>
+          <button id="toolbarPrintPdfBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Print PDF" aria-label="Print PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"/><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
+          <button id="toolbarNewBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="New File" aria-label="New File"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M12 10v6"/></svg></button>
+          <button id="toolbarCalcBtn" class="toolbar-icon-btn app-tool-icon toolbar-calc-icon" type="button" title="Calculate" aria-label="Calculate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 7h6M9 11h2M13 11h2M9 15h2M13 15h2M9 18h6"/></svg></button>
+          <button id="lockToggleBtn" class="toolbar-icon-btn app-tool-icon lock-toggle" type="button" title="Lock Zoom/Pan" aria-label="Lock Zoom/Pan"><span class="lock-icon lock-icon-unlocked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h12v10H7zM10 11V7a4 4 0 0 1 7-2"/></svg></span><span class="lock-icon lock-icon-locked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h12v10H6zM9 11V7a3 3 0 0 1 6 0v4"/></svg></span></button>
+        </div>
         <span id="selectedLabel">Selected: none</span>
         <span id="statusLabel">Ready</span>
       </div>
@@ -289,6 +295,6 @@
   <div id="printPages" class="print-pages" aria-hidden="true"></div>
 
   <script src="solver.js?v=13"></script>
-  <script src="app.js?v=47"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>

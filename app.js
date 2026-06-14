@@ -29,11 +29,26 @@ let isPanning = false;
 let didPan = false;
 let lastPan = null;
 let currentFileHandle = null;
+let viewLocked = false;
+let deleteMode = false;
 const filePickerSupported = "showSaveFilePicker" in window;
 const tutorialDrawer = document.getElementById("tutorialDrawer");
 const tutorialToggle = document.getElementById("tutorialToggle");
 const tutorialClose = document.getElementById("tutorialClose");
 const tutorialDrawerTab = document.getElementById("tutorialDrawerTab");
+const dayThemeBtn = document.getElementById("dayThemeBtn");
+const nightThemeBtn = document.getElementById("nightThemeBtn");
+const lockToggleBtn = document.getElementById("lockToggleBtn");
+const toolbarDeleteBtn = document.getElementById("toolbarDeleteBtn");
+const toolbarSaveBtn = document.getElementById("toolbarSaveBtn");
+const toolbarSaveAsBtn = document.getElementById("toolbarSaveAsBtn");
+const toolbarImportBtn = document.getElementById("toolbarImportBtn");
+const toolbarExportBtn = document.getElementById("toolbarExportBtn");
+const toolbarOpenBtn = document.getElementById("toolbarOpenBtn");
+const toolbarPrintBtn = document.getElementById("toolbarPrintBtn");
+const toolbarPrintPdfBtn = document.getElementById("toolbarPrintPdfBtn");
+const toolbarNewBtn = document.getElementById("toolbarNewBtn");
+const toolbarCalcBtn = document.getElementById("toolbarCalcBtn");
 function setTutorialDrawer(open) {
   if (!tutorialDrawer) return;
   tutorialDrawer.classList.toggle("open", open);
@@ -48,9 +63,40 @@ document.addEventListener("keydown", (event) => {
 });
 
 function themeColor(name, fallback) { return getComputedStyle(document.body).getPropertyValue(name).trim() || fallback; }
+function updateDayNightButtons() {
+  const isNight = document.body.dataset.theme === "green_teal";
+  dayThemeBtn?.classList.toggle("is-active", !isNight);
+  nightThemeBtn?.classList.toggle("is-active", isNight);
+}
+function updateLockToggle() {
+  if (!lockToggleBtn) return;
+  lockToggleBtn.classList.toggle("is-active", viewLocked);
+  lockToggleBtn.title = viewLocked ? "Unlock Zoom/Pan" : "Lock Zoom/Pan";
+  lockToggleBtn.setAttribute("aria-label", lockToggleBtn.title);
+}
+function setViewLocked(locked) {
+  viewLocked = !!locked;
+  if (viewLocked) isPanning = false;
+  updateLockToggle();
+  status(viewLocked ? "Zoom/Pan locked." : "Zoom/Pan unlocked.");
+}
+function setDeleteMode(active) {
+  deleteMode = !!active;
+  document.body.classList.toggle("delete-mode", deleteMode);
+  toolbarDeleteBtn?.classList.toggle("is-active", deleteMode);
+  if (deleteMode) {
+    model.mode = "delete";
+    model.selectedNodes = [];
+    model.selectedMemberIds = [];
+    model.selectedNode = null;
+  }
+  status(deleteMode ? "Delete tool active. Click a node or member to erase it." : "Delete tool off.");
+  draw();
+}
 function setTheme(name, remember = true) {
   document.body.dataset.theme = name || "olive_saffron";
   document.querySelectorAll("[data-theme-choice]").forEach(btn => btn.classList.toggle("active", btn.dataset.themeChoice === document.body.dataset.theme));
+  updateDayNightButtons();
   if (remember) localStorage.setItem("strucforge_theme", document.body.dataset.theme);
   draw();
 }
@@ -1604,6 +1650,40 @@ function loadRecord() {
   }
 }
 
+
+function deleteObjectAtPoint(px, py) {
+  const node = getNodeAt(px, py);
+  const member = node ? null : getMemberAt(px, py);
+  if (!node && !member) {
+    status("Delete tool: no node or member found at click point.");
+    return;
+  }
+
+  pushHistory();
+  if (node) {
+    const nodeId = node.id;
+    const connectedMemberIds = new Set(model.members.filter(m => sameId(m.i, nodeId) || sameId(m.j, nodeId)).map(m => m.id));
+    model.nodes = model.nodes.filter(n => !sameId(n.id, nodeId));
+    model.members = model.members.filter(m => !connectedMemberIds.has(m.id));
+    delete model.supports[nodeId];
+    model.loads = model.loads.filter(L => !sameId(L.node, nodeId) && !connectedMemberIds.has(L.member));
+    status(`Deleted Node ${nodeId} and connected member(s).`);
+  } else {
+    model.members = model.members.filter(m => !sameId(m.id, member.id));
+    model.loads = model.loads.filter(L => !sameId(L.member, member.id));
+    status(`Deleted Member ${member.id}.`);
+  }
+
+  model.selectedNodes = [];
+  model.selectedMemberIds = [];
+  model.selectedNode = null;
+  renumberNodesSystematically();
+  lastAnalysisResult = null;
+  diagramsVisible = false;
+  showDiagramBtn.textContent = "Show/Hide S&M Diagram";
+  draw();
+}
+
 function deleteSelectedItems() {
   const nodeIds = new Set(model.selectedNodes || []);
   if (model.selectedNode) nodeIds.add(model.selectedNode.id);
@@ -1798,6 +1878,10 @@ memberPropsTable.addEventListener("keydown", e => {
 
 canvas.addEventListener("wheel", e => {
   e.preventDefault();
+  if (viewLocked) {
+    status("Zoom/Pan is locked.");
+    return;
+  }
   const pt = eventToCanvas(e);
   const before = fromCanvas(pt.x, pt.y);
   zoom = Math.max(minZoom, Math.min(maxZoom, zoom * (e.deltaY < 0 ? 1.12 : 0.89)));
@@ -1808,6 +1892,7 @@ canvas.addEventListener("wheel", e => {
 }, {passive:false});
 
 canvas.addEventListener("mousedown", e => {
+  if (viewLocked) return;
   if (e.button === 1 || e.button === 2 || (e.shiftKey && model.mode !== "member")) {
     isPanning = true;
     didPan = false;
@@ -1816,6 +1901,7 @@ canvas.addEventListener("mousedown", e => {
 });
 
 canvas.addEventListener("mousemove", e => {
+  if (viewLocked) return;
   if (!isPanning) return;
   const dx = e.clientX - lastPan.x;
   const dy = e.clientY - lastPan.y;
@@ -1840,6 +1926,11 @@ canvas.addEventListener("click", e => {
   const px = pt.x;
   const py = pt.y;
   const additive = e.ctrlKey || e.shiftKey;
+
+  if (deleteMode) {
+    deleteObjectAtPoint(px, py);
+    return;
+  }
 
   if (loadType.value === "node" && model.mode === "node") {
     const loadNode = getNodeAt(px, py);
@@ -1966,23 +2057,24 @@ generateGrid.onclick = () => {
   draw();
 };
 
-modeNode.onclick = () => { model.mode = "node"; model.selectedNodes = []; status("Node Mode."); draw(); };
-modeMember.onclick = () => {
+modeNode.onclick = () => { if (deleteMode) setDeleteMode(false); model.mode = "node"; model.selectedNodes = []; status("Node Mode."); draw(); };
+modeMember.onclick = () => { if (deleteMode) setDeleteMode(false);
   model.mode = "member";
   model.selectedNodes = [];
   status("Create Member Mode. Click first node/intersection, then second.");
   draw();
 };
 
-modeSelect.onclick = () => {
+modeSelect.onclick = () => { if (deleteMode) setDeleteMode(false);
   model.mode = "select";
   model.selectedNodes = [];
   model.selectedNode = null;
   status("Select Member Mode. Click a member line. Ctrl/Shift + click adds more.");
   draw();
 };
-modeSupport.onclick = () => { model.mode = "support"; model.selectedNodes = []; status("Support Mode."); draw(); };
+modeSupport.onclick = () => { if (deleteMode) setDeleteMode(false); model.mode = "support"; model.selectedNodes = []; status("Support Mode."); draw(); };
 clearSelection.onclick = () => { model.selectedNodes = []; model.selectedMemberIds = []; model.selectedNode = null; status("Selection cleared."); draw(); };
+if (toolbarDeleteBtn) toolbarDeleteBtn.onclick = () => setDeleteMode(!deleteMode);
 if (typeof deleteSelectedBtn !== "undefined" && deleteSelectedBtn) deleteSelectedBtn.onclick = deleteSelectedItems;
 
 undoBtn.onclick = undo;
@@ -2002,6 +2094,18 @@ resetView.onclick = () => { zoom = 1; pan = {x:0, y:0}; draw(); };
 saveBtn.onclick = saveRecord;
 saveAsBtn.onclick = () => saveProjectFile(true);
 deleteRecordBtn.onclick = deleteRecord;
+if (toolbarSaveBtn) toolbarSaveBtn.onclick = saveRecord;
+if (toolbarSaveAsBtn) toolbarSaveAsBtn.onclick = () => saveProjectFile(true);
+if (toolbarImportBtn) toolbarImportBtn.onclick = () => importJsonFile.click();
+if (toolbarExportBtn) toolbarExportBtn.onclick = () => saveProjectFile(true);
+if (toolbarOpenBtn) toolbarOpenBtn.onclick = () => importJsonFile.click();
+if (toolbarPrintBtn) toolbarPrintBtn.onclick = () => printReport("printer");
+if (toolbarPrintPdfBtn) toolbarPrintPdfBtn.onclick = () => printReport("pdf");
+if (toolbarNewBtn) toolbarNewBtn.onclick = () => newDesign.click();
+if (toolbarCalcBtn) toolbarCalcBtn.onclick = () => calculateBtn.click();
+if (lockToggleBtn) lockToggleBtn.onclick = () => setViewLocked(!viewLocked);
+if (dayThemeBtn) dayThemeBtn.onclick = () => setTheme("olive_saffron", true);
+if (nightThemeBtn) nightThemeBtn.onclick = () => setTheme("green_teal", true);
 document.querySelectorAll("[data-theme-choice]").forEach(btn => {
   btn.onclick = () => setTheme(btn.dataset.themeChoice, true);
 });
@@ -2303,6 +2407,8 @@ window.addEventListener("load", () => {
   if (typeof toggleLoadsBtn !== "undefined" && toggleLoadsBtn) toggleLoadsBtn.textContent = "Show/Hide Loading";
   fontScaleSelect.value = String(fontScale);
   document.querySelectorAll("[data-theme-choice]").forEach(btn => btn.classList.toggle("active", btn.dataset.themeChoice === document.body.dataset.theme));
+  updateDayNightButtons();
+  updateLockToggle();
   prepareCanvasSizes();
   draw();
   loadDefaultProject();
