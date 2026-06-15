@@ -653,6 +653,22 @@ function setMemberDisplayName(memberId, value) {
   status(`Member name updated to ${member.name}.`);
 }
 
+function setMemberDimension(memberId, field, value) {
+  const member = getMember(memberId);
+  if (!member || (field !== "width" && field !== "height")) return;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    status("Enter a positive value for b or h.");
+    updateMemberPropertiesTable();
+    return;
+  }
+  member[field] = numeric;
+  normalizeMemberProperties(member);
+  lastAnalysisResult = null;
+  draw();
+  status(`${memberDisplayName(member)} ${field === "width" ? "b" : "h"} updated to ${numeric} mm.`);
+}
+
 function resetDesignWorkspace(message = "New design ready. Generate grid to begin.") {
   model.nodes = [];
   model.members = [];
@@ -676,13 +692,15 @@ function resetDesignWorkspace(message = "New design ready. Generate grid to begi
 function normalizeMemberProperties(member) {
   if (!member) return member;
   if (member.type === "Beam" || member.type === "Column") {
-    const props = memberTypeProperties(member.type);
-    member.width = props.width;
-    member.height = props.height;
-    member.dim = props.dim;
-    member.A = props.area;
-    member.I = props.inertia;
-    member.E = props.E;
+    const defaults = memberTypeProperties(member.type);
+    const width = Number(member.width) || defaults.width;
+    const height = Number(member.height) || defaults.height;
+    member.width = width;
+    member.height = height;
+    member.dim = `${width}x${height} mm`;
+    member.A = width * height;
+    member.I = width * Math.pow(height, 3) / 12;
+    member.E = Number(member.E) || defaults.E;
   }
   return member;
 }
@@ -1002,8 +1020,8 @@ function updateMemberPropertiesTable() {
     <tr>
       <td><input class="member-name-input" data-member-name="${m.id}" value="${escapeHtml(memberDisplayName(m))}" /></td>
       <td>${m.type}</td>
-      <td>${propertyText(m.width, "")}</td>
-      <td>${propertyText(m.height, "")}</td>
+      <td><input class="member-dim-input" data-member-dim="${m.id}" data-field="width" value="${escapeHtml(m.width)}" /></td>
+      <td><input class="member-dim-input" data-member-dim="${m.id}" data-field="height" value="${escapeHtml(m.height)}" /></td>
       <td>${propertyText(m.A, "")}</td>
       <td>${propertyText(m.I, "")}</td>
       <td>${propertyText(m.E, "")}</td>
@@ -1882,13 +1900,17 @@ window.addEventListener("afterprint", () => {
 });
 
 memberPropsTable.addEventListener("change", e => {
-  const input = e.target.closest("[data-member-name]");
-  if (!input) return;
-  setMemberDisplayName(input.dataset.memberName, input.value);
+  const nameInput = e.target.closest("[data-member-name]");
+  if (nameInput) {
+    setMemberDisplayName(nameInput.dataset.memberName, nameInput.value);
+    return;
+  }
+  const dimInput = e.target.closest("[data-member-dim]");
+  if (dimInput) setMemberDimension(dimInput.dataset.memberDim, dimInput.dataset.field, dimInput.value);
 });
 
 memberPropsTable.addEventListener("keydown", e => {
-  const input = e.target.closest("[data-member-name]");
+  const input = e.target.closest("[data-member-name], [data-member-dim]");
   if (!input) return;
   if (e.key === "Enter") {
     e.preventDefault();

@@ -194,3 +194,18 @@ body[data-theme="green_teal"] .topbar{background:#003d2c}
   .topbar-project label span{text-align:left}
   .tutorial-drawer{top:193px}
 }
+
+
+/* Member results moved into shared right-side drawer */
+.tutorial-drawer{top:135px;z-index:160}
+.tutorial-drawer-panel{width:min(980px,calc(100vw - 36px))}
+.tutorial-drawer .member-props-table{position:relative;right:auto;top:auto;z-index:1;width:100%;max-height:42px;overflow:hidden;border:0;border-bottom:1px solid #000;border-radius:0;box-shadow:none;background:#fff;flex:0 0 auto}
+.tutorial-drawer .member-props-table:hover,
+.tutorial-drawer .member-props-table:focus-within{width:100%;max-height:45vh;overflow:auto;box-shadow:none}
+.tutorial-drawer .member-props-table table{min-width:980px}
+.tutorial-drawer .tutorial-drawer-head{border-top:1px solid #000}
+.member-dim-input{width:62px;min-width:62px;border:1px solid #999;border-radius:3px;padding:2px 3px;font:inherit;background:#fff;color:#000}
+@media(max-width:900px){
+  .tutorial-drawer{top:193px}
+  .tutorial-drawer-panel{width:min(820px,calc(100vw - 36px))}
+}
