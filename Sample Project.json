@@ -1,7 +1,7 @@
 {
   "app": "StrucForge 2D Frame Analysis",
   "version": 9,
-  "savedAt": "2026-06-15T00:02:50.932Z",
+  "savedAt": "2026-06-15T07:18:26.925Z",
   "theme": "mauve_neutral",
   "view": {
     "zoom": 0.8515504266269385,
@@ -16,7 +16,7 @@
     "title": "Dela Cruz Residence",
     "owner": "Mr. Juan dela Cruz",
     "location": "Pagadian City",
-    "designedBy": ""
+    "designedBy": "Engr. Sue N. Su"
   },
   "model": {
     "v": [

@@ -209,3 +209,15 @@ body[data-theme="green_teal"] .topbar{background:#003d2c}
   .tutorial-drawer{top:193px}
   .tutorial-drawer-panel{width:min(820px,calc(100vw - 36px))}
 }
+
+
+/* Member Properties toolbar placement */
+.tutorial-drawer-panel{width:min(430px,calc(100vw - 36px))}
+.tutorial-drawer .member-props-table{display:none}
+.toolbar .member-props-table{position:absolute;right:14px;top:6px;z-index:80;width:260px;max-height:30px;overflow:hidden;background:#fff;border:1px solid #777;border-radius:2px;box-shadow:none;color:#000;transition:width .16s ease,max-height .16s ease,box-shadow .16s ease}
+.toolbar .member-props-table:hover,
+.toolbar .member-props-table:focus-within{width:min(980px,calc(100% - 28px));max-height:min(60vh,520px);overflow:auto;box-shadow:0 5px 18px rgba(0,0,0,.22)}
+.toolbar .member-props-title{position:sticky;top:0;z-index:2;height:28px;padding:6px 9px;background:#888182;color:#fff;border-bottom:1px solid #777;font-size:10px;letter-spacing:.02em;justify-content:center}
+.toolbar .member-props-title::before{display:none}
+.toolbar .member-props-table table{min-width:980px;font-size:12px}
+.toolbar .member-props-table:not(:hover):not(:focus-within) table{display:none}

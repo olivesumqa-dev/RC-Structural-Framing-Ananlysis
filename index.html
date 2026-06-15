@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=38" />
+  <link rel="stylesheet" href="styles.css?v=39" />
 </head>
 <body>
   <div class="app">
@@ -243,6 +243,18 @@
         </div>
         <span id="selectedLabel">Selected: none</span>
         <span id="statusLabel">Ready</span>
+
+        <div class="member-props-table" id="memberPropsTable">
+                <div class="member-props-title">Member Properties / Results</div>
+                <table>
+                  <thead>
+                    <tr><th>ID</th><th>Type</th><th>b</th><th>h</th><th>A</th><th>I</th><th>E</th><th>SW kN/m</th><th>DL+SW kN/m</th><th>V kN</th><th>M kN-m</th><th>Rx kN</th><th>Ry kN</th><th>Rz kN-m</th><th>Px kN</th><th>Py kN</th><th>Mz kN-m</th></tr>
+                  </thead>
+                  <tbody id="memberPropsBody">
+                    <tr><td colspan="17">No data</td></tr>
+                  </tbody>
+                </table>
+              </div>
       </div>
       <canvas id="canvas" width="1500" height="950"></canvas>
     </main>
@@ -251,19 +263,7 @@
   <aside class="tutorial-drawer" id="tutorialDrawer" aria-label="Beginners Tutorials" aria-hidden="true">
     <button class="tutorial-drawer-tab" id="tutorialDrawerTab" type="button" aria-label="Show Beginners Tutorials">Tutorials</button>
     <div class="tutorial-drawer-panel">
-      <div class="member-props-table" id="memberPropsTable">
-        <div class="member-props-title">Member Properties / Results</div>
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Type</th><th>b</th><th>h</th><th>A</th><th>I</th><th>E</th><th>SW kN/m</th><th>DL+SW kN/m</th><th>V kN</th><th>M kN-m</th><th>Rx kN</th><th>Ry kN</th><th>Rz kN-m</th><th>Px kN</th><th>Py kN</th><th>Mz kN-m</th></tr>
-          </thead>
-          <tbody id="memberPropsBody">
-            <tr><td colspan="17">No data</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="tutorial-drawer-head">
+<div class="tutorial-drawer-head">
         <h2>Beginners Tutorials</h2>
         <button class="tutorial-close" id="tutorialClose" type="button" aria-label="Hide Beginners Tutorials">x</button>
       </div>
@@ -298,7 +298,7 @@
 {
   "app": "StrucForge 2D Frame Analysis",
   "version": 9,
-  "savedAt": "2026-06-15T00:02:50.932Z",
+  "savedAt": "2026-06-15T07:18:26.925Z",
   "theme": "mauve_neutral",
   "view": {
     "zoom": 0.8515504266269385,
@@ -313,7 +313,7 @@
     "title": "Dela Cruz Residence",
     "owner": "Mr. Juan dela Cruz",
     "location": "Pagadian City",
-    "designedBy": ""
+    "designedBy": "Engr. Sue N. Su"
   },
   "model": {
     "v": [
