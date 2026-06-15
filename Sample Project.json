@@ -1,22 +1,22 @@
 {
   "app": "StrucForge 2D Frame Analysis",
   "version": 9,
-  "savedAt": "2026-06-14T08:26:39.593Z",
+  "savedAt": "2026-06-15T00:02:50.932Z",
   "theme": "mauve_neutral",
   "view": {
-    "zoom": 0.9644827157714757,
+    "zoom": 0.8515504266269385,
     "pan": {
-      "x": -383.4462973001352,
-      "y": -40.52127396423663
+      "x": -454.37887330868256,
+      "y": -16.31537344130706
     },
-    "fontScale": 1,
+    "fontScale": 0.75,
     "loadsVisible": true
   },
   "project": {
     "title": "Dela Cruz Residence",
     "owner": "Mr. Juan dela Cruz",
     "location": "Pagadian City",
-    "designedBy": "Engr. Oliver A. Sumampong"
+    "designedBy": ""
   },
   "model": {
     "v": [
@@ -784,16 +784,24 @@
         "case": "EQL",
         "member": 54,
         "w": 25
+      },
+      {
+        "kind": "member_udl",
+        "case": "WL",
+        "member": 55,
+        "w": 35
+      },
+      {
+        "kind": "member_udl",
+        "case": "EQL",
+        "member": 55,
+        "w": 25
       }
     ],
     "selectedNodes": [],
-    "selectedMemberIds": [
-      52,
-      53,
-      54
-    ],
+    "selectedMemberIds": [],
     "selectedNode": null,
-    "mode": "select",
+    "mode": "delete",
     "nextNode": 25,
     "nextMember": 56
   }

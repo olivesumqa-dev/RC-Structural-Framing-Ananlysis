@@ -36,8 +36,7 @@ const tutorialDrawer = document.getElementById("tutorialDrawer");
 const tutorialToggle = document.getElementById("tutorialToggle");
 const tutorialClose = document.getElementById("tutorialClose");
 const tutorialDrawerTab = document.getElementById("tutorialDrawerTab");
-const dayThemeBtn = document.getElementById("dayThemeBtn");
-const nightThemeBtn = document.getElementById("nightThemeBtn");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
 const lockToggleBtn = document.getElementById("lockToggleBtn");
 const toolbarDeleteBtn = document.getElementById("toolbarDeleteBtn");
 const toolbarSaveBtn = document.getElementById("toolbarSaveBtn");
@@ -65,8 +64,10 @@ document.addEventListener("keydown", (event) => {
 function themeColor(name, fallback) { return getComputedStyle(document.body).getPropertyValue(name).trim() || fallback; }
 function updateDayNightButtons() {
   const isNight = document.body.dataset.theme === "green_teal";
-  dayThemeBtn?.classList.toggle("is-active", !isNight);
-  nightThemeBtn?.classList.toggle("is-active", isNight);
+  if (!themeToggleBtn) return;
+  themeToggleBtn.classList.toggle("is-night", isNight);
+  themeToggleBtn.title = isNight ? "Day theme" : "Night theme";
+  themeToggleBtn.setAttribute("aria-label", themeToggleBtn.title);
 }
 function updateLockToggle() {
   if (!lockToggleBtn) return;
@@ -608,7 +609,7 @@ function columnSelfWeight(member) {
   return member && member.type === "Column" ? memberSelfWeight(member) : 0;
 }
 
-function memberUdlByCase(member, loadCaseName) {
+function memberUdlByCase(member, loadCaseName, component = "w") {
   if (!member) return 0;
   return model.loads
     .filter(load =>
@@ -616,7 +617,7 @@ function memberUdlByCase(member, loadCaseName) {
       sameId(load.member, member.id) &&
       String(load.case || "").toUpperCase() === loadCaseName
     )
-    .reduce((sum, load) => sum + Math.abs(Number(load.w) || 0), 0);
+    .reduce((sum, load) => sum + Math.abs(Number(load[component]) || 0), 0);
 }
 
 function memberAutoDeadLoad(member) {
@@ -869,17 +870,18 @@ function drawGridBubbles() {
   if (model.v.length < 1 || model.h.length < 1) return;
   const top = toCanvas(0, model.h[model.h.length-1]).y - scaled(98 + 18);
   const color = annotationColor();
+  const isNight = document.body.dataset.theme === "green_teal";
   setScaledFont(12);
   for (let i=0; i<model.v.length; i++) {
     const x = toCanvas(model.v[i], 0).x;
     ctx.beginPath();
     ctx.arc(x, top, scaled(15), 0, Math.PI*2);
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = isNight ? "#000" : "#fff";
     ctx.fill();
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = isNight ? "#fff" : color;
     ctx.lineWidth = scaled(1);
     ctx.stroke();
-    ctx.fillStyle = color;
+    ctx.fillStyle = isNight ? "#fff" : color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(gridLetter(i), x, top + scaled(1));
@@ -1066,19 +1068,21 @@ function escapeHtml(value) {
 }
 
 function drawNodes() {
+  const isNight = document.body.dataset.theme === "green_teal";
   for (const n of model.nodes) {
     const p = toCanvas(n.x, n.y);
     const nodeLabel = String(n.id);
     const nodeRadius = scaled(nodeLabel.length > 2 ? 9 : 8);
     ctx.beginPath();
     ctx.arc(p.x, p.y, nodeRadius, 0, Math.PI*2);
-    ctx.fillStyle = model.selectedNode?.id === n.id || model.selectedNodes.includes(n.id) ? "#f59e0b" : "#fff";
+    const isSelected = model.selectedNode?.id === n.id || model.selectedNodes.includes(n.id);
+    ctx.fillStyle = isSelected ? "#f59e0b" : (isNight ? "#000" : "#fff");
     ctx.fill();
-    ctx.strokeStyle = annotationColor();
+    ctx.strokeStyle = isNight ? "#fff" : annotationColor();
     ctx.lineWidth = Math.max(0.9, scaled(1.35));
     ctx.stroke();
 
-    ctx.fillStyle = annotationColor();
+    ctx.fillStyle = isNight && !isSelected ? "#fff" : annotationColor();
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     setScaledFont(nodeLabel.length > 2 ? 7.5 : 8.5);
@@ -1288,7 +1292,9 @@ function drawLoads() {
       const key = L.member;
       if (!memberUdlMap[key]) memberUdlMap[key] = {kind:"member_udl", member:key, cases:{}};
       const loadCase = L.case || "UDL";
-      memberUdlMap[key].cases[loadCase] = (memberUdlMap[key].cases[loadCase] || 0) + (Number(L.w) || 0);
+      if (!memberUdlMap[key].cases[loadCase]) memberUdlMap[key].cases[loadCase] = {w:0, wx:0};
+      memberUdlMap[key].cases[loadCase].w += Number(L.w) || 0;
+      memberUdlMap[key].cases[loadCase].wx += Number(L.wx) || 0;
     }
     if (L.kind === "member_point") {
       memberPointStack[L.member] = (memberPointStack[L.member] || 0) + 1;
@@ -1297,7 +1303,15 @@ function drawLoads() {
   }
   Object.values(memberUdlMap).forEach(load => {
     load.label = Object.entries(load.cases)
-      .map(([caseName, w]) => `${caseName}=${valueText(Math.abs(w), "kN/m")}`)
+      .map(([caseName, values]) => {
+        const parts = [];
+        const wy = Number(values.w) || 0;
+        const wx = Number(values.wx) || 0;
+        if (wy) parts.push(`${caseName}y=${valueText(Math.abs(wy), "kN/m")}`);
+        if (wx) parts.push(`${caseName}x=${valueText(wx, "kN/m")}`);
+        return parts.join(" + ");
+      })
+      .filter(Boolean)
       .join(" + ");
     drawUdl(load, 1);
   });
@@ -1618,9 +1632,15 @@ function loadProjectPackage(data, sourceName, options = {}) {
 
 async function loadDefaultProject() {
   try {
-    const response = await fetch("Sample%20Project.json", {cache: "no-store"});
-    if (!response.ok) throw new Error("Default model not found.");
-    const data = await response.json();
+    let data = null;
+    const embedded = document.getElementById("defaultProjectData");
+    if (embedded && embedded.textContent.trim()) {
+      data = JSON.parse(embedded.textContent);
+    } else {
+      const response = await fetch("Sample%20Project.json", {cache: "no-store"});
+      if (!response.ok) throw new Error("Default model not found.");
+      data = await response.json();
+    }
     currentFileHandle = null;
     loadProjectPackage(data, "Default Sample Project", {pushHistory: false});
     recordName.value = "Default Sample Project";
@@ -2104,8 +2124,7 @@ if (toolbarPrintPdfBtn) toolbarPrintPdfBtn.onclick = () => printReport("pdf");
 if (toolbarNewBtn) toolbarNewBtn.onclick = () => newDesign.click();
 if (toolbarCalcBtn) toolbarCalcBtn.onclick = () => calculateBtn.click();
 if (lockToggleBtn) lockToggleBtn.onclick = () => setViewLocked(!viewLocked);
-if (dayThemeBtn) dayThemeBtn.onclick = () => setTheme("olive_saffron", true);
-if (nightThemeBtn) nightThemeBtn.onclick = () => setTheme("green_teal", true);
+if (themeToggleBtn) themeToggleBtn.onclick = () => setTheme(document.body.dataset.theme === "green_teal" ? "olive_saffron" : "green_teal", true);
 document.querySelectorAll("[data-theme-choice]").forEach(btn => {
   btn.onclick = () => setTheme(btn.dataset.themeChoice, true);
 });
@@ -2163,7 +2182,7 @@ assignLoad.onclick = () => {
 
   pushHistory();
   for (const m of members) {
-    model.loads.push({kind:"member_udl", case:lc, member:m.id, w:Number(wudl.value)});
+    model.loads.push({kind:"member_udl", case:lc, member:m.id, w:Number(wudl.value) || 0, wx:Number(document.getElementById("wudlX")?.value) || 0});
   }
 
   lastAnalysisResult = null;

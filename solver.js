@@ -29,7 +29,17 @@ function computedMemberDiagramValues(model, member) {
     .reduce((sum, load) => sum + Math.abs(Number(load.w) || 0), 0);
   const udls = memberLoads
     .filter(load => load.kind === "member_udl")
-    .map(load => Math.abs(Number(load.w) || 0));
+    .map(load => {
+      const a = memberNode(model, member.i);
+      const b = memberNode(model, member.j);
+      const Lm = memberLength(model, member);
+      const c = a && b ? (b.x - a.x) / Lm : 1;
+      const s = a && b ? (b.y - a.y) / Lm : 0;
+      const wx = Number(load.wx) || 0;
+      const wy = Number(load.w) || 0;
+      const qyLocal = -s * wx - c * wy;
+      return Math.abs(qyLocal);
+    });
   const beamDeadLoad = member.type === "Beam" ? userDeadLoad + selfWeight : userDeadLoad;
   if ((member.type === "Beam" || member.type === "Column") && selfWeight > 0) udls.push(selfWeight);
   const points = memberLoads
@@ -259,13 +269,16 @@ function computeFrameSystemResults(model, memberResults) {
     }
 
     const memberLoads = (model.loads || []).filter(load => sameModelId(load.member, member.id));
-    let totalUdl = memberSelfWeightValue(member);
+    const distributedLoads = [{wx: 0, wy: memberSelfWeightValue(member)}];
     for (const load of memberLoads) {
-      if (load.kind === "member_udl") totalUdl += Math.abs(Number(load.w) || 0);
+      if (load.kind === "member_udl") distributedLoads.push({wx: Number(load.wx) || 0, wy: Number(load.w) || 0});
     }
-    if (totalUdl > 0) {
-      const qxKnM = -totalUdl * s;
-      const qyKnM = -totalUdl * c;
+    for (const distLoad of distributedLoads) {
+      const wxKnM = Number(distLoad.wx) || 0;
+      const wyKnM = Number(distLoad.wy) || 0;
+      if (!wxKnM && !wyKnM) continue;
+      const qxKnM = c * wxKnM - s * wyKnM;
+      const qyKnM = -s * wxKnM - c * wyKnM;
       const equivLocal = [
         qxKnM * Lm / 2 * 1000,
         qyKnM * Lm / 2 * 1000,
