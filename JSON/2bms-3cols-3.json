@@ -1,0 +1,196 @@
+{
+  "app": "StrucForge 2-Beam 3-Column Calculator",
+  "version": 1,
+  "savedAt": "2026-06-24T10:49:21.484Z",
+  "theme": "green_teal",
+  "view": {
+    "zoom": 1.21483232253472,
+    "pan": {
+      "x": -250.36040466432246,
+      "y": 22.138332286423065
+    },
+    "fontScale": 1.5,
+    "loadsVisible": true,
+    "membersVisible": true
+  },
+  "project": {
+    "title": "Dela Cruz Residence",
+    "owner": "Mr. Juan dela Cruz",
+    "location": "Pagadian City",
+    "designedBy": "Engr. Sue N. Su"
+  },
+  "design": {
+    "fc": 28,
+    "fy": 415,
+    "cover": 40,
+    "beamBarDia": 16,
+    "columnBarDia": 16,
+    "tieBarDia": 10
+  },
+  "model": {
+    "v": [
+      0,
+      5,
+      9
+    ],
+    "h": [
+      0,
+      3
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": 2,
+        "x": 5,
+        "y": 0
+      },
+      {
+        "id": 3,
+        "x": 9,
+        "y": 0
+      },
+      {
+        "id": 4,
+        "x": 0,
+        "y": 3
+      },
+      {
+        "id": 5,
+        "x": 5,
+        "y": 3
+      },
+      {
+        "id": 6,
+        "x": 9,
+        "y": 3
+      }
+    ],
+    "members": [
+      {
+        "id": 1,
+        "i": 1,
+        "j": 4,
+        "type": "Column",
+        "name": "C-1",
+        "length": 3,
+        "width": 350,
+        "height": 350,
+        "area": 90000,
+        "inertia": 675000000,
+        "E": 24870.062324007155,
+        "dim": "350x350 mm",
+        "A": 122500,
+        "I": 1250520833.3333333
+      },
+      {
+        "id": 2,
+        "i": 2,
+        "j": 5,
+        "type": "Column",
+        "name": "C-2",
+        "length": 3,
+        "width": 400,
+        "height": 370,
+        "area": 90000,
+        "inertia": 675000000,
+        "E": 24870.062324007155,
+        "dim": "400x370 mm",
+        "A": 148000,
+        "I": 1688433333.3333333
+      },
+      {
+        "id": 3,
+        "i": 3,
+        "j": 6,
+        "type": "Column",
+        "name": "C-3",
+        "length": 3,
+        "width": 300,
+        "height": 300,
+        "area": 90000,
+        "inertia": 675000000,
+        "E": 24870.062324007155,
+        "dim": "300x300 mm",
+        "A": 90000,
+        "I": 675000000
+      },
+      {
+        "id": 4,
+        "i": 4,
+        "j": 5,
+        "type": "Beam",
+        "name": "B-1",
+        "length": 5,
+        "width": 210,
+        "height": 460,
+        "area": 80000,
+        "inertia": 1066666666.6666666,
+        "E": 24870.062324007155,
+        "dim": "210x460 mm",
+        "A": 96600,
+        "I": 1703380000,
+        "beamBarDia": 20
+      },
+      {
+        "id": 5,
+        "i": 5,
+        "j": 6,
+        "type": "Beam",
+        "name": "B-2",
+        "length": 4,
+        "width": 210,
+        "height": 460,
+        "area": 80000,
+        "inertia": 1066666666.6666666,
+        "E": 24870.062324007155,
+        "dim": "210x460 mm",
+        "A": 96600,
+        "I": 1703380000,
+        "beamBarDia": 20
+      }
+    ],
+    "supports": {
+      "1": "Fixed",
+      "2": "Fixed",
+      "3": "Fixed"
+    },
+    "loads": [
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 4,
+        "w": 29,
+        "wx": 0
+      },
+      {
+        "kind": "member_udl",
+        "case": "DL",
+        "member": 5,
+        "w": 29,
+        "wx": 0
+      },
+      {
+        "kind": "node",
+        "case": "P",
+        "node": 4,
+        "fx": 60,
+        "fy": 0,
+        "mz": 0
+      }
+    ],
+    "selectedNodes": [],
+    "selectedMemberIds": [],
+    "selectedNode": {
+      "id": 4,
+      "x": 0,
+      "y": 3
+    },
+    "mode": "node",
+    "nextNode": 7,
+    "nextMember": 6
+  }
+}

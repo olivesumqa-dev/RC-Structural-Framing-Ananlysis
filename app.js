@@ -2,10 +2,30 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const resultsCanvas = document.createElement("canvas");
 const rctx = resultsCanvas.getContext("2d");
+const RESTRICTED_FRAME = true;
+const span1Input = document.getElementById("span1");
+const span2Input = document.getElementById("span2");
+const frameHeightInput = document.getElementById("frameHeight");
+const beamSupportCanvas = document.getElementById("beamSupportCanvas");
+const beamMidspanCanvas = document.getElementById("beamMidspanCanvas");
+const columnSectionCanvas = document.getElementById("columnSectionCanvas");
+const deflectionCanvas = document.getElementById("deflectionCanvas");
+const shearDiagramCanvas = document.getElementById("shearDiagramCanvas");
+const momentDiagramCanvas = document.getElementById("momentDiagramCanvas");
+const analysisState = document.getElementById("analysisState");
+const toggleMembersBtn = document.getElementById("toggleMembersBtn");
+const concreteFcInput = document.getElementById("concreteFc");
+const steelFyInput = document.getElementById("steelFy");
+const clearCoverInput = document.getElementById("clearCover");
+const beamBarDiaInput = document.getElementById("beamBarDia");
+const columnBarDiaInput = document.getElementById("columnBarDia");
+const tieBarDiaInput = document.getElementById("tieBarDia");
+const analysisWarning = document.getElementById("analysisWarning");
+const calculationDetailsBody = document.getElementById("calculationDetailsBody");
 
 const model = {
-  v: [0,3,6,9],
-  h: [0,3,6,9],
+  v: [0,4,8],
+  h: [0,3],
   nodes: [],
   members: [],
   supports: {},
@@ -31,11 +51,14 @@ let lastPan = null;
 let currentFileHandle = null;
 let viewLocked = false;
 let deleteMode = false;
+let membersVisible = true;
 const filePickerSupported = "showSaveFilePicker" in window;
 const tutorialDrawer = document.getElementById("tutorialDrawer");
 const tutorialToggle = document.getElementById("tutorialToggle");
 const tutorialClose = document.getElementById("tutorialClose");
 const tutorialDrawerTab = document.getElementById("tutorialDrawerTab");
+const memberPropsDrawerTab = document.getElementById("memberPropsDrawerTab");
+const memberPropsTable = document.getElementById("memberPropsTable");
 const themeToggleBtn = document.getElementById("themeToggleBtn");
 const lockToggleBtn = document.getElementById("lockToggleBtn");
 const toolbarDeleteBtn = document.getElementById("toolbarDeleteBtn");
@@ -48,15 +71,28 @@ const toolbarPrintBtn = document.getElementById("toolbarPrintBtn");
 const toolbarPrintPdfBtn = document.getElementById("toolbarPrintPdfBtn");
 const toolbarNewBtn = document.getElementById("toolbarNewBtn");
 const toolbarCalcBtn = document.getElementById("toolbarCalcBtn");
-function setTutorialDrawer(open) {
+const loadList = document.getElementById("loadList");
+function setTutorialDrawer(open, section = "tutorial") {
   if (!tutorialDrawer) return;
   tutorialDrawer.classList.toggle("open", open);
   tutorialDrawer.setAttribute("aria-hidden", open ? "false" : "true");
   tutorialToggle?.setAttribute("aria-expanded", open ? "true" : "false");
+  tutorialDrawer.dataset.section = section;
+  memberPropsDrawerTab?.classList.toggle("is-active", open && section === "member");
+  tutorialDrawerTab?.classList.toggle("is-active", open && section === "tutorial");
+  if (open && section === "member") memberPropsTable?.classList.add("is-open");
+  if (open && section === "tutorial") memberPropsTable?.classList.remove("is-open");
 }
 tutorialToggle?.addEventListener("click", () => setTutorialDrawer(!tutorialDrawer?.classList.contains("open")));
 tutorialClose?.addEventListener("click", () => setTutorialDrawer(false));
-tutorialDrawerTab?.addEventListener("click", () => setTutorialDrawer(!tutorialDrawer?.classList.contains("open")));
+tutorialDrawerTab?.addEventListener("click", () => {
+  const sameTabOpen = tutorialDrawer?.classList.contains("open") && tutorialDrawer?.dataset.section === "tutorial";
+  setTutorialDrawer(!sameTabOpen, "tutorial");
+});
+memberPropsDrawerTab?.addEventListener("click", () => {
+  const sameTabOpen = tutorialDrawer?.classList.contains("open") && tutorialDrawer?.dataset.section === "member";
+  setTutorialDrawer(!sameTabOpen, "member");
+});
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") setTutorialDrawer(false);
 });
@@ -110,7 +146,28 @@ function projectHeaderData() {
     designedBy: field("designedBy")
   };
 }
-function modelPackage() { return {app:"StrucForge 2D Frame Analysis",version:9,savedAt:new Date().toISOString(),theme:document.body.dataset.theme||"olive_saffron",view:{zoom,pan:clone(pan),fontScale,loadsVisible},project:projectHeaderData(),model:clone(model)}; }
+function designInputData() {
+  return {
+    fc: Number(concreteFcInput?.value) || 28,
+    fy: Number(steelFyInput?.value) || 415,
+    cover: Number(clearCoverInput?.value) || 40,
+    beamBarDia: Number(beamBarDiaInput?.value) || 20,
+    columnBarDia: Number(columnBarDiaInput?.value) || 20,
+    tieBarDia: Number(tieBarDiaInput?.value) || 10
+  };
+}
+
+function memberDesignData(member) {
+  const base = designInputData();
+  return {
+    ...base,
+    beamBarDia: Number(member?.beamBarDia) || base.beamBarDia,
+    columnBarDia: Number(member?.columnBarDia) || base.columnBarDia,
+    tieBarDia: Number(member?.tieBarDia) || base.tieBarDia
+  };
+}
+
+function modelPackage() { return {app:"StrucForge 2-Beam 3-Column Calculator",version:1,savedAt:new Date().toISOString(),theme:document.body.dataset.theme||"olive_saffron",view:{zoom,pan:clone(pan),fontScale,loadsVisible,membersVisible},project:projectHeaderData(),design:designInputData(),model:clone(model)}; }
 function normalizeModelPayload(data) { return data && data.model ? data : {model:data || {}, view:null, theme:null}; }
 
 function status(msg) {
@@ -344,6 +401,10 @@ function renumberNodesSystematically() {
 function addNode(x, y) {
   const existing = model.nodes.find(n => Math.abs(n.x-x)<1e-6 && Math.abs(n.y-y)<1e-6);
   if (existing) return existing;
+  if (RESTRICTED_FRAME) {
+    status("This calculator is restricted to six fixed frame nodes.");
+    return null;
+  }
   model.nodes.push({id: model.nextNode++, x, y});
   renumberNodesSystematically();
   return model.nodes.find(n => Math.abs(n.x-x)<1e-6 && Math.abs(n.y-y)<1e-6);
@@ -387,6 +448,10 @@ function selectedMembers() {
 }
 
 function addMember(i, j) {
+  if (RESTRICTED_FRAME) {
+    status("Additional beams and columns are disabled in this calculator.");
+    return null;
+  }
   if (i === j) return null;
   const a = getNode(i);
   const b = getNode(j);
@@ -499,6 +564,7 @@ function addPointLoadToSelected() {
 
 let diagramsVisible = false;
 let lastAnalysisResult = null;
+let lastStrengthEnvelope = null;
 let fontScale = 1;
 let loadsVisible = true;
 const concreteUnitWeight = 24;
@@ -665,11 +731,33 @@ function setMemberDimension(memberId, field, value) {
   member[field] = numeric;
   normalizeMemberProperties(member);
   lastAnalysisResult = null;
+  lastStrengthEnvelope = null;
   draw();
+  updateMemberPropertiesTable();
   status(`${memberDisplayName(member)} ${field === "width" ? "b" : "h"} updated to ${numeric} mm.`);
 }
 
+function setMemberRebar(memberId, field, value) {
+  const member = getMember(memberId);
+  if (!member || !["beamBarDia", "columnBarDia", "tieBarDia"].includes(field)) return;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    status("Enter a positive rebar or tie diameter.");
+    updateMemberPropertiesTable();
+    return;
+  }
+  member[field] = numeric;
+  if (!lastStrengthEnvelope && lastAnalysisResult) lastStrengthEnvelope = buildStrengthEnvelope(model);
+  renderEngineeringResults(lastAnalysisResult);
+  updateMemberPropertiesTable();
+  status(`${memberDisplayName(member)} ${field === "tieBarDia" ? "tie/stirrup" : "main rebar"} diameter updated to D${numeric}.`);
+}
+
 function resetDesignWorkspace(message = "New design ready. Generate grid to begin.") {
+  if (RESTRICTED_FRAME) {
+    buildRestrictedFrame(message);
+    return;
+  }
   model.nodes = [];
   model.members = [];
   model.supports = {};
@@ -705,6 +793,98 @@ function normalizeMemberProperties(member) {
   return member;
 }
 
+function restrictedGeometry() {
+  const clamp = (value, min, max, fallback) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  };
+  return {
+    l1: clamp(span1Input?.value, 1, 15, 4),
+    l2: clamp(span2Input?.value, 1, 15, 4),
+    height: clamp(frameHeightInput?.value, 1, 10, 3)
+  };
+}
+
+function buildRestrictedFrame(message = "Restricted frame generated.") {
+  const {l1, l2, height} = restrictedGeometry();
+  if (span1Input) span1Input.value = l1;
+  if (span2Input) span2Input.value = l2;
+  if (frameHeightInput) frameHeightInput.value = height;
+  model.v = [0, l1, l1 + l2];
+  model.h = [0, height];
+  if (typeof vPositions !== "undefined" && vPositions) vPositions.value = model.v.join(",");
+  if (typeof hPositions !== "undefined" && hPositions) hPositions.value = model.h.join(",");
+
+  model.nodes = [
+    {id: 1, x: 0, y: 0}, {id: 2, x: l1, y: 0}, {id: 3, x: l1 + l2, y: 0},
+    {id: 4, x: 0, y: height}, {id: 5, x: l1, y: height}, {id: 6, x: l1 + l2, y: height}
+  ];
+  const member = (id, i, j, type, name) => {
+    const a = model.nodes.find(node => node.id === i);
+    const b = model.nodes.find(node => node.id === j);
+    const props = memberTypeProperties(type);
+    return normalizeMemberProperties({id, i, j, type, name, length: Math.hypot(b.x-a.x, b.y-a.y), ...props, A: props.area, I: props.inertia});
+  };
+  model.members = [
+    member(1, 1, 4, "Column", "C-1"),
+    member(2, 2, 5, "Column", "C-2"),
+    member(3, 3, 6, "Column", "C-3"),
+    member(4, 4, 5, "Beam", "B-1"),
+    member(5, 5, 6, "Beam", "B-2")
+  ];
+  model.supports = {1: "Fixed", 2: "Fixed", 3: "Fixed"};
+  model.loads = [];
+  model.selectedNodes = [];
+  model.selectedMemberIds = [];
+  model.selectedNode = null;
+  model.mode = "select";
+  model.nextNode = 7;
+  model.nextMember = 6;
+  zoom = 1;
+  pan = {x: 0, y: 0};
+  diagramsVisible = false;
+  lastAnalysisResult = null;
+  if (analysisState) analysisState.textContent = "Press Calculate to update results.";
+  renderEngineeringResults(null);
+  status(message);
+  draw();
+}
+
+function restrictedDefaultPackage() {
+  return {
+    app: "StrucForge 2-Beam 3-Column Calculator",
+    version: 1,
+    theme: "green_teal",
+    view: {zoom: 1.0951515644, pan: {x: -198.138, y: 81.714}, fontScale: 1.5, loadsVisible: true, membersVisible:true},
+    project: {title: "Dela Cruz Residence", owner: "Mr. Juan dela Cruz", location: "Pagadian City", designedBy: "Engr. Sue N. Su"},
+    design: {fc: 28, fy: 415, cover: 40, beamBarDia: 16, columnBarDia: 16, tieBarDia: 10},
+    model: {
+      v: [0, 7, 12.5], h: [0, 3],
+      nodes: [
+        {id:1,x:0,y:0},{id:2,x:7,y:0},{id:3,x:12.5,y:0},
+        {id:4,x:0,y:3},{id:5,x:7,y:3},{id:6,x:12.5,y:3}
+      ],
+      members: [
+        {id:1,i:1,j:4,type:"Column",name:"C-1",width:300,height:300,length:3,E:24870.062324,A:90000,I:675000000},
+        {id:2,i:2,j:5,type:"Column",name:"C-2",width:300,height:300,length:3,E:24870.062324,A:90000,I:675000000},
+        {id:3,i:3,j:6,type:"Column",name:"C-3",width:300,height:300,length:3,E:24870.062324,A:90000,I:675000000},
+        {id:4,i:4,j:5,type:"Beam",name:"B-1",width:200,height:400,length:7,E:24870.062324,A:80000,I:1066666666.6666666},
+        {id:5,i:5,j:6,type:"Beam",name:"B-2",width:200,height:400,length:5.5,E:24870.062324,A:80000,I:1066666666.6666666}
+      ],
+      supports: {1:"Fixed",2:"Fixed",3:"Fixed"},
+      loads: [
+        {kind:"member_point",case:"P",member:4,p:12,x:3},
+        {kind:"member_point",case:"P",member:4,p:12,x:5},
+        {kind:"member_point",case:"P",member:5,p:12,x:3.5},
+        {kind:"member_udl",case:"DL",member:5,w:25,wx:0},
+        {kind:"member_udl",case:"DL",member:4,w:25,wx:0},
+        {kind:"member_udl",case:"WL",member:1,w:0,wx:35}
+      ],
+      selectedNodes: [], selectedMemberIds: [], selectedNode: null, mode: "select", nextNode: 7, nextMember: 6
+    }
+  };
+}
+
 function nodeDisplayName(node) {
   return node ? `N-${node.id}` : "";
 }
@@ -731,13 +911,15 @@ function draw() {
   ctx.textBaseline = "alphabetic";
 
   drawGrid();
-  drawMembers();
+  if (membersVisible) drawMembers();
   drawNodes();
   if (loadsVisible) drawLoads();
   if (loadsVisible) drawSupportReactions();
+  drawColumnSectionDimensionLabels();
   drawMainDiagramTitle();
   if (diagramsVisible) drawResultsInMainCanvas();
   updateMemberPropertiesTable();
+  renderLoadList();
   updateButtonStates();
 
   modeLabel.textContent = `Mode: ${model.mode} | Zoom: ${Math.round(zoom*100)}%`;
@@ -946,7 +1128,96 @@ function drawAutoDimensions() {
   }
 }
 
+function drawColumnSectionDimensionLabels() {
+  const columns = model.members.filter(member => member.type === "Column");
+  if (!columns.length) return;
+  const color = annotationColor();
+  const tick = scaled(5);
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = Math.max(0.8, scaled(1));
+  setScaledFont(9);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  columns.forEach((member, index) => {
+    normalizeMemberProperties(member);
+    const a = getNode(member.i);
+    const b = getNode(member.j);
+    if (!a || !b) return;
+    const bottomNode = a.y <= b.y ? a : b;
+    const topNode = a.y > b.y ? a : b;
+    const base = toCanvas(bottomNode.x, bottomNode.y);
+    const top = toCanvas(topNode.x, topNode.y);
+    const widthLabel = `b=${Math.round(Number(member.width) || 0)}mm`;
+    const heightLabel = `h=${Math.round(Number(member.height) || 0)}mm`;
+    const sectionW = scaled(34);
+    const sectionH = scaled(24);
+    const sectionY = base.y + scaled(118 + (index % 2) * 10);
+    const sectionX = base.x - sectionW / 2;
+    const horizontalY = sectionY + sectionH + scaled(20);
+    const horizontalHalf = Math.max(sectionW / 2, scaled(24));
+    const verticalHalf = Math.max(sectionH / 2, scaled(18));
+    const side = index === 0 ? -1 : 1;
+    const sideX = sectionX + (side < 0 ? -scaled(22) : sectionW + scaled(22));
+    const sideY = sectionY + sectionH / 2;
+
+    ctx.fillStyle = themeColor("--surface", "#fff");
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(0.9, scaled(1));
+    ctx.beginPath();
+    ctx.rect(sectionX, sectionY, sectionW, sectionH);
+    ctx.fill();
+    ctx.stroke();
+
+    const innerPad = scaled(5);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(0.65, scaled(0.75));
+    ctx.strokeRect(sectionX + innerPad, sectionY + innerPad, Math.max(1, sectionW - innerPad * 2), Math.max(1, sectionH - innerPad * 2));
+
+    ctx.fillStyle = color;
+    const barRadius = Math.max(1.7, scaled(2.4));
+    [
+      [sectionX + innerPad, sectionY + innerPad],
+      [sectionX + sectionW - innerPad, sectionY + innerPad],
+      [sectionX + innerPad, sectionY + sectionH - innerPad],
+      [sectionX + sectionW - innerPad, sectionY + sectionH - innerPad]
+    ].forEach(([bx, by]) => {
+      ctx.beginPath();
+      ctx.arc(bx, by, barRadius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.beginPath();
+    ctx.moveTo(base.x - horizontalHalf, horizontalY);
+    ctx.lineTo(base.x + horizontalHalf, horizontalY);
+    ctx.moveTo(base.x - horizontalHalf, horizontalY - tick);
+    ctx.lineTo(base.x - horizontalHalf, horizontalY + tick);
+    ctx.moveTo(base.x + horizontalHalf, horizontalY - tick);
+    ctx.lineTo(base.x + horizontalHalf, horizontalY + tick);
+    ctx.stroke();
+    reserveLabelBox(base.x, horizontalY + scaled(13), widthLabel, 4);
+    ctx.fillText(widthLabel, base.x, horizontalY + scaled(13));
+
+    ctx.beginPath();
+    ctx.moveTo(sideX, sideY - verticalHalf);
+    ctx.lineTo(sideX, sideY + verticalHalf);
+    ctx.moveTo(sideX - tick, sideY - verticalHalf);
+    ctx.lineTo(sideX + tick, sideY - verticalHalf);
+    ctx.moveTo(sideX - tick, sideY + verticalHalf);
+    ctx.lineTo(sideX + tick, sideY + verticalHalf);
+    ctx.stroke();
+    drawRotatedText(heightLabel, sideX + side * scaled(13), sideY, -Math.PI / 2, color);
+  });
+
+  ctx.restore();
+}
+
 function drawMembers() {
+  const transform = modelTransform();
+  const modelMinX = Math.min(...model.v);
+  const modelMaxX = Math.max(...model.v);
   for (const m of model.members) {
     const a = getNode(m.i);
     const b = getNode(m.j);
@@ -956,12 +1227,34 @@ function drawMembers() {
     const B = toCanvas(b.x, b.y);
     const selected = model.selectedMemberIds.includes(m.id);
 
+    normalizeMemberProperties(m);
     ctx.strokeStyle = selected ? themeColor("--selected", "#ef4444") : (m.type === "Column" ? themeColor("--column", "#111827") : themeColor("--beam", "#2563eb"));
-    ctx.lineWidth = selected ? scaled(7) : scaled(4);
-    ctx.beginPath();
-    ctx.moveTo(A.x, A.y);
-    ctx.lineTo(B.x, B.y);
-    ctx.stroke();
+    ctx.lineWidth = selected ? Math.max(2.4, scaled(2.5)) : Math.max(1.1, scaled(1.35));
+    ctx.setLineDash([]);
+
+    if (m.type === "Column") {
+      const widthPx = Math.max(2, Number(m.width) / 1000 * transform.scale);
+      const left = A.x - widthPx / 2;
+      const top = Math.min(A.y, B.y);
+      const bottom = Math.max(A.y, B.y);
+      ctx.strokeRect(left, top, widthPx, bottom - top);
+    } else if (m.type === "Beam") {
+      const depthPx = Math.max(2, Number(m.height) / 1000 * transform.scale);
+      const columnAtStart = model.members.find(member => member.type === "Column" && (sameId(member.i, m.i) || sameId(member.j, m.i)));
+      const columnAtEnd = model.members.find(member => member.type === "Column" && (sameId(member.i, m.j) || sameId(member.j, m.j)));
+      const startExtension = Math.abs(a.x - modelMinX) < 1e-6 ? (Number(columnAtStart?.width) || 0) / 2000 * transform.scale : 0;
+      const endExtension = Math.abs(b.x - modelMaxX) < 1e-6 ? (Number(columnAtEnd?.width) || 0) / 2000 * transform.scale : 0;
+      const left = Math.min(A.x, B.x) - startExtension;
+      const right = Math.max(A.x, B.x) + endExtension;
+      const top = Math.min(A.y, B.y);
+      const bottom = top + depthPx;
+      ctx.beginPath();
+      ctx.moveTo(left, top); ctx.lineTo(right, top);
+      ctx.moveTo(left, bottom); ctx.lineTo(right, bottom);
+      if (startExtension > 0) { ctx.moveTo(left, top); ctx.lineTo(left, bottom); }
+      if (endExtension > 0) { ctx.moveTo(right, top); ctx.lineTo(right, bottom); }
+      ctx.stroke();
+    }
 
     drawMemberLabel(m, A, B);
   }
@@ -1003,11 +1296,275 @@ function drawMemberLabel(m, A, B) {
   }
 }
 
+function concreteElasticModulus(fc = designInputData().fc) {
+  return 4700 * Math.sqrt(Math.max(17, Number(fc) || 28));
+}
+
+function barArea(diameter) {
+  return Math.PI * Math.pow(Number(diameter) || 0, 2) / 4;
+}
+
+function roundedSpacing(value) {
+  return Math.max(75, Math.floor(Math.max(75, value) / 25) * 25);
+}
+
+function loadCategory(loadCase) {
+  const name = String(loadCase || "").toUpperCase();
+  if (name === "DL" || name === "SDL") return "D";
+  if (name === "LL" || name === "P") return "L";
+  if (name === "WL") return "W";
+  if (name === "EQ" || name === "EQL") return "E";
+  return null;
+}
+
+function scaledCombinationModel(sourceModel, factors) {
+  const copy = clone(sourceModel);
+  copy.loads = (copy.loads || []).map(load => {
+    const category = loadCategory(load.case);
+    const factor = category ? Number(factors[category] || 0) : 0;
+    const scaled = {...load};
+    ["w","wx","p","fx","fy","mz"].forEach(field => {
+      if (scaled[field] != null) scaled[field] = (Number(scaled[field]) || 0) * factor;
+    });
+    return scaled;
+  }).filter(load => ["w","wx","p","fx","fy","mz"].some(field => Math.abs(Number(load[field]) || 0) > 1e-12));
+  return copy;
+}
+
+function buildStrengthEnvelope(sourceModel) {
+  const combinations = [
+    {name:"U1 1.4D", factors:{D:1.4,L:0,W:0,E:0}},
+    {name:"U2 1.2D + 1.6L", factors:{D:1.2,L:1.6,W:0,E:0}},
+    {name:"U3 1.2D + 1.0L + 1.0W", factors:{D:1.2,L:1.0,W:1.0,E:0}},
+    {name:"U4 0.9D + 1.0W", factors:{D:0.9,L:0,W:1.0,E:0}},
+    {name:"U5 1.2D + 1.0L + 1.0E", factors:{D:1.2,L:1.0,W:0,E:1.0}},
+    {name:"U6 0.9D + 1.0E", factors:{D:0.9,L:0,W:0,E:1.0}}
+  ];
+  const analyses = combinations.map(combo => ({
+    ...combo,
+    result: runBasicFrameAnalysis(scaledCombinationModel(sourceModel, combo.factors), {selfWeightFactor:combo.factors.D, resultType:"FACTORED", combination:combo.name})
+  }));
+  const members = {};
+  (sourceModel.members || []).forEach(member => {
+    const demand = {positiveMoment:0,negativeMoment:0,shear:0,axial:0,endMoment:0,governingPositive:"",governingNegative:"",governingShear:"",governingAxial:""};
+    analyses.forEach(analysis => {
+      if (!analysis.result.valid) return;
+      const diagram = analysis.result.memberResults?.[member.id];
+      const end = analysis.result.memberEndForces?.[member.id];
+      const positive = Math.max(0, Number(diagram?.maxPositiveMoment) || 0);
+      const negative = Math.abs(Math.min(0, Number(diagram?.maxNegativeMoment) || 0));
+      const shear = Math.max(Math.abs(Number(diagram?.maxShear) || 0), Math.abs(Number(end?.start?.shear)||0), Math.abs(Number(end?.end?.shear)||0));
+      const axial = Math.max(Math.abs(Number(end?.start?.axial)||0), Math.abs(Number(end?.end?.axial)||0));
+      const endMoment = Math.max(Math.abs(Number(end?.start?.moment)||0), Math.abs(Number(end?.end?.moment)||0));
+      if (positive > demand.positiveMoment) { demand.positiveMoment = positive; demand.governingPositive = analysis.name; }
+      if (negative > demand.negativeMoment) { demand.negativeMoment = negative; demand.governingNegative = analysis.name; }
+      if (shear > demand.shear) { demand.shear = shear; demand.governingShear = analysis.name; }
+      if (axial > demand.axial) { demand.axial = axial; demand.governingAxial = analysis.name; }
+      demand.endMoment = Math.max(demand.endMoment, endMoment);
+    });
+    members[member.id] = demand;
+  });
+  return {members, analyses, valid:analyses.every(item => item.result.valid), basis:"Factored D/L/W/E strength envelope using combinations U1 through U6"};
+}
+
+function preliminaryReinforcement(member, result) {
+  if (!result || !lastStrengthEnvelope) return {pu:"-", mu:"-", asReq:"-", bars:"Calculate", supportBars:"Calculate", midspanBars:"Calculate", transverse:"Calculate", status:"CALCULATE", recommendation:"Press Calculate to generate the member design.", utilization:"-", governing:"-"};
+  const design = memberDesignData(member);
+  const fc = design.fc;
+  const fy = design.fy;
+  const b = Number(member.width) || 300;
+  const h = Number(member.height) || 500;
+  const demand = lastStrengthEnvelope.members?.[member.id] || {};
+  const muPositive = Number(demand.positiveMoment) || 0;
+  const muNegative = Number(demand.negativeMoment) || 0;
+  const mu = Math.max(muPositive, muNegative, Number(demand.endMoment) || 0);
+  const vu = Number(demand.shear) || 0;
+  const pu = member.type === "Column" ? Number(demand.axial) || 0 : 0;
+  const tieDia = design.tieBarDia;
+
+  if (member.type === "Beam") {
+    const mainDia = design.beamBarDia;
+    const d = Math.max(h * 0.65, h - design.cover - tieDia - mainDia / 2);
+    const asMin = Math.max(0.25 * Math.sqrt(fc) / fy * b * d, 1.4 / fy * b * d);
+    const requiredAs = moment => {
+      const rn = moment * 1e6 / Math.max(1, 0.9 * b * d * d);
+      const discriminant = 1 - 2 * rn / Math.max(0.001, 0.85 * fc);
+      if (discriminant <= 0) return {as:Infinity,doublyRequired:true};
+      const rho = 0.85 * fc / fy * (1 - Math.sqrt(discriminant));
+      return {as:Math.max(asMin, rho * b * d),doublyRequired:false};
+    };
+    const topDesign = requiredAs(muNegative);
+    const bottomDesign = requiredAs(muPositive);
+    const topCount = Number.isFinite(topDesign.as) ? Math.max(2, Math.ceil(topDesign.as / barArea(mainDia))) : 0;
+    const bottomCount = Number.isFinite(bottomDesign.as) ? Math.max(2, Math.ceil(bottomDesign.as / barArea(mainDia))) : 0;
+    const topProvided = topCount * barArea(mainDia);
+    const bottomProvided = bottomCount * barArea(mainDia);
+    const phiMn = asProvided => {
+      if (!asProvided) return 0;
+      const beta1 = Math.max(0.65, 0.85 - Math.max(0, fc - 28) * 0.05 / 7);
+      const a = asProvided * fy / (0.85 * fc * b);
+      const c = a / beta1;
+      const et = c > 0 ? 0.003 * (d - c) / c : 0.005;
+      const phi = et >= 0.005 ? 0.9 : et <= 0.002 ? 0.65 : 0.65 + (et - 0.002) * 0.25 / 0.003;
+      return phi * asProvided * fy * (d - a / 2) / 1e6;
+    };
+    const topCapacity = phiMn(topProvided);
+    const bottomCapacity = phiMn(bottomProvided);
+    const vc = 0.17 * Math.sqrt(fc) * b * d / 1000;
+    const av = 2 * barArea(tieDia);
+    const shearDemand = Math.max(0, vu / 0.75 - vc);
+    const strengthSpacing = shearDemand > 0 ? av * fy * d / (shearDemand * 1000) : 600;
+    const minSpacing = av * fy / Math.max(0.062 * Math.sqrt(fc) * b, 0.35 * b);
+    const spacing = roundedSpacing(Math.min(strengthSpacing, minSpacing, d / 2, 600));
+    const vs = av * fy * d / spacing / 1000;
+    const phiVn = 0.75 * (vc + vs);
+    const topClear = topCount > 1 ? (b - 2 * (design.cover + tieDia) - topCount * mainDia) / (topCount - 1) : 999;
+    const bottomClear = bottomCount > 1 ? (b - 2 * (design.cover + tieDia) - bottomCount * mainDia) / (bottomCount - 1) : 999;
+    const congested = Math.min(topClear,bottomClear) < Math.max(25,mainDia);
+    const utilization = Math.max(muNegative / Math.max(0.001,topCapacity), muPositive / Math.max(0.001,bottomCapacity), vu / Math.max(0.001,phiVn));
+    const warnings = [];
+    if (topDesign.doublyRequired || bottomDesign.doublyRequired) warnings.push("DOUBLY REINFORCED DESIGN REQUIRED");
+    if (congested) warnings.push("BAR CONGESTION");
+    if (utilization > 1) warnings.push("PROVIDED STRENGTH INSUFFICIENT");
+    const recommendation = memberRepairRecommendation(member, {
+      kind: "Beam",
+      utilization,
+      warnings,
+      width: b,
+      height: h,
+      barDia: mainDia,
+      topCount,
+      bottomCount,
+      muPositive,
+      muNegative,
+      vu
+    });
+    return {
+      pu: "0",
+      mu: valueText(mu, ""),
+      asReq: `${Number.isFinite(topDesign.as) ? Math.ceil(topDesign.as) : "NG"} top / ${Number.isFinite(bottomDesign.as) ? Math.ceil(bottomDesign.as) : "NG"} bottom`,
+      bars: `${Math.max(topCount,bottomCount)}-D${mainDia}`,
+      supportBars: topCount ? `${topCount}-D${mainDia} top (As=${Math.round(topProvided)})` : "SECTION INADEQUATE",
+      midspanBars: bottomCount ? `${bottomCount}-D${mainDia} bottom (As=${Math.round(bottomProvided)})` : "SECTION INADEQUATE",
+      transverse: `2-Leg D${tieDia} @ ${spacing} mm`,
+      status: warnings.length ? "REVISE" : "PASS",
+      recommendation,
+      utilization: Number.isFinite(utilization) ? utilization.toFixed(2) : ">1.00",
+      governing: `${demand.governingNegative || "-"} / ${demand.governingPositive || "-"}`
+    };
+  }
+
+  const mainDia = design.columnBarDia;
+  const ag = b * h;
+  const phi = 0.65;
+  const axialSteel = Math.max(0, (pu * 1000 / (phi * 0.8) - 0.85 * fc * ag) / Math.max(1, fy - 0.85 * fc));
+  const effectiveDepth = Math.max(h * 0.7, h - design.cover - tieDia - mainDia / 2);
+  const momentSteel = mu * 1e6 / Math.max(1, 0.9 * fy * 0.8 * effectiveDepth);
+  const asReq = Math.max(0.01 * ag, axialSteel, momentSteel);
+  const count = Math.max(4, Math.ceil(asReq / barArea(mainDia)));
+  const asProvided = count * barArea(mainDia);
+  const tieSpacing = roundedSpacing(Math.min(16 * mainDia, 48 * tieDia, Math.min(b, h)));
+  const phiPnMax = phi * 0.8 * (0.85 * fc * (ag - asProvided) + fy * asProvided) / 1000;
+  const approxPhiMn = 0.65 * asProvided * fy * 0.8 * effectiveDepth / 1e6;
+  const screeningUtilization = pu / Math.max(0.001,phiPnMax) + mu / Math.max(0.001,approxPhiMn);
+  const ratio = asProvided / ag;
+  const warnings = [];
+  if (ratio < 0.01) warnings.push("Ast BELOW 1% Ag");
+  if (ratio > 0.04) warnings.push("HIGH REBAR CONGESTION");
+  if (ratio > 0.08) warnings.push("Ast ABOVE 8% Ag");
+  if (screeningUtilization > 1) warnings.push("P-M SCREENING FAIL");
+  const recommendation = memberRepairRecommendation(member, {
+    kind: "Column",
+    utilization: screeningUtilization,
+    warnings,
+    width: b,
+    height: h,
+    barDia: mainDia,
+    count,
+    pu,
+    mu
+  });
+  return {
+    pu: valueText(pu, ""),
+    mu: valueText(mu, ""),
+    asReq: Math.ceil(asReq).toString(),
+    bars: `${count}-D${mainDia} (As=${Math.round(asProvided)} mm2)`,
+    supportBars: "N/A",
+    midspanBars: "N/A",
+    transverse: `D${tieDia} ties @ ${tieSpacing} mm`,
+    status: warnings.length ? "REVISE" : "PASS",
+    recommendation,
+    utilization: screeningUtilization.toFixed(2),
+    governing: demand.governingAxial || "-"
+  };
+}
+
+function nextStandardBarDia(currentDia, steps = 1) {
+  const bars = [10, 12, 16, 20, 25, 28, 32, 36];
+  const currentIndex = bars.findIndex(dia => dia > Number(currentDia));
+  const start = currentIndex >= 0 ? currentIndex : bars.length - 1;
+  return bars[Math.min(bars.length - 1, start + Math.max(0, steps - 1))];
+}
+
+function roundUpTo(value, step) {
+  return Math.ceil(Number(value) / step) * step;
+}
+
+function memberRepairRecommendation(member, data) {
+  const name = memberDisplayName(member);
+  const warnings = data.warnings || [];
+  const failed = warnings.length || Number(data.utilization) > 1;
+  if (!failed) {
+    if (data.kind === "Column") {
+      return `No change required. Keep ${data.width}x${data.height} mm with ${data.count}-D${data.barDia}; utilization ${Number(data.utilization).toFixed(2)}.`;
+    }
+    return `No change required. Keep the ${data.width}x${data.height} mm section and D${data.barDia} reinforcement shown; utilization ${Number(data.utilization).toFixed(2)}.`;
+  }
+
+  const utilization = Number.isFinite(Number(data.utilization)) ? Math.max(1, Number(data.utilization)) : 1.35;
+  const nextBar = nextStandardBarDia(data.barDia, utilization > 1.25 ? 2 : 1);
+
+  if (data.kind === "Beam") {
+    const deeper = roundUpTo(Math.max(data.height + 50, data.height * Math.sqrt(utilization) * 1.12), 50);
+    const wider = roundUpTo(Math.max(data.width + 50, data.width * Math.min(1.45, 1 + (utilization - 1) * 0.45)), 50);
+    const issues = [];
+    if (warnings.some(item => /STRENGTH/i.test(item))) issues.push("flexural or shear demand exceeds the current provided capacity");
+    if (warnings.some(item => /CONGESTION/i.test(item))) issues.push("the current bar arrangement is congested");
+    if (warnings.some(item => /DOUBLY/i.test(item))) issues.push("the current section requires a doubly reinforced solution");
+    const actions = [issues.length ? `Issue: ${issues.join(" and ")}` : "Issue: member utilization exceeds 1.00"];
+    if (warnings.some(item => /CONGESTION|DOUBLY/i.test(item))) {
+      actions.push(`increase ${name} width from ${data.width} mm to about ${wider} mm`);
+    }
+    actions.push(`increase ${name} depth from ${data.height} mm to about ${deeper} mm`);
+    actions.push(`try D${nextBar} beam bars with a revised bar layout`);
+    if (data.vu > 0) actions.push("use tighter stirrup spacing near supports");
+    actions.push("reduce span or factored load if the section cannot grow");
+    return actions.join("; ") + ".";
+  }
+
+  const side = Math.max(data.width, data.height);
+  const newSide = roundUpTo(Math.max(side + 50, side * Math.sqrt(utilization) * 1.12), 50);
+  const barCount = Math.max(Number(data.count) + 2, Math.ceil(Number(data.count) * Math.min(1.65, utilization * 1.08)));
+  return [
+    `Issue: combined axial and bending demand exceeds the current column capacity at utilization ${utilization.toFixed(2)}`,
+    `increase ${name} column size from ${data.width}x${data.height} mm to about ${newSide}x${newSide} mm`,
+    `try ${barCount}-D${nextBar} longitudinal bars`,
+    "reduce unsupported height or lateral load if the section cannot grow"
+  ].join("; ") + ".";
+}
+
+function designStatusClass(status) {
+  const text = String(status || "");
+  if (text.startsWith("REVISE")) return "design-fail";
+  if (text === "PASS") return "design-ok";
+  return "design-unverified";
+}
+
 function updateMemberPropertiesTable() {
   const body = document.getElementById("memberPropsBody");
   if (!body) return;
   if (!model.members.length && !model.nodes.length) {
-    body.innerHTML = '<tr><td colspan="17">No data</td></tr>';
+    body.innerHTML = '<tr><td colspan="30">No data</td></tr>';
     return;
   }
 
@@ -1016,12 +1573,15 @@ function updateMemberPropertiesTable() {
     const r = result?.memberResults?.[m.id] || computedMemberDiagramValues(model, m);
     const sw = memberSelfWeight(m);
     const dlTotal = memberAutoDeadLoad(m);
+    const rebar = preliminaryReinforcement(m, result);
     return `
     <tr>
       <td><input class="member-name-input" data-member-name="${m.id}" value="${escapeHtml(memberDisplayName(m))}" /></td>
       <td>${m.type}</td>
       <td><input class="member-dim-input" data-member-dim="${m.id}" data-field="width" value="${escapeHtml(m.width)}" /></td>
       <td><input class="member-dim-input" data-member-dim="${m.id}" data-field="height" value="${escapeHtml(m.height)}" /></td>
+      <td><input class="member-bar-input" data-member-rebar="${m.id}" data-field="${m.type === "Column" ? "columnBarDia" : "beamBarDia"}" value="${escapeHtml(m.type === "Column" ? (m.columnBarDia || designInputData().columnBarDia) : (m.beamBarDia || designInputData().beamBarDia))}" /></td>
+      <td><input class="member-bar-input" data-member-rebar="${m.id}" data-field="tieBarDia" value="${escapeHtml(m.tieBarDia || designInputData().tieBarDia)}" /></td>
       <td>${propertyText(m.A, "")}</td>
       <td>${propertyText(m.I, "")}</td>
       <td>${propertyText(m.E, "")}</td>
@@ -1029,12 +1589,18 @@ function updateMemberPropertiesTable() {
       <td>${valueText(dlTotal, "")}</td>
       <td>${valueText(r.maxShear || 0, "")}</td>
       <td>${valueText(r.maxMoment || 0, "")}</td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
+      <td>${rebar.pu}</td>
+      <td>${rebar.mu}</td>
+      <td>${rebar.asReq}</td>
+      <td>${rebar.supportBars}</td>
+      <td>${rebar.midspanBars}</td>
+      <td>${m.type === "Column" ? rebar.bars : "N/A"}</td>
+      <td>${rebar.transverse}</td>
+      <td>${rebar.governing}</td>
+      <td class="${designStatusClass(rebar.status)}">${rebar.status}</td>
+      <td class="design-recommendation ${String(rebar.status).startsWith("REVISE") ? "needs-action" : "ok-action"}">${escapeHtml(rebar.recommendation || "")}</td>
+      <td>${rebar.utilization}</td>
+      <td></td><td></td><td></td><td></td><td></td><td></td>
     </tr>
   `;
   });
@@ -1045,8 +1611,7 @@ function updateMemberPropertiesTable() {
       <tr>
         <td>${nodeDisplayName(getNode(load.node) || {id: load.node})}</td>
         <td>Node Sum P/M</td>
-        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-        <td></td><td></td><td></td><td></td><td></td>
+        ${"<td></td>".repeat(25)}
         <td>${valueText(load.fx || 0, "")}</td>
         <td>${valueText(load.fy || 0, "")}</td>
         <td>${momentText(load.mz || 0)}</td>
@@ -1059,8 +1624,7 @@ function updateMemberPropertiesTable() {
       <tr>
         <td>${reaction.id}</td>
         <td>${reaction.support || "Support"}</td>
-        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-        <td></td><td></td>
+        ${"<td></td>".repeat(22)}
         <td>${valueText(reaction.rx || 0, "")}</td>
         <td>${valueText(reaction.ry || 0, "")}</td>
         <td>${momentText(reaction.mz || 0)}</td>
@@ -1068,7 +1632,7 @@ function updateMemberPropertiesTable() {
       </tr>
     `);
 
-  body.innerHTML = [...memberRows, ...nodeRows, ...reactionRows].join("") || '<tr><td colspan="17">No data</td></tr>';
+  body.innerHTML = [...memberRows, ...nodeRows, ...reactionRows].join("") || '<tr><td colspan="30">No data</td></tr>';
 }
 
 function momentText(value) {
@@ -1558,6 +2122,60 @@ function updateLoadInputs() {
   if (isNodeLoad) loadCase.value = "P";
 }
 
+function loadTargetText(load) {
+  if (load.kind === "node") return nodeDisplayName(getNode(load.node) || {id: load.node});
+  const member = getMember(load.member);
+  return member ? memberDisplayName(member) : `M-${load.member}`;
+}
+
+function loadSummaryText(load, index) {
+  const target = loadTargetText(load);
+  const loadCaseName = load.case || (load.kind === "node" ? "P" : "LOAD");
+  if (load.kind === "node") {
+    return `${index + 1}. ${loadCaseName} @ ${target}: Px=${valueText(load.fx || 0, "kN")}, Py=${valueText(load.fy || 0, "kN")}, Mz=${momentText(load.mz || 0)}`;
+  }
+  if (load.kind === "member_udl") {
+    const parts = [];
+    if (Math.abs(Number(load.w) || 0) > 1e-9) parts.push(`Wy=${valueText(load.w || 0, "kN/m")}`);
+    if (Math.abs(Number(load.wx) || 0) > 1e-9) parts.push(`Wx=${valueText(load.wx || 0, "kN/m")}`);
+    return `${index + 1}. ${loadCaseName} UDL @ ${target}: ${parts.join(", ") || "0 kN/m"}`;
+  }
+  if (load.kind === "member_point") {
+    return `${index + 1}. ${loadCaseName} point @ ${target}: ${valueText(load.p || 0, "kN")} at ${valueText(load.x || 0, "m")}`;
+  }
+  return `${index + 1}. ${loadCaseName} @ ${target}`;
+}
+
+function renderLoadList() {
+  if (!loadList) return;
+  if (!model.loads.length) {
+    loadList.innerHTML = "No loads assigned.";
+    return;
+  }
+  loadList.innerHTML = model.loads.map((load, index) => `
+    <div class="load-list-row">
+      <span>${escapeHtml(loadSummaryText(load, index))}</span>
+      <button type="button" class="delete-load-btn" data-delete-load="${index}" aria-label="Delete load ${index + 1}">Delete</button>
+    </div>
+  `).join("");
+}
+
+function deleteLoadAtIndex(index) {
+  const loadIndex = Number(index);
+  if (!Number.isInteger(loadIndex) || loadIndex < 0 || loadIndex >= model.loads.length) {
+    status("Load was not found.");
+    return;
+  }
+  const label = loadSummaryText(model.loads[loadIndex], loadIndex);
+  pushHistory();
+  model.loads.splice(loadIndex, 1);
+  lastAnalysisResult = null;
+  diagramsVisible = false;
+  showDiagramBtn.textContent = "Show/Hide S&M Diagram";
+  status(`Deleted load: ${label}`);
+  draw();
+}
+
 function assignNodePointLoad() {
   if (!model.selectedNode) {
     status("Select a node first, then click Assign to Node.");
@@ -1619,6 +2237,14 @@ function loadProjectPackage(data, sourceName, options = {}) {
   if (!payload.model || typeof payload.model !== "object") {
     throw new Error("Invalid frame model JSON.");
   }
+  if (RESTRICTED_FRAME) {
+    const candidate = payload.model;
+    const validShape = Array.isArray(candidate.v) && candidate.v.length === 3
+      && Array.isArray(candidate.h) && candidate.h.length === 2
+      && Array.isArray(candidate.nodes) && candidate.nodes.length === 6
+      && Array.isArray(candidate.members) && candidate.members.length === 5;
+    if (!validShape) throw new Error("This calculator accepts only a two-beam, three-column frame file.");
+  }
 
   if (options.pushHistory !== false) pushHistory();
   Object.assign(model, payload.model);
@@ -1627,11 +2253,30 @@ function loadProjectPackage(data, sourceName, options = {}) {
     pan = payload.view.pan || {x: 0, y: 0};
     fontScale = Number(payload.view.fontScale) || fontScale;
     loadsVisible = payload.view.loadsVisible !== false;
+    membersVisible = payload.view.membersVisible !== false;
     if (typeof toggleLoadsBtn !== "undefined" && toggleLoadsBtn) toggleLoadsBtn.textContent = "Show/Hide Loading";
     if (fontScaleSelect) fontScaleSelect.value = String(fontScale);
   }
   vPositions.value = (model.v || []).join(",");
   hPositions.value = (model.h || []).join(",");
+  if (RESTRICTED_FRAME) {
+    const v = model.v || [0, 4, 8];
+    const h = model.h || [0, 3];
+    if (span1Input) span1Input.value = Number(v[1] - v[0]).toFixed(2).replace(/\.00$/, "");
+    if (span2Input) span2Input.value = Number(v[2] - v[1]).toFixed(2).replace(/\.00$/, "");
+    if (frameHeightInput) frameHeightInput.value = Number(h[1] - h[0]).toFixed(2).replace(/\.00$/, "");
+    const beam = model.members.find(member => member.type === "Beam");
+    const column = model.members.find(member => member.type === "Column");
+    if (beam) { beamWidth.value = beam.width; beamHeight.value = beam.height; }
+    if (column) { columnWidth.value = column.width; columnHeight.value = column.height; }
+    model.supports = {1:"Fixed", 2:"Fixed", 3:"Fixed"};
+  }
+  if (payload.design) {
+    const designFields = {concreteFc:payload.design.fc, steelFy:payload.design.fy, clearCover:payload.design.cover, beamBarDia:payload.design.beamBarDia, columnBarDia:payload.design.columnBarDia, tieBarDia:payload.design.tieBarDia};
+    Object.entries(designFields).forEach(([id, value]) => { const input = document.getElementById(id); if (input && value != null) input.value = value; });
+  }
+  const concreteE = concreteElasticModulus();
+  model.members.forEach(member => { member.E = concreteE; normalizeMemberProperties(member); });
   if (payload.project) {
     const setField = (id, value) => {
       const input = document.getElementById(id);
@@ -1649,6 +2294,21 @@ function loadProjectPackage(data, sourceName, options = {}) {
 }
 
 async function loadDefaultProject() {
+  if (RESTRICTED_FRAME) {
+    try {
+      const response = await fetch("JSON/2bms-3cols-3.json", {cache: "no-store"});
+      if (!response.ok) throw new Error("Default restricted frame JSON not found.");
+      const data = await response.json();
+      currentFileHandle = null;
+      loadProjectPackage(data, "JSON/2bms-3cols-3.json", {pushHistory: false});
+      recordName.value = "2bms-3cols-3";
+    } catch (err) {
+      loadProjectPackage(restrictedDefaultPackage(), "built-in 2bms-3cols-3 fallback", {pushHistory: false});
+      recordName.value = "2bms-3cols-3";
+      status("Loaded built-in fallback. JSON/2bms-3cols-3.json was not available.");
+    }
+    return;
+  }
   try {
     let data = null;
     const embedded = document.getElementById("defaultProjectData");
@@ -1777,6 +2437,7 @@ function printHeaderHtml() {
   const printedAt = new Date();
   const disclaimerLine1 = "Disclaimer: Calculations must be checked and approved";
   const disclaimerLine2 = "by a licensed Structural or Civil Engineer.";
+  const disclaimerLine3 = "Preliminary design aid only; not a substitute for professional engineering judgment.";
   return `
     <div class="print-header">
       <img class="print-logo" src="assets/LOGO-STRUCF.png?v=3" alt="StrucForge Structural Design Studio" />
@@ -1790,7 +2451,7 @@ function printHeaderHtml() {
           <span><strong>Date:</strong> ${escapeHtml(printedAt.toLocaleDateString())}</span>
         </div>
       </div>
-      <div class="print-disclaimer">${escapeHtml(disclaimerLine1)}<br>${escapeHtml(disclaimerLine2)}</div>
+      <div class="print-disclaimer">${escapeHtml(disclaimerLine1)}<br>${escapeHtml(disclaimerLine2)}<br>${escapeHtml(disclaimerLine3)}</div>
     </div>
   `;
 }
@@ -1906,17 +2567,59 @@ memberPropsTable.addEventListener("change", e => {
     return;
   }
   const dimInput = e.target.closest("[data-member-dim]");
-  if (dimInput) setMemberDimension(dimInput.dataset.memberDim, dimInput.dataset.field, dimInput.value);
+  if (dimInput) {
+    setMemberDimension(dimInput.dataset.memberDim, dimInput.dataset.field, dimInput.value);
+    return;
+  }
+  const rebarInput = e.target.closest("[data-member-rebar]");
+  if (rebarInput) setMemberRebar(rebarInput.dataset.memberRebar, rebarInput.dataset.field, rebarInput.value);
+});
+
+let memberTableInputTimer = null;
+memberPropsTable.addEventListener("input", e => {
+  const editable = e.target.closest("[data-member-dim], [data-member-rebar]");
+  if (!editable) return;
+  clearTimeout(memberTableInputTimer);
+  memberTableInputTimer = setTimeout(() => {
+    if (!document.contains(editable)) return;
+    const dimInput = editable.closest("[data-member-dim]");
+    if (dimInput) {
+      setMemberDimension(dimInput.dataset.memberDim, dimInput.dataset.field, dimInput.value);
+      return;
+    }
+    const rebarInput = editable.closest("[data-member-rebar]");
+    if (rebarInput) setMemberRebar(rebarInput.dataset.memberRebar, rebarInput.dataset.field, rebarInput.value);
+  }, 450);
 });
 
 memberPropsTable.addEventListener("keydown", e => {
-  const input = e.target.closest("[data-member-name], [data-member-dim]");
+  const input = e.target.closest("[data-member-name], [data-member-dim], [data-member-rebar]");
   if (!input) return;
   if (e.key === "Enter") {
     e.preventDefault();
     input.blur();
   }
 });
+
+const memberPropsTitle = memberPropsTable?.querySelector(".member-props-title");
+if (memberPropsTitle) {
+  memberPropsTitle.setAttribute("role", "button");
+  memberPropsTitle.setAttribute("tabindex", "0");
+  memberPropsTitle.setAttribute("title", "Click to show/hide member properties and recommendations");
+  const toggleMemberProps = () => {
+    memberPropsTable.classList.toggle("is-open");
+    status(memberPropsTable.classList.contains("is-open")
+      ? "Member Properties / Results table opened."
+      : "Member Properties / Results table hidden.");
+  };
+  memberPropsTitle.addEventListener("click", toggleMemberProps);
+  memberPropsTitle.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleMemberProps();
+    }
+  });
+}
 
 canvas.addEventListener("wheel", e => {
   e.preventDefault();
@@ -2089,6 +2792,10 @@ canvas.addEventListener("click", e => {
 
 generateGrid.onclick = () => {
   pushHistory();
+  if (RESTRICTED_FRAME) {
+    buildRestrictedFrame("Two-span frame updated. Reassign loads, then calculate.");
+    return;
+  }
   model.v = parsePositions(vPositions.value);
   model.h = parsePositions(hPositions.value);
   diagramsVisible = false;
@@ -2122,7 +2829,7 @@ if (typeof deleteSelectedBtn !== "undefined" && deleteSelectedBtn) deleteSelecte
 undoBtn.onclick = undo;
 newDesign.onclick = () => {
   pushHistory();
-  resetDesignWorkspace("New design ready. Generate grid to begin.");
+  resetDesignWorkspace(RESTRICTED_FRAME ? "New two-span frame ready." : "New design ready. Generate grid to begin.");
 };
 clearAll.onclick = () => {
   pushHistory();
@@ -2159,18 +2866,22 @@ importJsonBtn.onclick = () => importJsonFile.click();
 importJsonFile.onchange = async () => { const file = importJsonFile.files && importJsonFile.files[0]; if (!file) return; try { const data = JSON.parse(await file.text()); currentFileHandle = null; loadProjectPackage(data, file.name); recordName.value = file.name.replace(/\.json$/i, ""); } catch (err) { status("Could not load JSON file. Check that it is a valid frame model."); } finally { importJsonFile.value = ""; } };
 
 assignSelectedProps.onclick = () => {
-  const members = selectedMembers();
-  if (!members.length) {
-    status("Select one or more members first.");
-    return;
-  }
+  const members = RESTRICTED_FRAME ? model.members : selectedMembers();
+  if (!members.length) return;
 
   pushHistory();
   for (const m of members) {
+    if (RESTRICTED_FRAME) {
+      m.width = Number(m.type === "Column" ? columnWidth.value : beamWidth.value);
+      m.height = Number(m.type === "Column" ? columnHeight.value : beamHeight.value);
+    }
     normalizeMemberProperties(m);
+    m.E = concreteElasticModulus();
   }
 
-  status(`Properties assigned to ${members.length} selected member(s).`);
+  lastAnalysisResult = null;
+  renderEngineeringResults(null);
+  status(RESTRICTED_FRAME ? "Beam and column sections applied to all members." : `Properties assigned to ${members.length} selected member(s).`);
   draw();
 };
 
@@ -2218,13 +2929,266 @@ assignPointLoad.onclick = () => {
   addPointLoadToSelected();
 };
 
+loadList?.addEventListener("click", event => {
+  const button = event.target.closest("[data-delete-load]");
+  if (!button) return;
+  deleteLoadAtIndex(button.dataset.deleteLoad);
+});
+
+function prepareResultCanvas(target) {
+  if (!target) return null;
+  const rect = target.getBoundingClientRect();
+  const cssWidth = Math.max(320, Math.round(rect.width || target.width));
+  const cssHeight = Math.max(180, Math.round(rect.height || target.height));
+  const ratio = Math.min(2, window.devicePixelRatio || 1);
+  target.width = Math.round(cssWidth * ratio);
+  target.height = Math.round(cssHeight * ratio);
+  const context = target.getContext("2d");
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  context.clearRect(0, 0, cssWidth, cssHeight);
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, cssWidth, cssHeight);
+  context.font = "12px Arial";
+  context.fillStyle = "#111";
+  context.strokeStyle = "#111";
+  return {context, width: cssWidth, height: cssHeight};
+}
+
+function drawSectionDetail(target, type) {
+  const prepared = prepareResultCanvas(target);
+  if (!prepared) return;
+  const {context: c, width, height} = prepared;
+  const isBeam = type === "Beam";
+  const b = Number(isBeam ? beamWidth.value : columnWidth.value) || (isBeam ? 300 : 400);
+  const h = Number(isBeam ? beamHeight.value : columnHeight.value) || (isBeam ? 500 : 400);
+  const maxW = width * 0.44;
+  const maxH = height * 0.62;
+  const scale = Math.min(maxW / b, maxH / h);
+  const rw = b * scale;
+  const rh = h * scale;
+  const x = (width - rw) / 2;
+  const y = (height - rh) / 2 + 4;
+  c.fillStyle = "#e5e7eb";
+  c.strokeStyle = "#111";
+  c.lineWidth = 2;
+  c.fillRect(x, y, rw, rh);
+  c.strokeRect(x, y, rw, rh);
+  c.lineWidth = 1;
+  const cover = Math.min(28, rw * 0.13, rh * 0.13);
+  c.strokeStyle = "#777";
+  c.strokeRect(x + cover, y + cover, Math.max(1, rw - cover * 2), Math.max(1, rh - cover * 2));
+  c.fillStyle = "#111";
+  const bars = isBeam ? [[.22,.2],[.78,.2],[.22,.8],[.5,.8],[.78,.8]] : [[.18,.18],[.82,.18],[.18,.82],[.82,.82]];
+  bars.forEach(([px, py]) => { c.beginPath(); c.arc(x + rw * px, y + rh * py, 4, 0, Math.PI * 2); c.fill(); });
+  c.textAlign = "center";
+  c.fillText(`b = ${b} mm`, width / 2, y + rh + 25);
+  c.save();
+  c.translate(x - 24, y + rh / 2);
+  c.rotate(-Math.PI / 2);
+  c.fillText(`h = ${h} mm`, 0, 0);
+  c.restore();
+  const area = b * h;
+  const inertia = b * Math.pow(h, 3) / 12;
+  c.fillStyle = "#555";
+  c.fillText(`A = ${area.toLocaleString()} mm2   I = ${inertia.toExponential(3)} mm4`, width / 2, height - 12);
+}
+
+function drawBeamBarGroup(c, count, left, right, startY, rowStep, filled = true) {
+  let remaining = Math.max(2, count);
+  let row = 0;
+  while (remaining > 0 && row < 4) {
+    const inRow = Math.min(6, remaining);
+    for (let i = 0; i < inRow; i++) {
+      const x = inRow === 1 ? (left + right) / 2 : left + (right - left) * i / (inRow - 1);
+      const y = startY + row * rowStep;
+      c.beginPath(); c.arc(x, y, 4.5, 0, Math.PI * 2);
+      if (filled) c.fill(); else c.stroke();
+    }
+    remaining -= inRow;
+    row++;
+  }
+}
+
+function drawBeamSectionDetail(target, location, result) {
+  const prepared = prepareResultCanvas(target);
+  if (!prepared) return;
+  const {context: c, width, height} = prepared;
+  const b = Number(beamWidth.value) || 300;
+  const h = Number(beamHeight.value) || 500;
+  const design = designInputData();
+  const beamDesigns = model.members.filter(member => member.type === "Beam").map(member => preliminaryReinforcement(member, result));
+  const mainCount = Math.max(2, ...beamDesigns.map(item => parseInt(location === "support" ? item.supportBars : item.midspanBars, 10) || 2));
+  const maxW = width * 0.38;
+  const maxH = height * 0.60;
+  const scale = Math.min(maxW / b, maxH / h);
+  const rw = b * scale;
+  const rh = h * scale;
+  const x = (width - rw) / 2;
+  const y = 42;
+  const cover = Math.max(14, Math.min(25, design.cover * scale));
+  c.fillStyle = "#e2e2e2";
+  c.strokeStyle = "#222";
+  c.lineWidth = 2;
+  c.fillRect(x, y, rw, rh);
+  c.strokeRect(x, y, rw, rh);
+  c.lineWidth = 1.2;
+  c.strokeStyle = "#777";
+  c.strokeRect(x + cover, y + cover, rw - cover * 2, rh - cover * 2);
+
+  const barLeft = x + cover + 7;
+  const barRight = x + rw - cover - 7;
+  const topY = y + cover + 9;
+  const bottomY = y + rh - cover - 9;
+  c.fillStyle = "#111";
+  c.strokeStyle = "#555";
+  if (location === "support") {
+    drawBeamBarGroup(c, mainCount, barLeft, barRight, topY, 14, true);
+    drawBeamBarGroup(c, 2, barLeft, barRight, bottomY, -14, false);
+  } else {
+    drawBeamBarGroup(c, 2, barLeft, barRight, topY, 14, false);
+    drawBeamBarGroup(c, mainCount, barLeft, barRight, bottomY, -14, true);
+  }
+
+  c.fillStyle = "#111";
+  c.font = "bold 13px Arial";
+  c.textAlign = "center";
+  c.fillText(location === "support" ? "SUPPORT - TOP BARS" : "MID-SPAN - BOTTOM BARS", width / 2, 22);
+  c.font = "12px Arial";
+  c.fillText(`b = ${b} mm`, width / 2, y - 8);
+  c.save(); c.translate(x + rw + 30, y + rh / 2); c.rotate(-Math.PI / 2); c.fillText(`h = ${h} mm`, 0, 0); c.restore();
+  const mainLabel = `${mainCount}-D${design.beamBarDia} main bars`;
+  const compressionLabel = `2-D${design.beamBarDia} compression bars`;
+  c.textAlign = "left";
+  c.fillText(location === "support" ? mainLabel : compressionLabel, 16, y + 30);
+  c.fillText(location === "support" ? compressionLabel : mainLabel, 16, y + rh - 18);
+  const transverse = beamDesigns[0]?.transverse || `2-Leg D${design.tieBarDia} stirrups`;
+  c.textAlign = "center";
+  c.fillStyle = "#555";
+  c.fillText(transverse, width / 2, height - 18);
+}
+
+function diagramFrameTransform(width, height) {
+  const bounds = baseModelBounds();
+  const pad = {left: 72, right: 42, top: 34, bottom: 48};
+  const sx = (width - pad.left - pad.right) / Math.max(1, bounds.maxX - bounds.minX);
+  const sy = (height - pad.top - pad.bottom) / Math.max(1, bounds.maxY - bounds.minY);
+  const scale = Math.min(sx, sy);
+  return point => ({x: pad.left + (point.x - bounds.minX) * scale, y: height - pad.bottom - (point.y - bounds.minY) * scale});
+}
+
+function drawDeflectionResult(result) {
+  const prepared = prepareResultCanvas(deflectionCanvas);
+  if (!prepared) return;
+  const {context: c, width, height} = prepared;
+  const map = diagramFrameTransform(width, height);
+  const displacements = new Map((result?.nodeDisplacements || []).map(item => [String(item.node), item]));
+  const maxMm = Math.max(...[...displacements.values()].map(d => Math.hypot(d.ux || 0, d.uy || 0)), 0);
+  const bounds = baseModelBounds();
+  const modelSizeMm = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * 1000;
+  const magnification = maxMm > 1e-9 ? Math.min(250, Math.max(1, modelSizeMm * 0.08 / maxMm)) : 1;
+  const drawShape = (deformed, color, dashed, widthPx) => {
+    c.strokeStyle = color; c.lineWidth = widthPx; c.setLineDash(dashed ? [7, 5] : []);
+    model.members.forEach(member => {
+      const a = getNode(member.i), b = getNode(member.j);
+      const da = displacements.get(String(a.id)) || {ux:0,uy:0};
+      const db = displacements.get(String(b.id)) || {ux:0,uy:0};
+      const pa = map({x:a.x + (deformed ? da.ux * magnification / 1000 : 0), y:a.y + (deformed ? da.uy * magnification / 1000 : 0)});
+      const pb = map({x:b.x + (deformed ? db.ux * magnification / 1000 : 0), y:b.y + (deformed ? db.uy * magnification / 1000 : 0)});
+      c.beginPath(); c.moveTo(pa.x, pa.y); c.lineTo(pb.x, pb.y); c.stroke();
+    });
+  };
+  drawShape(false, "#9ca3af", true, 1.2);
+  drawShape(true, "#018A61", false, 2.5);
+  c.setLineDash([]); c.fillStyle = "#111"; c.textAlign = "left";
+  c.fillText(`Maximum nodal displacement = ${maxMm.toFixed(3)} mm`, 18, 20);
+  c.textAlign = "right"; c.fillText(`Display magnification: ${magnification.toFixed(0)}x`, width - 18, 20);
+}
+
+function drawBeamResultChart(target, result, kind) {
+  const prepared = prepareResultCanvas(target);
+  if (!prepared) return;
+  const {context: c, width, height} = prepared;
+  const beams = model.members.filter(member => member.type === "Beam");
+  const values = beams.map(beam => result?.memberResults?.[beam.id] || computedMemberDiagramValues(model, beam));
+  const samplesKey = kind === "shear" ? "shearSamples" : "momentSamples";
+  const maxValue = Math.max(...values.flatMap(item => item[samplesKey].map(sample => Math.abs(sample.value))), 0.001);
+  const left = 70, right = width - 40;
+  const totalLength = beams.reduce((sum, beam) => sum + memberLength(model, beam), 0) || 1;
+  const amplitude = Math.min(72, (height - 60) / (beams.length * 2.1));
+  let cursor = left;
+  beams.forEach((beam, index) => {
+    const data = values[index];
+    const chartWidth = (right - left) * memberLength(model, beam) / totalLength;
+    const baseline = 60 + index * ((height - 80) / Math.max(1, beams.length));
+    c.strokeStyle = "#333"; c.lineWidth = 1; c.beginPath(); c.moveTo(cursor, baseline); c.lineTo(cursor + chartWidth, baseline); c.stroke();
+    const points = data[samplesKey].map(sample => ({x: cursor + chartWidth * sample.t, y: baseline - sample.value / maxValue * amplitude, value: sample.value}));
+    c.strokeStyle = kind === "shear" ? "#018A61" : "#FF961F";
+    c.lineWidth = 2; c.setLineDash(kind === "moment" ? [8, 5] : []);
+    c.beginPath(); c.moveTo(cursor, baseline); points.forEach(point => c.lineTo(point.x, point.y)); c.lineTo(cursor + chartWidth, baseline); c.stroke(); c.setLineDash([]);
+    c.fillStyle = "#111"; c.textAlign = "left"; c.fillText(memberDisplayName(beam), cursor, baseline - amplitude - 12);
+    const labels = kind === "shear" ? data.shearLabels : data.momentLabels;
+    c.fillStyle = kind === "shear" ? "#018A61" : "#b85c00"; c.textAlign = "center";
+    labels.filter(label => Math.abs(label.value) > 0.01).forEach(label => {
+      const x = cursor + chartWidth * label.t;
+      const y = baseline - label.value / maxValue * amplitude;
+      c.fillText(valueText(label.value, ""), x, y + (label.value >= 0 ? -7 : 14));
+    });
+    cursor += chartWidth;
+  });
+}
+
+function renderEngineeringResults(result = lastAnalysisResult) {
+  drawBeamSectionDetail(beamSupportCanvas, "support", result);
+  drawBeamSectionDetail(beamMidspanCanvas, "midspan", result);
+  drawSectionDetail(columnSectionCanvas, "Column");
+  drawDeflectionResult(result);
+  drawBeamResultChart(shearDiagramCanvas, result, "shear");
+  drawBeamResultChart(momentDiagramCanvas, result, "moment");
+}
+
+function renderCalculationTransparency(result, envelope) {
+  if (!calculationDetailsBody || !result) return;
+  const eq = result.equilibrium || {};
+  const rows = model.members.map(member => {
+    const service = result.memberResults?.[member.id] || {};
+    const demand = envelope?.members?.[member.id] || {};
+    const design = preliminaryReinforcement(member, result);
+    return `<tr><td>${escapeHtml(memberDisplayName(member))}</td><td>${escapeHtml(member.type)}</td><td>${valueText(service.maxShear||0,"")} kN</td><td>${valueText(service.maxPositiveMoment||0,"")} / ${valueText(service.maxNegativeMoment||0,"")} kN-m</td><td>${valueText(demand.axial||0,"")} kN</td><td>${valueText(Math.max(demand.positiveMoment||0,demand.negativeMoment||0,demand.endMoment||0),"")} kN-m</td><td>${escapeHtml(design.governing)}</td><td>${escapeHtml(design.status)}</td><td>${escapeHtml(design.recommendation || "")}</td></tr>`;
+  }).join("");
+  calculationDetailsBody.innerHTML = `
+    <p><strong>Analysis:</strong> 2D matrix stiffness method; 3 DOF/node (Ux, Uy, Rz); transformed frame-element stiffness; consistent nodal load vectors for UDL and concentrated member loads; end forces recovered from <code>q = k'u' - f<sub>eq</sub></code>.</p>
+    <p><strong>Service display:</strong> ${escapeHtml(result.combination || "Unfactored service case")}. <strong>Factored screening:</strong> ${escapeHtml(envelope?.basis || "Not calculated")}.</p>
+    <p><strong>Equilibrium:</strong> residual Fx = ${valueText(eq.residual?.fx||0,"")} kN; Fy = ${valueText(eq.residual?.fy||0,"")} kN; M = ${valueText(eq.residual?.mz||0,"")} kN-m; status = <strong>${eq.ok ? "BALANCED" : "ANALYSIS ERROR"}</strong>.</p>
+    <p><strong>RC design checks:</strong> beam flexure uses a rectangular compression block, strain-dependent phi, and Mn = As fy(d-a/2); shear uses Vc plus two-leg stirrup Vs; columns use the displayed combined axial-and-bending utilization. PASS is utilization at or below 1.00 with reinforcement limits satisfied; REVISE provides the required section and bar changes.</p>
+    <table><thead><tr><th>Member</th><th>Type</th><th>Service V</th><th>Service M+ / M-</th><th>Factored Pu</th><th>Factored Mu</th><th>Governing</th><th>Status</th><th>Recommended Action</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
 calculateBtn.onclick = () => {
-  const r = runBasicFrameAnalysis(model);
+  const ec = concreteElasticModulus();
+  model.members.forEach(member => { member.E = ec; normalizeMemberProperties(member); });
+  const r = runBasicFrameAnalysis(model, {resultType:"SERVICE", combination:"Service D + L + W/E (simultaneous display case)"});
   lastAnalysisResult = r;
+  lastStrengthEnvelope = buildStrengthEnvelope(model);
   diagramsVisible = true;
   showDiagramBtn.textContent = "Show/Hide S&M Diagram";
   draw();
-  status(`Calculated: ${r.nodes} nodes, ${r.members} members, ${r.loads} loads checked.`);
+  renderEngineeringResults(r);
+  if (analysisState) analysisState.textContent = r.valid
+    ? `SERVICE diagrams shown. FACTORED design envelope evaluated separately. ${lastStrengthEnvelope.basis}.`
+    : "ANALYSIS ERROR - equilibrium or stability check failed.";
+  const designRows = model.members.map(member => preliminaryReinforcement(member, r));
+  const failed = designRows.filter(item => String(item.status).startsWith("REVISE"));
+  if (analysisWarning) {
+    analysisWarning.hidden = false;
+    analysisWarning.dataset.state = !r.valid || failed.length ? "revise" : "pass";
+    analysisWarning.textContent = !r.valid
+      ? `ANALYSIS ERROR: equilibrium residuals are Fx ${valueText(r.equilibrium?.residual?.fx || 0,"kN")}, Fy ${valueText(r.equilibrium?.residual?.fy || 0,"kN")}, and M ${valueText(r.equilibrium?.residual?.mz || 0,"kN-m")}. Correct the supports, connectivity, or loads and calculate again.`
+      : failed.length
+        ? `${failed.length} member(s) require revision. Open Member Properties and apply the exact section and reinforcement changes shown in the REVISE rows.`
+        : `PASS: all ${designRows.length} members satisfy the current strength and detailing checks for the entered loads.`;
+  }
+  renderCalculationTransparency(r, lastStrengthEnvelope);
+  status(r.valid ? `Service analysis balanced. ${r.nodes} nodes, ${r.members} members, ${r.loads} loads.` : "ANALYSIS ERROR - results suppressed from verification.");
 };
 if (typeof printPdfBtn !== "undefined" && printPdfBtn) printPdfBtn.onclick = () => printReport("pdf");
 if (typeof printLocalBtn !== "undefined" && printLocalBtn) printLocalBtn.onclick = () => printReport("printer");
@@ -2241,7 +3205,7 @@ function resultBounds() {
 
 function mainTitleDrop(base = baseModelBounds()) {
   const height = Math.max(1, base.maxY - base.minY);
-  return Math.max(2.05, height * 0.34);
+  return Math.max(2.65, height * 0.58);
 }
 
 function baseModelBounds() {
@@ -2426,6 +3390,13 @@ showDiagramBtn.onclick = () => {
   diagramsVisible = !diagramsVisible;
   showDiagramBtn.textContent = "Show/Hide S&M Diagram";
   draw();
+};
+
+if (toggleMembersBtn) toggleMembersBtn.onclick = () => {
+  membersVisible = !membersVisible;
+  toggleMembersBtn.classList.toggle("is-active", !membersVisible);
+  draw();
+  status(membersVisible ? "Columns and beams shown." : "Columns and beams hidden.");
 };
 
 toggleLoadsBtn.onclick = () => {
