@@ -12,9 +12,9 @@
 </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Two-Beam / Three-Column RC Frame Calculator</title>
+  <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=48" />
+  <link rel="stylesheet" href="styles.css?v=39" />
 </head>
 <body>
   <div class="app">
@@ -31,8 +31,8 @@
         <label><span>Designed By</span><input id="designedBy" value="" /></label>
       </div>
       <div class="topbar-brand">
-        <div class="topbar-title">2-BEAM / 3-COLUMN FRAME ANALYSIS</div>
-        <div class="topbar-subtitle">Restricted Reinforced Concrete Frame Calculator</div>
+        <div class="topbar-title">R.C. STRUCTURAL FRAMING ANALYSIS</div>
+        <div class="topbar-subtitle">Reinforced Concrete - Structural Frame Analysis</div>
       </div>
       <div class="topbar-right">
         <div class="header-disclaimer"><strong>Disclaimer:</strong><span>Calculations must be checked and</span><span>approved by a licensed Structural or Civil Engineer.</span></div>
@@ -91,32 +91,27 @@
 
     <div class="workspace">
     <aside class="panel">
-      <h1>2 Beams + 3 Columns</h1>
+      <h1>StrucForge RC Frame</h1>
       <button id="newDesign" class="new-design-btn" type="button">New Design</button>
 <section>
-        <h2>1. Fixed Frame Geometry</h2>
-        <p class="hint fixed-grid-note">Restricted to 3 vertical grids and 2 horizontal grids.</p>
-        <label>Left beam span L1, m</label>
-        <input id="span1" type="number" min="1" max="15" step="0.1" value="4" />
-        <label>Right beam span L2, m</label>
-        <input id="span2" type="number" min="1" max="15" step="0.1" value="4" />
-        <label>Column height H, m</label>
-        <input id="frameHeight" type="number" min="1" max="10" step="0.1" value="3" />
-        <input id="vPositions" value="0,4,8" readonly hidden />
-        <input id="hPositions" value="0,3" readonly hidden />
-        <button id="generateGrid">Generate / Update Frame</button>
+        <h2>1. Grid</h2>
+        <label>V-grid positions from left, m</label>
+        <input id="vPositions" value="0,3,6,9" />
+        <label>H-grid elevations from bottom, m</label>
+        <input id="hPositions" value="0,3,6,9" />
+        <button id="generateGrid">Generate Grid</button>
         <button id="resetView">Reset View</button>
       </section>
 
-      <section class="restricted-selection">
-        <h2>2. Selection</h2>
+      <section>
+        <h2>2. Model / Selection</h2>
         <p class="hint">
-          The topology is fixed. Select a beam, column, or node to assign loads.
+          Node: click grid intersection. Create Member: click two nodes/intersections. Select Member: click member line. Ctrl/Shift + click adds more members.
         </p>
-        <button id="modeNode">Select Node</button>
-        <button id="modeMember" hidden>Create Member Mode</button>
-        <button id="modeSelect">Select Member</button>
-        <button id="modeSupport" hidden>Support Mode</button>
+        <button id="modeNode">Node Mode</button>
+        <button id="modeMember">Create Member Mode</button>
+        <button id="modeSelect">Select Member Mode</button>
+        <button id="modeSupport">Support Mode</button>
         <button id="clearSelection">Clear Selection</button>
 
         <label>Support Type</label>
@@ -129,7 +124,7 @@
 
         <div class="row">
           <button id="undoBtn">Undo</button>
-          <button id="clearAll">Reset Frame</button>
+          <button id="clearAll">Clear</button>
         </div>
       </section>
 
@@ -155,27 +150,15 @@
       </section>
 
       <section>
-        <h2>4. RC Sections</h2>
+        <h2>4. Member Properties</h2>
         <label>Beam width b, mm</label>
-        <input id="beamWidth" type="number" min="150" step="25" value="300" />
+        <input id="beamWidth" value="300" readonly />
         <label>Beam height h, mm</label>
-        <input id="beamHeight" type="number" min="200" step="25" value="500" />
+        <input id="beamHeight" value="500" readonly />
         <label>Column width b, mm</label>
-        <input id="columnWidth" type="number" min="200" step="25" value="400" />
+        <input id="columnWidth" value="400" readonly />
         <label>Column height h, mm</label>
-        <input id="columnHeight" type="number" min="200" step="25" value="400" />
-        <label>Concrete strength f'c, MPa</label>
-        <input id="concreteFc" type="number" min="17" max="70" step="1" value="28" />
-        <label>Rebar yield strength fy, MPa</label>
-        <input id="steelFy" type="number" min="275" max="690" step="5" value="415" />
-        <label>Clear cover, mm</label>
-        <input id="clearCover" type="number" min="25" max="75" step="5" value="40" />
-        <div class="row">
-          <div><label>Beam bar dia., mm</label><input id="beamBarDia" type="number" min="12" max="36" step="2" value="20" /></div>
-          <div><label>Column bar dia., mm</label><input id="columnBarDia" type="number" min="12" max="40" step="2" value="20" /></div>
-        </div>
-        <label>Stirrup / tie dia., mm</label>
-        <input id="tieBarDia" type="number" min="8" max="16" step="2" value="10" />
+        <input id="columnHeight" value="400" readonly />
         <label>Beam dimension label</label>
         <input id="beamDim" value="300x500 mm" readonly />
         <label>Column dimension label</label>
@@ -186,8 +169,7 @@
         <input id="secA" value="300000" readonly />
         <label>Inertia I, mm⁴</label>
         <input id="secI" value="8e9" readonly />
-        <button id="assignSelectedProps">Apply Sections</button>
-        <p class="hint design-note">The member check evaluates factored load combinations, beam flexure and shear, column axial-bending utilization, minimum steel, and reinforcement fit. PASS rows require no change; REVISE rows provide a specific upgrade.</p>
+        <button id="assignSelectedProps" disabled>Auto Assigned</button>
       </section>
 
       <section>
@@ -228,16 +210,11 @@
         <button id="assignNodeLoad">Assign to Node</button>
         <button id="assignLoad">Assign Selected Load</button>
         <button id="assignPointLoad">Add Point Load to Selected Member(s)</button>
-        <div class="load-delete-panel" id="loadDeletePanel" aria-label="Current assigned loads">
-          <div class="load-delete-title">Assigned Loads</div>
-          <div id="loadList" class="load-list">No loads assigned.</div>
-        </div>
       </section>
 
       <section>
         <h2>6. Analysis</h2>
         <button id="calculateBtn">Calculate</button>
-        <button id="toggleMembersBtn" type="button">Show/Hide Cols &amp; Beams</button>
         <button id="showDiagramBtn" type="button">Show/Hide S&amp;M Diagram</button>
         <button id="toggleLoadsBtn" type="button">Show/Hide Loading</button>
         <div class="row">
@@ -252,7 +229,7 @@
       <div class="toolbar">
         <span id="modeLabel">Mode: Node</span>
         <div class="tool-icon-group" aria-label="Application tools">
-          <button id="toolbarDeleteBtn" class="toolbar-icon-btn app-tool-icon delete-tool-icon" type="button" title="Delete" aria-label="Delete" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-1 0v14H9V6m-2 0h10"/></svg></button>
+          <button id="toolbarDeleteBtn" class="toolbar-icon-btn app-tool-icon delete-tool-icon" type="button" title="Delete" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-1 0v14H9V6m-2 0h10"/></svg></button>
           <button id="toolbarSaveBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Save" aria-label="Save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 17h8"/></svg></button>
           <button id="toolbarSaveAsBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Save As" aria-label="Save As"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 17h5M16 13l4 4m0-4l-4 4"/></svg></button>
           <button id="toolbarImportBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Import" aria-label="Import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M12 4v11m0 0l-4-4m4 4l4-4M5 7h4M15 7h4"/></svg></button>
@@ -261,61 +238,47 @@
           <button id="toolbarPrintBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Print" aria-label="Print"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"/></svg></button>
           <button id="toolbarPrintPdfBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="Print PDF" aria-label="Print PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"/><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
           <button id="toolbarNewBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="New File" aria-label="New File"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M12 10v6"/></svg></button>
-          <button id="lockToggleBtn" class="toolbar-icon-btn app-tool-icon lock-toggle" type="button" title="Lock Zoom/Pan" aria-label="Lock Zoom/Pan"><span class="lock-icon lock-icon-unlocked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h12v10H7zM10 11V7a4 4 0 0 1 7-2"/></svg></span><span class="lock-icon lock-icon-locked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h12v10H6zM9 11V7a3 3 0 0 1 6 0v4"/></svg></span></button>
           <button id="toolbarCalcBtn" class="toolbar-icon-btn app-tool-icon toolbar-calc-icon" type="button" title="Calculate" aria-label="Calculate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 7h6M9 11h2M13 11h2M9 15h2M13 15h2M9 18h6"/></svg></button>
+          <button id="lockToggleBtn" class="toolbar-icon-btn app-tool-icon lock-toggle" type="button" title="Lock Zoom/Pan" aria-label="Lock Zoom/Pan"><span class="lock-icon lock-icon-unlocked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h12v10H7zM10 11V7a4 4 0 0 1 7-2"/></svg></span><span class="lock-icon lock-icon-locked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h12v10H6zM9 11V7a3 3 0 0 1 6 0v4"/></svg></span></button>
         </div>
         <span id="selectedLabel">Selected: none</span>
         <span id="statusLabel">Ready</span>
+
+        <div class="member-props-table" id="memberPropsTable">
+                <div class="member-props-title">Member Properties / Results</div>
+                <table>
+                  <thead>
+                    <tr><th>ID</th><th>Type</th><th>b</th><th>h</th><th>A</th><th>I</th><th>E</th><th>SW kN/m</th><th>DL+SW kN/m</th><th>V kN</th><th>M kN-m</th><th>Rx kN</th><th>Ry kN</th><th>Rz kN-m</th><th>Px kN</th><th>Py kN</th><th>Mz kN-m</th></tr>
+                  </thead>
+                  <tbody id="memberPropsBody">
+                    <tr><td colspan="17">No data</td></tr>
+                  </tbody>
+                </table>
+              </div>
       </div>
-      <div id="analysisWarning" class="analysis-warning" role="alert" hidden></div>
-      <canvas id="canvas" width="1500" height="760"></canvas>
-      <section class="engineering-results" id="engineeringResults" aria-label="Engineering result diagrams">
-        <div class="results-heading"><strong>Analysis &amp; Section Details</strong><span id="analysisState">Press Calculate to update results.</span></div>
-        <details class="calculation-transparency">
-          <summary>Calculation Transparency / Audit Trail</summary>
-          <div id="calculationDetailsBody">Calculate the model to display formulas, load basis, equilibrium, governing combinations, and member screening results.</div>
-        </details>
-        <div class="result-grid section-grid">
-          <article class="result-panel"><h2>Beam Section at Support</h2><canvas id="beamSupportCanvas" width="560" height="340"></canvas></article>
-          <article class="result-panel"><h2>Beam Section at Mid-span</h2><canvas id="beamMidspanCanvas" width="560" height="340"></canvas></article>
-          <article class="result-panel column-detail-panel"><h2>Column Section Detail</h2><canvas id="columnSectionCanvas" width="560" height="300"></canvas></article>
-        </div>
-        <article class="result-panel result-wide"><h2>Deflected Shape</h2><canvas id="deflectionCanvas" width="1180" height="320"></canvas></article>
-        <article class="result-panel result-wide"><h2>Service Shear Force Diagram, kN</h2><canvas id="shearDiagramCanvas" width="1180" height="340"></canvas></article>
-        <article class="result-panel result-wide"><h2>Service Bending Moment Diagram, kN-m</h2><canvas id="momentDiagramCanvas" width="1180" height="340"></canvas></article>
-      </section>
+      <canvas id="canvas" width="1500" height="950"></canvas>
     </main>
     </div>
   </div>
-  <aside class="tutorial-drawer" id="tutorialDrawer" aria-label="Right Side Tools" aria-hidden="true">
-    <div class="right-drawer-tabs">
-      <button class="right-drawer-tab member-drawer-tab" id="memberPropsDrawerTab" type="button" aria-label="Show Member Properties">Member Properties</button>
-      <button class="right-drawer-tab tutorial-drawer-tab" id="tutorialDrawerTab" type="button" aria-label="Show Beginners Tutorials">Tutorials</button>
-    </div>
+  <aside class="tutorial-drawer" id="tutorialDrawer" aria-label="Beginners Tutorials" aria-hidden="true">
+    <button class="tutorial-drawer-tab" id="tutorialDrawerTab" type="button" aria-label="Show Beginners Tutorials">Tutorials</button>
     <div class="tutorial-drawer-panel">
-      <div class="member-props-table" id="memberPropsTable">
-        <div class="member-props-title">Member Properties / Results</div>
-        <table>
-          <thead>
-            <tr><th>Member ID</th><th>Type</th><th>b</th><th>h</th><th>Main Rebar Dia.</th><th>Tie/Stirrup Dia.</th><th>A</th><th>I</th><th>E</th><th>SW kN/m</th><th>DL+SW kN/m</th><th>Service V kN</th><th>Service M kN-m</th><th>Factored Pu kN</th><th>Factored Mu kN-m</th><th>As req. mm2</th><th>Support Reinforcement</th><th>Mid-span Reinforcement</th><th>Column Longitudinal Bars</th><th>Stirrups / Ties</th><th>Governing Combination</th><th>Design Status</th><th>Recommended Action</th><th>Utilization</th><th>Rx kN</th><th>Ry kN</th><th>Rz kN-m</th><th>Px kN</th><th>Py kN</th><th>Mz kN-m</th></tr>
-          </thead>
-          <tbody id="memberPropsBody">
-            <tr><td colspan="30">No data</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="tutorial-drawer-head">
+<div class="tutorial-drawer-head">
         <h2>Beginners Tutorials</h2>
         <button class="tutorial-close" id="tutorialClose" type="button" aria-label="Hide Beginners Tutorials">x</button>
       </div>
       <div class="tutorial-drawer-content">
         <h3>Start A New Frame</h3>
         <ol>
-          <li>Enter the left span, right span, and column height.</li>
-          <li>Click <strong>Generate / Update Frame</strong>. The app always creates exactly two beams and three fixed-base columns.</li>
-          <li>Enter beam and column section dimensions, then click <strong>Apply Sections</strong>.</li>
-          <li>Use <strong>Select Member</strong> before assigning UDL or member point loads.</li>
-          <li>Use <strong>Select Node</strong> before assigning node forces or moments.</li>
+          <li>Click <strong>New Design</strong> to clear the drawing area.</li>
+          <li>Enter vertical grid positions in meters, such as <strong>0,3,6,9</strong>.</li>
+          <li>Enter horizontal levels in meters, such as <strong>0,1.5,4.5</strong>.</li>
+          <li>Click <strong>Generate Grid</strong>.</li>
+          <li>Use <strong>Node Mode</strong> and click grid intersections to create nodes.</li>
+          <li>Use <strong>Create Member Mode</strong> and click two nodes to create a beam or column.</li>
+          <li>Use <strong>Support Mode</strong>, choose the support type, then click base nodes.</li>
+          <li>Select members before assigning UDL or point loads.</li>
+          <li>Select a node before assigning node P loads or nodal moments.</li>
           <li>Click <strong>Calculate</strong> to update reactions, member results, and diagrams.</li>
           <li>Use <strong>Show/Hide Loading</strong> to simplify the drawing view.</li>
           <li>Use <strong>Print PDF</strong> or <strong>Print Local</strong> for report output.</li>
@@ -1141,7 +1104,7 @@
   }
 }
   </script>
-  <script src="solver.js?v=18"></script>
-  <script src="app.js?v=58"></script>
+  <script src="solver.js?v=14"></script>
+  <script src="app.js?v=52"></script>
 </body>
 </html>
