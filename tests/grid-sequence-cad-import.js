@@ -1,0 +1,80 @@
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+
+const root = path.resolve(__dirname, "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+
+assert.match(html, /function sequentialGridLabels\(axis, count\)/, "sequential grid-label helper must exist");
+assert.match(html, /axis === "X" \? xGridLabelAt\(index\) : String\(index \+ 1\)/, "X grids must start at A and numeric grids at 1");
+assert.match(html, /remapGridAxisState\(normalizedAxis, selected, normalizedLabels\)/, "deleting grids must preserve/remap coordinated model state");
+assert.match(html, /id="planYLabels" value="1,2,3,4,5"/, "default numeric grids must begin at 1");
+assert.match(css, /background:#F1AB82!important/, "sidebar subgroup strips must use #F1AB82");
+
+assert.match(html, /<span>Upload Drawings<\/span>/, "Upload Drawings package must be named for all supported drawing formats");
+assert.ok(html.indexOf('id="uploadCadPackage"') < html.indexOf('id="structuralPlanPackage"'), "Upload Drawings must precede Structural Plan");
+assert.match(html, /accept="\.dxf,image\/png,image\/jpeg,\.png,\.jpg,\.jpeg" multiple/, "CAD uploader must accept multiple DXF, PNG, and JPEG drawings");
+assert.doesNotMatch(html, /StrucForgeDwgConverter/, "the user-facing importer must not require a DWG converter");
+assert.doesNotMatch(html, /Overall outer-grid width, m|cadReferenceWidth/, "manual overall-width scaling must not be exposed");
+assert.match(html, /This will delete all existing drawings\. Are you sure you want to continue\?/, "the upload package must show the revised destructive-action warning");
+assert.match(html, /id="uploadDrawingsHoverWarning"/, "the upload warning must use a separately positioned tooltip beside the package strip");
+assert.doesNotMatch(html, /title="This will delete all drawings in the drawing window"/, "the overlapping native upload tooltip must not be used");
+assert.match(html, /id="uploadDrawingsConfirmDialog"[\s\S]{0,500}This will delete all existing drawings\. Are you sure you want to continue\?/, "opening Upload Drawings must require the revised custom confirmation dialog");
+assert.match(html, /requestUploadDrawingsConfirmation\(toggle,/, "the Upload Drawings package must invoke the sidebar confirmation workflow");
+assert.match(html, /function inferCadDrawingRole\(/, "drawing titles must map to FOUNDATION and LEVEL roles");
+assert.match(html, /function recognizeCadImageText\(/, "drawing OCR results must be reusable across title and geometry detection");
+assert.match(html, /const titleStart = image\.naturalHeight \* 0\.56;[\s\S]{0,260}>= titleStart/, "panel routing must read the lower drawing-title band instead of internal frame notes");
+assert.match(html, /function reconcileCadPanelRoles\(/, "unreadable titles must be reconciled from drawing content and level sequence");
+assert.match(html, /EARTH\\s\*FILL[\s\S]{0,260}SLAB\\s\+ON\\s\+FILL/, "foundation and Level-1 content clues must support title routing");
+assert.match(html, /function trimCadProjectionOutlier\(/, "dimension and symbol projection peaks must be removed from detected structural grids");
+assert.match(html, /function renderCadDrawingList\(/, "multiple titled drawings must have a review list");
+assert.match(html, /function splitRasterDrawingSheet\(/, "combined image sheets must be split into drawing panels");
+assert.match(html, /function standardTwoByThreeSheetBounds\(/, "2x3 drawing sheets need a deterministic divider fallback");
+assert.match(html, /height \* 0\.55[\s\S]{0,140}width \* 0\.55/, "sheet dividers must tolerate shorter or anti-aliased separator lines");
+assert.match(html, /rowIndex === 0[\s\S]{0,120}"FOUNDATION"[\s\S]{0,80}"LEVEL-1"/, "the standard 2x3 sheet must deterministically map its top plan row");
+assert.match(html, /rowIndex === 1[\s\S]{0,120}"LEVEL-2"[\s\S]{0,80}"LEVEL-3"/, "the standard 2x3 sheet must deterministically map its middle plan row");
+assert.match(html, /FOUNDATION LEVEL and LEVEL-1/, "the importer must require the base drawing sequence");
+assert.match(html, /X-AXIS FRAME/, "X-axis frame titles must be routed");
+assert.match(html, /Y-AXIS FRAME/, "Y-axis frame titles must be routed");
+assert.match(html, /function renderCadSourceReview\(/, "detected sheet panels must be reviewable");
+assert.match(html, /function analyzeRasterPlan\(/, "raster plan detection must be installed");
+assert.match(html, /function calibrateRasterDimensionsFromDrawing\(/, "printed image dimensions must calibrate detected spans when OCR is available");
+assert.match(html, /tesseract\.js@5\/dist\/tesseract\.min\.js/, "image imports must have a lazy OCR fallback when native browser OCR is unavailable");
+assert.match(html, /await releaseCadOcrWorker\(\)/, "the import-only OCR worker must be released after analysis");
+assert.match(html, /function auditCadDrawingAccuracy\(/, "a conversion accuracy audit must run before model creation");
+assert.match(html, /Conversion accuracy check failed/, "inconsistent imported views must be blocked before conversion");
+assert.match(html, /hidden: coverage >= 0\.14/, "dashed raster lines must be classified as hidden");
+assert.match(html, /function applyImportedDrawingTopology\(/, "hidden members must be excluded from the generated structural topology");
+assert.match(html, /function classifyRasterPlanCells\(/, "uploaded slab and earth-filled panel labels must be classified");
+assert.match(html, /footingPoints/, "uploaded foundation drawings must retain detected footing locations");
+assert.match(html, /planMemberName\(/, "detected imported beams must use the application's default member naming convention");
+assert.match(html, /function parseAsciiDxf\(/, "ASCII DXF parsing must be installed");
+assert.match(html, /function buildDetectedCadModel\(/, "detected plans must build a coordinated model");
+assert.match(html, /buildDetectedCadModel\(\{automatic: true\}\)/, "Import & Analyze must immediately run native model conversion after a successful audit");
+assert.match(html, /the raster was replaced by editable native app drawings/, "successful import must clearly report native conversion instead of image placement");
+assert.match(html, /byId\("cadApplyDetectedBtn"\)\.disabled = false;[\s\S]{0,180}cadImportState\.audit\.errors\.length/, "reviewed conversion must stay enabled when automatic validation reports correctable findings");
+assert.match(html, /function analyzeRasterFrameDimensions\(/, "frame OCR must import printed level heights into the sidebar");
+assert.match(html, /function frameStoreyHeightsFromGeometry\(/, "frame geometry must recover level heights when rotated dimension OCR is unavailable");
+assert.match(html, /function inferImportedFrameGridLines\(/, "plan OCR must identify the selected X/Y frame grid lines");
+assert.match(html, /contains a different local dimension; the coordinated \$\{primary\.role\} grid span is used instead/, "local detail dimensions must not block or overwrite the coordinated Level-1 grid");
+assert.match(html, /primarySource\?\.detected\?\.columnPoints\?\.length/, "an empty column detection must fall back to all validated grid intersections");
+assert.match(html, /reliableColumnSymbols[\s\S]{0,180}expectedColumnCount \* 0\.5/, "weak raster column detection must not delete valid column stories");
+assert.match(html, /Source preview is kept in the Upload Drawings sidebar/, "uploaded raster previews must stay in the sidebar instead of replacing drawing views");
+assert.doesNotMatch(html, /ctx\.drawImage\(source\.image, left, top, width, height\)/, "the upload workspace must not display a raster as if it were a converted native drawing");
+assert.match(html, /Required source-drawing format/, "users must receive precise source-sheet preparation requirements");
+assert.match(html, /Dashed\/hidden lines are read as no structural member/, "source requirements must document the hidden-line member rule");
+assert.match(html, /const cadAllowed = \["annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text"\]/, "CAD mode must limit editing to line/text/dimension annotations");
+
+for (const id of ["uploadCadPackage", "structuralPlanPackage", "modelCreationPackage", "saveLoadPackage", "memberPropertiesPackage", "loadAnalysisPackage"]) {
+  assert.match(html, new RegExp(`"${id}"`), `${id} must be included in the default expanded package set`);
+}
+assert.match(html, /<section class="sidebar-package" id="uploadCadPackage">/, "Upload Drawings must be expanded in the initial HTML before scripts finish loading");
+assert.match(html, /renderStructuralSequence\(\{resetViews: true, activeView: "PLAN"\}\)/, "the opening drawing must default to Structural Plan");
+assert.match(html, /Click to edit \$\{kind\} name/, "member-name hover must show a compact click-to-edit hint");
+assert.doesNotMatch(html, /id="memberNameHoverInput"/, "member-name hover must no longer show the oversized inline editor");
+assert.match(html, /#memberNameDialog #memberNameDialogApply \{[^}]*background: #08766c;[^}]*color: #fff;/, "the Update Name action must have high-contrast text and background colors");
+assert.match(html, /#memberNameDialog input \{[^}]*background: #fff;[^}]*color: #070b0c;/, "the member-name field must remain legible against the dialog background");
+assert.match(html, /planState\.memberStart = endpoint;[\s\S]{0,220}Continue clicking aligned nodes/, "member creation must continue from the last clicked endpoint");
+
+console.log("grid sequence and CAD import regression tests: passed");

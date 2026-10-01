@@ -15,6 +15,7 @@ frame-model*.json
 *.json
 !Frame 9.json
 !Sample Project.json
+!assets/templates/2-storey-storage-bldg.json
 
 # Generated / archived local output
 APP-COPY 2/

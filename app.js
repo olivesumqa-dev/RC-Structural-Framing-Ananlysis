@@ -28,6 +28,8 @@ const margin = {left: 125, bottom: 105};
 let isPanning = false;
 let didPan = false;
 let lastPan = null;
+let panDrawQueued = false;
+let mprUpdateQueued = false;
 let currentFileHandle = null;
 let viewLocked = false;
 let deleteMode = false;
@@ -81,6 +83,8 @@ function setViewLocked(locked) {
   updateLockToggle();
   status(viewLocked ? "Zoom/Pan locked." : "Zoom/Pan unlocked.");
 }
+window.strucForgeSetXViewLocked = setViewLocked;
+window.strucForgeIsXViewLocked = () => viewLocked;
 function setDeleteMode(active) {
   deleteMode = !!active;
   document.body.classList.toggle("delete-mode", deleteMode);
@@ -115,6 +119,8 @@ function normalizeModelPayload(data) { return data && data.model ? data : {model
 
 function status(msg) {
   statusLabel.textContent = msg;
+  statusLabel.title = `Current Processes: ${msg}`;
+  window.__strucForgeProcessRevision = (Number(window.__strucForgeProcessRevision) || 0) + 1;
 }
 
 function clone(obj) {
@@ -215,13 +221,23 @@ function getMember(id) {
   return model.members.find(m => sameId(m.id, id));
 }
 
+function isHiddenPlanPoint(x, y) {
+  return model.nodes.some(node => node.hiddenPlanNode
+    && Math.abs(node.x - x) < 1e-6
+    && Math.abs(node.y - y) < 1e-6);
+}
+
 function getGridPoint(px, py) {
   let best = null;
   for (const x of model.v) {
     for (const y of model.h) {
       const p = toCanvas(x, y);
       const d = Math.hypot(px - p.x, py - p.y);
-      if (d < scaled(20) && (!best || d < best.d)) best = {x, y, d};
+      if (d < scaled(20) && (!best || d < best.d)) {
+        best = {x, y, d, hiddenNode: model.nodes.find(node => node.hiddenPlanNode
+          && Math.abs(node.x - x) < 1e-6
+          && Math.abs(node.y - y) < 1e-6) || null};
+      }
     }
   }
   return best;
@@ -229,13 +245,16 @@ function getGridPoint(px, py) {
 
 function addGridMemberCandidate(candidates, member, x, y) {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  const hiddenNode = model.nodes.find(node => node.hiddenPlanNode
+    && Math.abs(node.x - x) < 1e-6
+    && Math.abs(node.y - y) < 1e-6) || null;
   const minX = Math.min(...model.v, 0);
   const maxX = Math.max(...model.v, 0);
   const minY = Math.min(...model.h, 0);
   const maxY = Math.max(...model.h, 0);
   if (x < minX - 1e-6 || x > maxX + 1e-6 || y < minY - 1e-6 || y > maxY + 1e-6) return;
   const duplicate = candidates.some(p => Math.abs(p.x - x) < 1e-6 && Math.abs(p.y - y) < 1e-6 && sameId(p.member.id, member.id));
-  if (!duplicate) candidates.push({x, y, member});
+  if (!duplicate) candidates.push({x, y, member, hiddenNode});
 }
 
 function getGridMemberIntersection(px, py) {
@@ -274,6 +293,7 @@ function getGridMemberIntersection(px, py) {
 function getNodeAt(px, py) {
   let best = null;
   for (const n of model.nodes) {
+    if (n.hiddenPlanNode) continue;
     const p = toCanvas(n.x, n.y);
     const d = Math.hypot(px - p.x, py - p.y);
     if (d < scaled(14) && (!best || d < best.d)) best = {n, d};
@@ -343,7 +363,13 @@ function renumberNodesSystematically() {
 
 function addNode(x, y) {
   const existing = model.nodes.find(n => Math.abs(n.x-x)<1e-6 && Math.abs(n.y-y)<1e-6);
-  if (existing) return existing;
+  if (existing) {
+    if (existing.hiddenPlanNode) {
+      existing.hiddenPlanNode = false;
+      window.strucForgeRestoreHiddenFrameNode?.("X", existing);
+    }
+    return existing;
+  }
   model.nodes.push({id: model.nextNode++, x, y});
   renumberNodesSystematically();
   return model.nodes.find(n => Math.abs(n.x-x)<1e-6 && Math.abs(n.y-y)<1e-6);
@@ -376,10 +402,16 @@ function memberTypeProperties(type) {
 }
 
 function selectMember(id, additive) {
+  const clickedMember = getMember(id);
+  if (window.strucForgeWallBeamSelectionActive === "X" && clickedMember?.type !== "Beam") {
+    window.onStrucForgeFrameMemberSelection?.("X", selectedMembers(), clickedMember);
+    return;
+  }
   if (!additive) model.selectedMemberIds = [];
   if (!model.selectedMemberIds.includes(id)) model.selectedMemberIds.push(id);
   model.selectedNode = null;
   model.selectedNodes = [];
+  window.onStrucForgeFrameMemberSelection?.("X", selectedMembers(), clickedMember);
 }
 
 function selectedMembers() {
@@ -391,6 +423,8 @@ function addMember(i, j) {
   const a = getNode(i);
   const b = getNode(j);
   if (!a || !b) return null;
+  const length = Math.hypot(b.x-a.x, b.y-a.y);
+  if (length < 1e-5) return null;
 
   const duplicate = model.members.find(m => (m.i === i && m.j === j) || (m.i === j && m.j === i));
   if (duplicate) {
@@ -408,7 +442,7 @@ function addMember(i, j) {
     dim: props.dim,
     width: props.width,
     height: props.height,
-    length: Math.hypot(b.x-a.x, b.y-a.y),
+    length,
     E: props.E,
     A: props.area,
     I: props.inertia
@@ -450,11 +484,42 @@ function splitMemberAtNode(member, node) {
 
   const m1 = addMember(member.i, node.id);
   const m2 = addMember(node.id, member.j);
+  const copyStructuralProperties = part => {
+    if (!part) return;
+    Object.entries(member).forEach(([field, value]) => {
+      if (["id", "i", "j", "length"].includes(field)) return;
+      part[field] = Array.isArray(value) ? value.slice() : value;
+    });
+    const endpoints = memberStartEnd(part);
+    if (endpoints) part.length = Math.hypot(endpoints.end.x - endpoints.start.x, endpoints.end.y - endpoints.start.y);
+    if (part.type !== "Column") return;
+    const sourceStories = Array.from(new Set((Array.isArray(member.sourcePlanStoryIndices)
+      ? member.sourcePlanStoryIndices
+      : [member.sourcePlanStoryIndex])
+      .map(value => Number(value))
+      .filter(value => Number.isInteger(value) && value >= 0))).sort((a, b) => a - b);
+    if (!sourceStories.length || !endpoints) return;
+    const levels = (model.h || []).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+    const low = Math.min(endpoints.start.y, endpoints.end.y);
+    const high = Math.max(endpoints.start.y, endpoints.end.y);
+    const represented = sourceStories.filter(storyIndex =>
+      Number.isFinite(levels[storyIndex]) && Number.isFinite(levels[storyIndex + 1]) &&
+      levels[storyIndex] >= low - 1e-6 && levels[storyIndex + 1] <= high + 1e-6);
+    if (!represented.length) return;
+    part.sourcePlanStoryIndices = represented;
+    part.sourcePlanStoryIndex = represented[0];
+    part.continuousColumn = represented.length > 1;
+    if (part.sourcePlanColumnKey && typeof window.strucForgeColumnNameForStory === "function") {
+      part.name = window.strucForgeColumnNameForStory(part.sourcePlanColumnKey, represented[0]);
+    }
+  };
+  copyStructuralProperties(m1);
+  copyStructuralProperties(m2);
   for (const load of oldLoads) {
     if (load.kind === "member_udl") {
       if (m1) model.loads.push({...load, member: m1.id});
       if (m2) model.loads.push({...load, member: m2.id});
-    } else if (load.kind === "member_point" && oldLength > 1e-6) {
+    } else if ((load.kind === "member_point" || load.kind === "member_point_vector") && oldLength > 1e-6) {
       const x = Math.max(0, Math.min(oldLength, Number(load.x) || 0));
       if (x <= splitDist && m1) model.loads.push({...load, member: m1.id, x});
       if (x > splitDist && m2) model.loads.push({...load, member: m2.id, x: x - splitDist});
@@ -539,8 +604,8 @@ function scaled(value) {
   return value * viewScale();
 }
 
-function setScaledFont(size, family = "Arial") {
-  ctx.font = `${(scaled(size) * fontScale).toFixed(1)}px ${family}`;
+function setScaledFont(size, family = '"Aptos Light", Aptos, Arial, sans-serif') {
+  ctx.font = `300 ${(scaled(size) * fontScale).toFixed(1)}px ${family}`;
 }
 
 function labelBox(x, y, text, pad = 3) {
@@ -720,7 +785,18 @@ function aggregateNodalLoad(nodeId) {
     }, {fx: 0, fy: 0, mz: 0});
 }
 
-function draw() {
+function queueMemberPropertiesUpdate() {
+  if (mprUpdateQueued) return;
+  mprUpdateQueued = true;
+  const run = () => {
+    mprUpdateQueued = false;
+    updateMemberPropertiesTable();
+  };
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(run, {timeout: 180});
+  else window.setTimeout(run, 45);
+}
+
+function draw(options = {}) {
   mainLabelBoxes = [];
   resizeCanvasToDisplaySize(canvas);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -732,12 +808,16 @@ function draw() {
 
   drawGrid();
   drawMembers();
+  window.drawStrucForgeAnnotations?.("X", ctx, toCanvas);
   drawNodes();
-  if (loadsVisible) drawLoads();
-  if (loadsVisible) drawSupportReactions();
+  const showCalculatedLoads = loadsVisible && (typeof window.strucForgeFrameLoadsReady !== "function" || window.strucForgeFrameLoadsReady());
+  if (showCalculatedLoads) drawLoads();
+  if (showCalculatedLoads) drawSupportReactions();
   drawMainDiagramTitle();
   if (diagramsVisible) drawResultsInMainCanvas();
-  updateMemberPropertiesTable();
+  // The MPR is a full DOM/table/design rebuild.  Queue it outside the input
+  // event so drawing, selecting and tool clicks remain immediately responsive.
+  if (!options.skipMpr) queueMemberPropertiesUpdate();
   updateButtonStates();
 
   modeLabel.textContent = `Mode: ${model.mode} | Zoom: ${Math.round(zoom*100)}%`;
@@ -756,7 +836,7 @@ function updateButtonStates() {
     [modeSelect, "select"],
     [modeSupport, "support"]
   ];
-  modeButtons.forEach(([button, mode]) => button?.classList.toggle("is-active", model.mode === mode));
+  modeButtons.forEach(([button, mode]) => button?.classList.toggle("is-active", model.mode === mode && !(mode === "member" && window.strucForgeXColumnMode)));
   showDiagramBtn?.classList.toggle("is-active", diagramsVisible);
   toggleLoadsBtn?.classList.toggle("is-active", !loadsVisible);
 }
@@ -886,12 +966,15 @@ function gridLetter(index) {
 
 function drawGridBubbles() {
   if (model.v.length < 1 || model.h.length < 1) return;
-  const top = toCanvas(0, model.h[model.h.length-1]).y - scaled(98 + 18);
+  // Keep the grid bubble clear of both span and overall dimension lines.
+  const top = toCanvas(0, model.h[model.h.length-1]).y - scaled(59 + 28 + 42);
   const color = annotationColor();
   const isNight = document.body.dataset.theme === "green_teal";
   setScaledFont(12);
+  const bubbleBoxes = [];
   for (let i=0; i<model.v.length; i++) {
     const x = toCanvas(model.v[i], 0).x;
+    bubbleBoxes.push({x, y: top, r: scaled(15)});
     ctx.beginPath();
     ctx.arc(x, top, scaled(15), 0, Math.PI*2);
     ctx.fillStyle = isNight ? "#000" : "#fff";
@@ -906,13 +989,15 @@ function drawGridBubbles() {
   }
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+  window.setStrucForgeGridBubbleBoxes?.(bubbleBoxes);
 }
 
 function drawAutoDimensions() {
   if (model.v.length < 2 || model.h.length < 2) return;
-  const topY = toCanvas(0, model.h[model.h.length-1]).y - scaled(98);
-  const leftX = toCanvas(model.v[0], 0).x - scaled(118);
+  const topY = toCanvas(0, model.h[model.h.length-1]).y - scaled(59);
+  const leftX = toCanvas(model.v[0], 0).x - scaled(71);
   const tick = scaled(8);
+  const bubbleExtension = scaled(55);
   const gap = scaled(4);
   const color = annotationColor();
 
@@ -924,13 +1009,22 @@ function drawAutoDimensions() {
     const x2 = toCanvas(model.v[i+1], 0).x;
     const frameY = toCanvas(0, model.h[model.h.length-1]).y;
     ctx.beginPath();
-    ctx.moveTo(x1, topY-tick); ctx.lineTo(x1, topY+tick);
-    ctx.moveTo(x2, topY-tick); ctx.lineTo(x2, topY+tick);
+    ctx.moveTo(x1, topY-bubbleExtension); ctx.lineTo(x1, topY+tick);
+    ctx.moveTo(x2, topY-bubbleExtension); ctx.lineTo(x2, topY+tick);
     ctx.moveTo(x1, topY); ctx.lineTo(x1, frameY - gap);
     ctx.moveTo(x2, topY); ctx.lineTo(x2, frameY - gap);
     ctx.stroke();
     drawDimensionSegment(x1, topY, x2, topY, `${(model.v[i+1]-model.v[i]).toFixed(2)} m`, scaled(-9));
   }
+  const overallTopY = topY - scaled(28);
+  drawDimensionSegment(
+    toCanvas(model.v[0], 0).x,
+    overallTopY,
+    toCanvas(model.v[model.v.length - 1], 0).x,
+    overallTopY,
+    `${Math.abs(model.v[model.v.length - 1] - model.v[0]).toFixed(2)}m`,
+    scaled(-9)
+  );
 
   for (let i=0; i<model.h.length-1; i++) {
     const y1 = toCanvas(0, model.h[i]).y;
@@ -944,9 +1038,19 @@ function drawAutoDimensions() {
     ctx.stroke();
     drawDimensionSegment(leftX, y1, leftX, y2, `${(model.h[i+1]-model.h[i]).toFixed(2)} m`, scaled(-10));
   }
+  const overallLeftX = leftX - scaled(28);
+  drawDimensionSegment(
+    overallLeftX,
+    toCanvas(0, model.h[0]).y,
+    overallLeftX,
+    toCanvas(0, model.h[model.h.length - 1]).y,
+    `${Math.abs(model.h[model.h.length - 1] - model.h[0]).toFixed(2)}m`,
+    scaled(-10)
+  );
 }
 
 function drawMembers() {
+  const groupedLabels = new Map();
   for (const m of model.members) {
     const a = getNode(m.i);
     const b = getNode(m.j);
@@ -963,8 +1067,29 @@ function drawMembers() {
     ctx.lineTo(B.x, B.y);
     ctx.stroke();
 
-    drawMemberLabel(m, A, B);
+    if (m.type === "Beam" && m.designGroupId) {
+      const key = String(m.designGroupId);
+      if (!groupedLabels.has(key)) groupedLabels.set(key, {member: m, points: []});
+      groupedLabels.get(key).points.push(A, B);
+    } else {
+      drawMemberLabel(m, A, B);
+    }
   }
+
+  groupedLabels.forEach(group => {
+    const points = group.points.slice().sort((a, b) => Math.abs(a.x - b.x) > 1e-6 ? a.x - b.x : a.y - b.y);
+    if (points.length < 2) return;
+    drawMemberLabel({...group.member, name: group.member.designGroupName || group.member.name}, points[0], points[points.length - 1]);
+  });
+}
+
+function queuePanDraw() {
+  if (panDrawQueued) return;
+  panDrawQueued = true;
+  window.requestAnimationFrame(() => {
+    panDrawQueued = false;
+    draw({skipMpr: true});
+  });
 }
 
 function drawMemberLabel(m, A, B) {
@@ -981,20 +1106,21 @@ function drawMemberLabel(m, A, B) {
   setScaledFont(10);
   if (m.type === "Beam") {
     const p = findClearLabelPoint(midX, midY, label, [
-      {x: 0, y: scaled(14)},
-      {x: 0, y: scaled(21)},
-      {x: scaled(23), y: scaled(17)},
-      {x: -scaled(23), y: scaled(17)}
+      {x: 0, y: scaled(13)},
+      {x: scaled(30), y: scaled(13)},
+      {x: -scaled(30), y: scaled(13)},
+      {x: 0, y: scaled(-13)}
     ]);
-    drawRotatedText(label, p.x, p.y, 0, annotationColor());
+    drawRotatedText(label, p.x, p.y, 0, "#c1121f");
   } else if (m.type === "Column") {
+    const side = midX < canvas.width / 2 ? 1 : -1;
     const p = findClearLabelPoint(midX, midY, label, [
-      {x: -scaled(6), y: 0},
-      {x: -scaled(9), y: 0},
-      {x: -scaled(6), y: scaled(12)},
-      {x: -scaled(6), y: -scaled(12)}
+      {x: side * scaled(9), y: 0},
+      {x: -side * scaled(9), y: 0},
+      {x: side * scaled(14), y: scaled(14)},
+      {x: side * scaled(14), y: -scaled(14)}
     ]);
-    drawRotatedText(label, p.x, p.y, -Math.PI/2, annotationColor());
+    drawRotatedText(label, p.x, p.y, -Math.PI/2, "#00c853");
   } else {
     let angle = Math.atan2(dy, dx);
     if (angle > Math.PI / 2) angle -= Math.PI;
@@ -1014,7 +1140,6 @@ function updateMemberPropertiesTable() {
   const result = lastAnalysisResult || (diagramsVisible ? runBasicFrameAnalysis(model) : null);
   const memberRows = model.members.map(m => normalizeMemberProperties(m)).map(m => {
     const r = result?.memberResults?.[m.id] || computedMemberDiagramValues(model, m);
-    const sw = memberSelfWeight(m);
     const dlTotal = memberAutoDeadLoad(m);
     return `
     <tr>
@@ -1025,7 +1150,6 @@ function updateMemberPropertiesTable() {
       <td>${propertyText(m.A, "")}</td>
       <td>${propertyText(m.I, "")}</td>
       <td>${propertyText(m.E, "")}</td>
-      <td>${valueText(sw, "")}</td>
       <td>${valueText(dlTotal, "")}</td>
       <td>${valueText(r.maxShear || 0, "")}</td>
       <td>${valueText(r.maxMoment || 0, "")}</td>
@@ -1088,6 +1212,7 @@ function escapeHtml(value) {
 function drawNodes() {
   const isNight = document.body.dataset.theme === "green_teal";
   for (const n of model.nodes) {
+    if (n.hiddenPlanNode) continue;
     const p = toCanvas(n.x, n.y);
     const nodeLabel = String(n.id);
     const nodeRadius = scaled(nodeLabel.length > 2 ? 9 : 8);
@@ -1611,7 +1736,7 @@ function saveRecord() {
   saveRecordNames(names);
   refreshRecords();
   savedRecords.value = name;
-  status(`Saved "${name}" to browser records.`);
+  status(`Saved project "${name}" in the browser.`);
 }
 
 function loadProjectPackage(data, sourceName, options = {}) {
@@ -1642,7 +1767,7 @@ function loadProjectPackage(data, sourceName, options = {}) {
     setField("projectLocation", payload.project.location);
     setField("designedBy", payload.project.designedBy);
   }
-  if (payload.theme) setTheme(payload.theme, true);
+  if (payload.theme && options.applyTheme !== false) setTheme(payload.theme, true);
   prepareCanvasSizes();
   draw();
   status(`Loaded ${sourceName || "JSON file"}.`);
@@ -1660,7 +1785,7 @@ async function loadDefaultProject() {
       data = await response.json();
     }
     currentFileHandle = null;
-    loadProjectPackage(data, "Default Sample Project", {pushHistory: false});
+    loadProjectPackage(data, "Default Sample Project", {pushHistory: false, applyTheme: false});
     recordName.value = "Default Sample Project";
   } catch (err) {
     status("Ready. Default sample project was not loaded.");
@@ -1670,13 +1795,13 @@ async function loadDefaultProject() {
 function loadRecord() {
   const name = savedRecords.value;
   if (!name) {
-    status("No saved record selected.");
+    status("No saved project selected.");
     return;
   }
 
   const raw = localStorage.getItem("strucforge_record_" + name);
   if (!raw) {
-    status("Selected record was not found.");
+    status("Selected saved project was not found.");
     return;
   }
 
@@ -1684,7 +1809,7 @@ function loadRecord() {
     loadProjectPackage(JSON.parse(raw), `"${name}"`);
     recordName.value = name;
   } catch {
-    status("Could not load saved record.");
+    status("Could not load the saved project.");
   }
 }
 
@@ -1699,6 +1824,18 @@ function deleteObjectAtPoint(px, py) {
 
   pushHistory();
   if (node) {
+    const identity = window.strucForgeHideFrameNode?.("X", node);
+    if (identity) {
+      model.selectedNodes = [];
+      model.selectedMemberIds = [];
+      model.selectedNode = null;
+      lastAnalysisResult = null;
+      diagramsVisible = false;
+      showDiagramBtn.textContent = "Show/Hide S&M Diagram";
+      status(`X-axis node ${identity.xLabel}/${identity.yLabel} hidden. Its column and connected structural members were preserved; Node mode can restore this joint.`);
+      draw();
+      return;
+    }
     const nodeId = node.id;
     const connectedMemberIds = new Set(model.members.filter(m => sameId(m.i, nodeId) || sameId(m.j, nodeId)).map(m => m.id));
     model.nodes = model.nodes.filter(n => !sameId(n.id, nodeId));
@@ -1761,14 +1898,14 @@ function deleteSelectedItems() {
 function deleteRecord() {
   const name = savedRecords.value;
   if (!name) {
-    status("No record selected.");
+    status("No saved project selected.");
     return;
   }
 
   localStorage.removeItem("strucforge_record_" + name);
   saveRecordNames(getRecordNames().filter(n => n !== name));
   refreshRecords();
-  status(`Deleted "${name}".`);
+  status(`Deleted saved project "${name}".`);
 }
 
 function printHeaderHtml() {
@@ -1930,7 +2067,7 @@ canvas.addEventListener("wheel", e => {
   const after = toCanvas(before.x, before.y);
   pan.x += pt.x - after.x;
   pan.y += pt.y - after.y;
-  draw();
+  draw({skipMpr: true});
 }, {passive:false});
 
 canvas.addEventListener("mousedown", e => {
@@ -1951,7 +2088,7 @@ canvas.addEventListener("mousemove", e => {
   pan.x += dx;
   pan.y += dy;
   lastPan = {x: e.clientX, y: e.clientY};
-  draw();
+  queuePanDraw();
 });
 
 canvas.addEventListener("mouseup", () => isPanning = false);
@@ -1967,7 +2104,7 @@ canvas.addEventListener("click", e => {
   const pt = eventToCanvas(e);
   const px = pt.x;
   const py = pt.y;
-  const additive = e.ctrlKey || e.shiftKey;
+  const additive = e.ctrlKey || e.shiftKey || window.strucForgeWallBeamSelectionActive === "X";
 
   if (deleteMode) {
     deleteObjectAtPoint(px, py);
@@ -1992,9 +2129,11 @@ canvas.addEventListener("click", e => {
     const clickedMember = getMemberAt(px, py);
     if (clickedMember) {
       selectMember(clickedMember.id, additive);
-      status(additive
-        ? `Added Member ${clickedMember.id} to selection.`
-        : `Selected Member ${clickedMember.id}.`);
+      if (window.strucForgeWallBeamSelectionActive !== "X") {
+        status(additive
+          ? `Added Member ${clickedMember.id} to selection.`
+          : `Selected Member ${clickedMember.id}.`);
+      }
     } else {
       status("No member found at click point. Click directly on or near the member line.");
     }
@@ -2004,20 +2143,31 @@ canvas.addEventListener("click", e => {
 
   if (model.mode === "node") {
     const gp = getGridMemberIntersection(px, py) || getGridPoint(px, py);
-    if (!gp) return;
+    if (!gp) {
+      status("No X-axis node or grid/member intersection found at the click point.");
+      return;
+    }
+    const restoringHiddenNode = Boolean(gp.hiddenNode?.hiddenPlanNode);
     pushHistory();
     const n = addNode(gp.x, gp.y);
     if (gp.member) splitMemberAtNode(gp.member, n);
     model.selectedNode = n;
     model.selectedMemberIds = [];
-    status(gp.member ? `Created Node ${n.id} at grid/member intersection.` : `Created/selected Node ${n.id}.`);
+    status(restoringHiddenNode
+      ? `X-axis Node ${n.id} restored at the hidden plan joint. Existing column continuity was preserved and no beam was created.`
+      : gp.member
+        ? `Created Node ${n.id} at grid/member intersection. No new member was created.`
+        : `Created/selected Node ${n.id}. No member was created.`);
     draw();
     return;
   }
 
   if (model.mode === "support") {
     const n = getNodeAt(px, py);
-    if (!n) return;
+    if (!n) {
+      status("No X-axis node found. Click directly on a node to assign the support.");
+      return;
+    }
     pushHistory();
     model.supports[n.id] = supportType.value;
     model.selectedNode = n;
@@ -2036,9 +2186,11 @@ canvas.addEventListener("click", e => {
     // This prevents accidental new-node creation when the user is trying to select a member.
     if (clickedMember && !nearNode && !gridPoint) {
       selectMember(clickedMember.id, additive);
-      status(additive
-        ? `Added Member ${clickedMember.id} to selection.`
-        : `Selected Member ${clickedMember.id}.`);
+      if (window.strucForgeWallBeamSelectionActive !== "X") {
+        status(additive
+          ? `Added Member ${clickedMember.id} to selection.`
+          : `Selected Member ${clickedMember.id}.`);
+      }
       draw();
       return;
     }
@@ -2046,7 +2198,7 @@ canvas.addEventListener("click", e => {
     // Ctrl/Shift click prioritizes adding existing members to selection.
     if (clickedMember && additive) {
       selectMember(clickedMember.id, true);
-      status(`Added Member ${clickedMember.id} to selection.`);
+      if (window.strucForgeWallBeamSelectionActive !== "X") status(`Added Member ${clickedMember.id} to selection.`);
       draw();
       return;
     }
@@ -2065,10 +2217,25 @@ canvas.addEventListener("click", e => {
       if (!model.selectedNodes.includes(n.id)) model.selectedNodes.push(n.id);
 
       if (model.selectedNodes.length === 2) {
+        const firstNode = getNode(model.selectedNodes[0]);
+        const secondNode = getNode(model.selectedNodes[1]);
+        if (window.strucForgeXColumnMode && firstNode && secondNode && Math.abs(firstNode.x - secondNode.x) >= 1e-6) {
+          model.selectedNodes = [firstNode.id];
+          model.selectedNode = firstNode;
+          status("Column endpoints must be vertically aligned. The first node remains selected; click another level on the same gridline.");
+          draw();
+          return;
+        }
         pushHistory();
+        const memberCountBefore = model.members.length;
         const m = addMember(model.selectedNodes[0], model.selectedNodes[1]);
+        const memberWasCreated = model.members.length > memberCountBefore;
         model.selectedNodes = [];
         if (m) status(`Created/selected Member ${m.id}: ${m.type}, ${m.dim}.`);
+        else status("The selected endpoints coincide. No zero-length beam or column was created.");
+        if (memberWasCreated && m?.type === "Column" && typeof window.onStrucForgeFrameColumnCreated === "function") {
+          window.setTimeout(() => window.onStrucForgeFrameColumnCreated(m, "X"), 0);
+        }
       } else {
         status(`First node selected: Node ${n.id}. Click second node/intersection.`);
       }
@@ -2078,9 +2245,11 @@ canvas.addEventListener("click", e => {
 
     if (clickedMember) {
       selectMember(clickedMember.id, additive);
-      status(additive
-        ? `Added Member ${clickedMember.id} to selection.`
-        : `Selected Member ${clickedMember.id}.`);
+      if (window.strucForgeWallBeamSelectionActive !== "X") {
+        status(additive
+          ? `Added Member ${clickedMember.id} to selection.`
+          : `Selected Member ${clickedMember.id}.`);
+      }
       draw();
       return;
     }
@@ -2099,8 +2268,9 @@ generateGrid.onclick = () => {
   draw();
 };
 
-modeNode.onclick = () => { if (deleteMode) setDeleteMode(false); model.mode = "node"; model.selectedNodes = []; status("Node Mode."); draw(); };
+modeNode.onclick = () => { if (deleteMode) setDeleteMode(false); window.strucForgeXColumnMode = false; model.mode = "node"; model.selectedNodes = []; status("Node Mode."); draw(); };
 modeMember.onclick = () => { if (deleteMode) setDeleteMode(false);
+  window.strucForgeXColumnMode = false;
   model.mode = "member";
   model.selectedNodes = [];
   status("Create Member Mode. Click first node/intersection, then second.");
@@ -2108,13 +2278,14 @@ modeMember.onclick = () => { if (deleteMode) setDeleteMode(false);
 };
 
 modeSelect.onclick = () => { if (deleteMode) setDeleteMode(false);
+  window.strucForgeXColumnMode = false;
   model.mode = "select";
   model.selectedNodes = [];
   model.selectedNode = null;
   status("Select Member Mode. Click a member line. Ctrl/Shift + click adds more.");
   draw();
 };
-modeSupport.onclick = () => { if (deleteMode) setDeleteMode(false); model.mode = "support"; model.selectedNodes = []; status("Support Mode."); draw(); };
+modeSupport.onclick = () => { if (deleteMode) setDeleteMode(false); window.strucForgeXColumnMode = false; model.mode = "support"; model.selectedNodes = []; status("Support Mode."); draw(); };
 clearSelection.onclick = () => { model.selectedNodes = []; model.selectedMemberIds = []; model.selectedNode = null; status("Selection cleared."); draw(); };
 if (toolbarDeleteBtn) toolbarDeleteBtn.onclick = () => setDeleteMode(!deleteMode);
 if (typeof deleteSelectedBtn !== "undefined" && deleteSelectedBtn) deleteSelectedBtn.onclick = deleteSelectedItems;
@@ -2284,8 +2455,8 @@ function valueText(value, unit) {
   return value.toFixed(1).replace(/\.0$/, "") + (unit ? " " + unit : "");
 }
 
-function resultFont(size, family = "Arial") {
-  return `${Math.max(6, scaled(size) * fontScale).toFixed(1)}px ${family}`;
+function resultFont(size, family = '"Aptos Light", Aptos, Arial, sans-serif') {
+  return `300 ${Math.max(6, scaled(size) * fontScale).toFixed(1)}px ${family}`;
 }
 
 function resultMeasureBox(text, x, y) {
@@ -2380,7 +2551,7 @@ function drawResultDiagramOnMember(m, kind, globalMax) {
   rctx.setLineDash([]);
 
   rctx.fillStyle = color;
-  rctx.font = resultFont(8, "Arial");
+  rctx.font = resultFont(8);
   rctx.textAlign = "center";
   for (const label of labels || []) {
     if (Math.abs(label.value) < 0.05) continue;
@@ -2432,7 +2603,8 @@ toggleLoadsBtn.onclick = () => {
   loadsVisible = !loadsVisible;
   toggleLoadsBtn.textContent = "Show/Hide Loading";
   draw();
-  status(loadsVisible ? "Loadings shown." : "Loadings hidden.");
+  const calculated = typeof window.strucForgeFrameLoadsReady !== "function" || window.strucForgeFrameLoadsReady();
+  status(loadsVisible ? (calculated ? "Loadings shown." : "Loadings will display after Calculate.") : "Loadings hidden.");
 };
 
 function downloadProjectJson(filename) { const blob = new Blob([JSON.stringify(modelPackage(), null, 2)], {type:"application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename || `${(recordName.value || "frame-model").trim() || "frame-model"}.json`; a.click(); URL.revokeObjectURL(a.href); }
@@ -2442,7 +2614,7 @@ exportJson.onclick = () => saveProjectFile(true);
 window.addEventListener("load", () => {
   updateLoadInputs();
   refreshRecords();
-  document.body.dataset.theme = localStorage.getItem("strucforge_theme") || "olive_saffron";
+  document.body.dataset.theme = "green_teal";
   fontScale = Number(localStorage.getItem("strucforge_font_scale")) || 1;
   loadsVisible = true;
   if (typeof toggleLoadsBtn !== "undefined" && toggleLoadsBtn) toggleLoadsBtn.textContent = "Show/Hide Loading";
