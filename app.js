@@ -571,6 +571,23 @@ function addPointLoadToSelected() {
 let diagramsVisible = false;
 let lastAnalysisResult = null;
 let fontScale = 1;
+
+function applyFontScale(value, options = {}) {
+  const parsed = Number(value);
+  fontScale = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  if (fontScaleSelect) fontScaleSelect.value = String(fontScale);
+  document.documentElement.style.setProperty("--app-text-scale", String(fontScale));
+  document.body.dataset.textScale = String(fontScale);
+  if (options.remember !== false) localStorage.setItem("strucforge_font_scale", String(fontScale));
+  if (options.redraw !== false) {
+    draw();
+    window.strucForgeRedrawScaledViews?.();
+  }
+  if (options.announce !== false && typeof status === "function") {
+    const label = fontScaleSelect?.selectedOptions?.[0]?.textContent?.trim() || `${Math.round(fontScale * 100)}%`;
+    status(`Text Size changed to ${label}. Drawing labels, dimensions, and result diagrams were redrawn.`);
+  }
+}
 let loadsVisible = true;
 const concreteUnitWeight = 24;
 let mainLabelBoxes = [];
@@ -1666,13 +1683,13 @@ function drawPointLoad(L, stackIndex) {
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.arc(x + offset + loadLen, y, scaled(3), 0, Math.PI*2); ctx.fill();
     setScaledFont(9);
-    drawRotatedText(`${L.case}: P=${L.p} kN @ ${L.x} m`, x + offset + loadLen + scaled(12), y, -Math.PI/2, loadAnnotationColor());
+    drawRotatedText(L.label || `${L.case}: P=${L.p} kN @ ${L.x} m`, x + offset + loadLen + scaled(12), y, -Math.PI/2, loadAnnotationColor());
   } else {
     arrow(x, y - offset - loadLen, x, y - offset, color, 7, 1.5);
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.arc(x, y - offset - loadLen, scaled(3), 0, Math.PI*2); ctx.fill();
     setScaledFont(9);
-    const label = `${L.case}: P=${L.p} kN @ ${L.x} m`;
+    const label = L.label || `${L.case}: P=${L.p} kN @ ${L.x} m`;
     const isHorizontalMember = Math.abs(B.y - A.y) < scaled(1.5);
     if (isHorizontalMember) {
       const beamTopY = Math.min(A.y, B.y) - scaled(2.4);
@@ -1766,10 +1783,9 @@ function loadProjectPackage(data, sourceName, options = {}) {
   if (payload.view) {
     zoom = Number(payload.view.zoom) || 1;
     pan = payload.view.pan || {x: 0, y: 0};
-    fontScale = Number(payload.view.fontScale) || fontScale;
+    applyFontScale(Number(payload.view.fontScale) || fontScale, {remember: false, redraw: false, announce: false});
     loadsVisible = payload.view.loadsVisible !== false;
     if (typeof toggleLoadsBtn !== "undefined" && toggleLoadsBtn) toggleLoadsBtn.textContent = "Show/Hide Loading";
-    if (fontScaleSelect) fontScaleSelect.value = String(fontScale);
   }
   vPositions.value = (model.v || []).join(",");
   hPositions.value = (model.h || []).join(",");
@@ -1801,8 +1817,8 @@ async function loadDefaultProject() {
       data = await response.json();
     }
     currentFileHandle = null;
-    loadProjectPackage(data, "Default Sample Project", {pushHistory: false, applyTheme: false});
-    recordName.value = "Default Sample Project";
+    loadProjectPackage(data, "2-STO. BLDG", {pushHistory: false, applyTheme: false});
+    recordName.value = "2-STO. BLDG";
   } catch (err) {
     status("Ready. Default sample project was not loaded.");
   }
@@ -2337,12 +2353,7 @@ if (themeToggleBtn) themeToggleBtn.onclick = () => setTheme(document.body.datase
 document.querySelectorAll("[data-theme-choice]").forEach(btn => {
   btn.onclick = () => setTheme(btn.dataset.themeChoice, true);
 });
-if (fontScaleSelect) fontScaleSelect.onchange = () => {
-  fontScale = Number(fontScaleSelect.value) || 1;
-  localStorage.setItem("strucforge_font_scale", String(fontScale));
-  draw();
-  window.strucForgeRedrawScaledViews?.();
-};
+if (fontScaleSelect) fontScaleSelect.onchange = () => applyFontScale(fontScaleSelect.value);
 importJsonBtn.onclick = () => importJsonFile.click();
 importJsonFile.onchange = async () => { const file = importJsonFile.files && importJsonFile.files[0]; if (!file) return; try { const data = JSON.parse(await file.text()); currentFileHandle = null; loadProjectPackage(data, file.name); recordName.value = file.name.replace(/\.json$/i, ""); } catch (err) { status("Could not load JSON file. Check that it is a valid frame model."); } finally { importJsonFile.value = ""; } };
 
@@ -2632,10 +2643,9 @@ window.addEventListener("load", () => {
   updateLoadInputs();
   refreshRecords();
   document.body.dataset.theme = "green_teal";
-  fontScale = Number(localStorage.getItem("strucforge_font_scale")) || 1;
+  applyFontScale(Number(localStorage.getItem("strucforge_font_scale")) || 1, {remember: false, redraw: false, announce: false});
   loadsVisible = true;
   if (typeof toggleLoadsBtn !== "undefined" && toggleLoadsBtn) toggleLoadsBtn.textContent = "Show/Hide Loading";
-  if (fontScaleSelect) fontScaleSelect.value = String(fontScale);
   document.querySelectorAll("[data-theme-choice]").forEach(btn => btn.classList.toggle("active", btn.dataset.themeChoice === document.body.dataset.theme));
   updateDayNightButtons();
   updateLockToggle();

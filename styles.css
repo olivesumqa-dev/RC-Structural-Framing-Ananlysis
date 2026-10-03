@@ -121,12 +121,12 @@ canvas{background:var(--surface);display:block;width:100%;cursor:default}
 .member-props-table{position:absolute;right:14px;top:58px;z-index:8;width:230px;max-height:34px;overflow:hidden;background:rgba(255,255,255,.94);border:1px solid #000;border-radius:4px;color:#000;box-shadow:0 3px 10px rgba(0,0,0,.14);transition:width .16s ease,max-height .16s ease,box-shadow .16s ease}.member-props-table:hover,.member-props-table:focus-within{width:min(980px,calc(100% - 28px));max-height:calc(100vh - 112px);overflow:auto;box-shadow:0 5px 16px rgba(0,0,0,.2)}
 .member-props-title{position:sticky;top:0;z-index:2;padding:6px 8px;border-bottom:1px solid #000;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;background:#16845b;color:#fff;cursor:default;white-space:nowrap;display:flex;align-items:center}.member-props-title::before{content:"\2190";color:#ff8112;font-size:25px;font-weight:900;line-height:1;margin-right:9px;width:25px;text-align:center;-webkit-text-stroke:1.6px #ff8112;text-shadow:0 0 0 #ff8112}
 .mpr-title-text{font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:16px;font-weight:300;line-height:1;color:#fff;letter-spacing:.04em}
-.mpr-load-heading,.mpr-load-cell{text-align:center!important;vertical-align:middle!important;font-size:9px!important;line-height:1.15!important;overflow-wrap:normal!important;word-break:normal!important}
+.mpr-load-heading,.mpr-load-cell{text-align:center!important;vertical-align:middle!important;font-size:10px!important;line-height:1.15!important;overflow-wrap:normal!important;word-break:normal!important}
 .mpr-load-cell.is-not-applied{opacity:1;color:inherit}
-.member-results-sheet .member-props-table table{table-layout:auto!important;width:100%!important;font-size:10px!important}
-.member-results-sheet .member-props-table th,.member-results-sheet .member-props-table td{width:auto!important;max-width:150px;padding:3px 2px!important;font-size:10px!important;line-height:1.25!important;white-space:nowrap;vertical-align:middle}
+.member-results-sheet .member-props-table table{table-layout:auto!important;width:100%!important;font-size:11px!important}
+.member-results-sheet .member-props-table th,.member-results-sheet .member-props-table td{width:auto!important;max-width:150px;padding:3px 2px!important;font-size:11px!important;line-height:1.25!important;white-space:nowrap;vertical-align:middle}
 .member-results-sheet .member-props-table th{max-width:96px;white-space:normal!important;overflow-wrap:normal;word-break:normal;text-align:center}
-.member-results-sheet .member-props-table input,.member-results-sheet .member-props-table select{field-sizing:content;width:auto!important;min-width:5ch!important;max-width:13ch!important;padding:2px 3px!important;font-size:10px!important}
+.member-results-sheet .member-props-table input,.member-results-sheet .member-props-table select{field-sizing:content;width:auto!important;min-width:5ch!important;max-width:13ch!important;padding:2px 3px!important;font-size:11px!important}
 .member-results-sheet .member-props-table .design-status,.member-results-sheet .member-props-table .stirrup-spacing-cell,.member-results-sheet .member-props-table .rebar-location-cell,.member-results-sheet .member-props-table .not-applicable-cell{max-width:150px;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;line-height:1.3!important}
 #beamResultsTable col{width:auto!important}
 #beamResultsTable th:nth-child(24),#beamResultsTable td:nth-child(24),#columnResultsTable th:nth-child(24),#columnResultsTable td:nth-child(24),#slabResultsTable th:nth-child(26),#slabResultsTable td:nth-child(26),#footingResultsTable th:nth-child(25),#footingResultsTable td:nth-child(25){min-width:78px!important;max-width:150px!important;white-space:normal!important}
@@ -203,9 +203,17 @@ canvas{background:var(--surface);display:block;width:100%;cursor:default}
 .day-night-options .topbar-theme-toggle{position:relative;right:auto;top:auto}
 .topbar-theme-toggle.is-active{background:#00C74C;color:#000;border-color:#72E996}
 .delete-tool-icon.is-active{background:#ff961f;color:#000;border-color:#434a4c}
+.delete-tool-icon svg{width:24px!important;height:14px!important}
 body.delete-mode #canvas,
 body.delete-mode #structuralPlanCanvas,
-body.delete-mode #yAxisCanvas{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='rotate(-36 16 16)'%3E%3Cpath d='M10 3h12a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z' fill='%23F3AD4B' stroke='%230b1112' stroke-width='2'/%3E%3Cpath d='M7 19h18v5a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3Z' fill='%23f7f7f4' stroke='%230b1112' stroke-width='2'/%3E%3Cpath d='M9 18h14' stroke='%230b1112' stroke-width='1.5'/%3E%3C/g%3E%3C/svg%3E") 8 26, default!important}
+body.delete-mode #yAxisCanvas{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='18' viewBox='0 0 28 18'%3E%3Cg transform='rotate(-24 14 9)'%3E%3Cpath d='M3 5h22a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z' fill='%23F3AD4B' stroke='%230b1112' stroke-width='1'/%3E%3Cpath d='M3 5h7v8H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z' fill='%23f7f7f4' stroke='%230b1112' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E") 3 13, default!important}
+.draggable-popup{cursor:move;touch-action:none}
+.draggable-popup button,.draggable-popup input,.draggable-popup select,.draggable-popup textarea,.draggable-popup a{cursor:auto;touch-action:auto}
+.draggable-popup.is-dragging{user-select:none}
+.mpr-resizable-heading{position:sticky!important;top:0!important;z-index:12!important}
+.mpr-column-resizer{position:absolute;top:0;right:-3px;width:7px;height:100%;z-index:8;cursor:col-resize;touch-action:none;background:transparent}
+.mpr-column-resizer:hover,.mpr-column-resizer:focus{background:rgba(243,173,75,.6);outline:none}
+body.mpr-column-resizing,body.mpr-column-resizing *{cursor:col-resize!important;user-select:none!important}
 .member-props-title::before{content:"";width:31px;height:16px;margin-right:9px;background:#25f340;clip-path:polygon(0 50%,55% 0,55% 30%,100% 30%,100% 70%,55% 70%,55% 100%);filter:drop-shadow(0 0 1px rgba(0,0,0,.4))}
 
 

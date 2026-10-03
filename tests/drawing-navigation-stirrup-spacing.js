@@ -40,5 +40,8 @@ assert(html.includes("first stirrup &le;${reinforcement.firstStirrupOffset} mm")
 assert(html.includes('event.stopPropagation();') && !html.includes('scrollHost.scrollBy'), "Drawing wheel input must stay inside the canvas and must not scroll the page");
 assert(css.includes("main{overflow-x:hidden!important;overflow-y:auto!important"), "The main drawing workspace must not create horizontal page scrolling");
 assert(css.includes(".drawing-control-row.plan-control-row{position:sticky!important"), "Drawing controls must remain sticky above the canvas");
+assert(html.includes("pan.x += dx;") && html.includes("pan.y += dy;") && html.includes("queuePanDraw();"), "X-axis left-mouse panning must update the X view directly");
+assert(html.includes("function detachAuxiliaryGridEndpoint(endpoint, gridId)") && html.includes("planLevelWalls().map(wall => detachItemFromAuxiliaryGrid(wall, auxiliaryGrid.id))"), "Deleting an auxiliary grid must detach and retain connected walls and their loads");
+assert(!html.includes("Auxiliary grid, ${connected.length} connected beam(s), and ${connectedWalls.length} connected wall(s) deleted"), "Grid deletion must not report or perform deletion of connected structural items");
 
 console.log("drawing navigation and economical stirrup-spacing regression tests: passed");

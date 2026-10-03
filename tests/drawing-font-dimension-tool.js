@@ -62,7 +62,10 @@ assert(html.includes("window.strucForgeXMemberNameAt") && html.includes("functio
 assert(html.includes('canvas.member-name-editable-hover { cursor: text !important; }'), "Editable member names must indicate editability with the cursor instead of a hover popup");
 assert(!html.includes("Click to edit beam name"), "The sensitive beam-name hover popup must be removed");
 assert(html.includes('id="planLockViewBtn"') && html.includes("const drawingViewLocks = {PLAN: false, X: false, Y: false, ISO: false}"), "Every drawing view needs an independent Lock View tool");
-assert(html.includes("body.delete-mode #canvas") && html.includes("width='32' height='32'") && html.includes("fill='%23F3AD4B'"), "Delete mode must use a visible eraser-head mouse cursor in every editable drawing view");
+assert(html.includes("body.delete-mode #canvas") && html.includes("width='28' height='18'") && html.includes("M3 5h22") && html.includes("fill='%23F3AD4B'"), "Delete mode must use a long, thin pencil-like eraser cursor in every editable drawing view");
+assert(html.includes("function auxiliaryGridAtPoint") && html.includes("const auxiliaryGrid = auxiliaryGridAtPoint(canvasPoint, data)"), "Erase mode must detect the full auxiliary-grid object, not only its insertion handle");
+assert(html.includes("function activateExclusiveDrawingTool") && html.includes('activateExclusiveDrawingTool("plan")'), "Drawing tools must cancel competing unfinished tools before activating");
+assert(html.includes('showUnifiedDrawingView("PLAN")') && html.includes('setPlanCreationMode("aux_grid_insert")'), "Auxiliary-grid placement must switch to the Plan view and enter insertion mode");
 assert(html.includes("cursor: default;") && html.includes("The default Selection cursor is active"), "The normal drawing cursor must match the Selection Tool pointer");
 assert(html.includes('color: "#00c853"'), "Wall labels must use the requested green font color");
 assert(html.includes('id="defaultMemberDimensionsNote"') && html.includes("USER-SIZED PASS") && html.includes("defaultBeamHeight"), "Member dimensions must act as automatic-design defaults while preserving manual sizes");
