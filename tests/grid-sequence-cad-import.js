@@ -18,10 +18,10 @@ assert.match(html, /accept="\.dxf,image\/png,image\/jpeg,\.png,\.jpg,\.jpeg" mul
 assert.doesNotMatch(html, /StrucForgeDwgConverter/, "the user-facing importer must not require a DWG converter");
 assert.doesNotMatch(html, /Overall outer-grid width, m|cadReferenceWidth/, "manual overall-width scaling must not be exposed");
 assert.match(html, /This will delete all existing drawings\. Are you sure you want to continue\?/, "the upload package must show the revised destructive-action warning");
-assert.match(html, /id="uploadDrawingsHoverWarning"/, "the upload warning must use a separately positioned tooltip beside the package strip");
+assert.match(html, /id="uploadDrawingsHoverWarning"[^>]*>Upload drawings \(Png image files only\)\./, "the Upload Drawings package must show the PNG-only hover guidance");
 assert.doesNotMatch(html, /title="This will delete all drawings in the drawing window"/, "the overlapping native upload tooltip must not be used");
-assert.match(html, /id="uploadDrawingsConfirmDialog"[\s\S]{0,500}This will delete all existing drawings\. Are you sure you want to continue\?/, "opening Upload Drawings must require the revised custom confirmation dialog");
-assert.match(html, /requestUploadDrawingsConfirmation\(toggle,/, "the Upload Drawings package must invoke the sidebar confirmation workflow");
+assert.match(html, /id="uploadDrawingsConfirmDialog"[\s\S]{0,500}This will delete all existing drawings\. Are you sure you want to continue\?/, "the destructive-action confirmation dialog must remain available for drawing replacement actions");
+assert.doesNotMatch(html, /requestUploadDrawingsConfirmation\(toggle,/, "opening Upload Drawings must only expand its dropdown and must not invoke destructive confirmation");
 assert.match(html, /function inferCadDrawingRole\(/, "drawing titles must map to FOUNDATION and LEVEL roles");
 assert.match(html, /function recognizeCadImageText\(/, "drawing OCR results must be reusable across title and geometry detection");
 assert.match(html, /const titleStart = image\.naturalHeight \* 0\.56;[\s\S]{0,260}>= titleStart/, "panel routing must read the lower drawing-title band instead of internal frame notes");
@@ -71,7 +71,8 @@ for (const id of ["uploadCadPackage", "structuralPlanPackage", "modelCreationPac
 }
 assert.match(html, /<section class="sidebar-package" id="uploadCadPackage">/, "Upload Drawings must be expanded in the initial HTML before scripts finish loading");
 assert.match(html, /renderStructuralSequence\(\{resetViews: true, activeView: "PLAN"\}\)/, "the opening drawing must default to Structural Plan");
-assert.match(html, /Click to edit \$\{kind\} name/, "member-name hover must show a compact click-to-edit hint");
+assert.doesNotMatch(html, /Click to edit \$\{kind\} name/, "ordinary member-name hover must not display the sensitive click-to-edit popup");
+assert.match(html, /member-name-editable-hover/, "an exact member-name hover must indicate editability through the mouse cursor");
 assert.doesNotMatch(html, /id="memberNameHoverInput"/, "member-name hover must no longer show the oversized inline editor");
 assert.match(html, /#memberNameDialog #memberNameDialogApply \{[^}]*background: #08766c;[^}]*color: #fff;/, "the Update Name action must have high-contrast text and background colors");
 assert.match(html, /#memberNameDialog input \{[^}]*background: #fff;[^}]*color: #070b0c;/, "the member-name field must remain legible against the dialog background");

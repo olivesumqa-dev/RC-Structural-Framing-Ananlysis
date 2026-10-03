@@ -50,13 +50,19 @@ const toolbarPrintBtn = document.getElementById("toolbarPrintBtn");
 const toolbarPrintPdfBtn = document.getElementById("toolbarPrintPdfBtn");
 const toolbarNewBtn = document.getElementById("toolbarNewBtn");
 const toolbarCalcBtn = document.getElementById("toolbarCalcBtn");
+const fontScaleSelect = document.getElementById("fontScaleSelect");
 function setTutorialDrawer(open) {
   if (!tutorialDrawer) return;
   tutorialDrawer.classList.toggle("open", open);
   tutorialDrawer.setAttribute("aria-hidden", open ? "false" : "true");
   tutorialToggle?.setAttribute("aria-expanded", open ? "true" : "false");
 }
-tutorialToggle?.addEventListener("click", () => setTutorialDrawer(!tutorialDrawer?.classList.contains("open")));
+window.strucForgeSetTutorialDrawer = setTutorialDrawer;
+window.strucForgeToggleTutorials = () => setTutorialDrawer(!tutorialDrawer?.classList.contains("open"));
+tutorialToggle?.addEventListener("click", event => {
+  event.preventDefault();
+  window.strucForgeToggleTutorials();
+});
 tutorialClose?.addEventListener("click", () => setTutorialDrawer(false));
 tutorialDrawerTab?.addEventListener("click", () => setTutorialDrawer(!tutorialDrawer?.classList.contains("open")));
 document.addEventListener("keydown", (event) => {
@@ -568,6 +574,7 @@ let fontScale = 1;
 let loadsVisible = true;
 const concreteUnitWeight = 24;
 let mainLabelBoxes = [];
+let mainMemberNameTargets = [];
 let resultLabelBoxes = [];
 
 function resizeCanvasToDisplaySize(target) {
@@ -798,6 +805,7 @@ function queueMemberPropertiesUpdate() {
 
 function draw(options = {}) {
   mainLabelBoxes = [];
+  mainMemberNameTargets = [];
   resizeCanvasToDisplaySize(canvas);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = themeColor("--surface", "#fff");
@@ -1112,6 +1120,7 @@ function drawMemberLabel(m, A, B) {
       {x: 0, y: scaled(-13)}
     ]);
     drawRotatedText(label, p.x, p.y, 0, "#c1121f");
+    mainMemberNameTargets.push({memberId: m.id, box: labelBox(p.x, p.y, label, scaled(1))});
   } else if (m.type === "Column") {
     const side = midX < canvas.width / 2 ? 1 : -1;
     const p = findClearLabelPoint(midX, midY, label, [
@@ -1128,6 +1137,13 @@ function drawMemberLabel(m, A, B) {
     drawRotatedText(label, midX + nx*scaled(14), midY + ny*scaled(14), angle, annotationColor());
   }
 }
+
+window.strucForgeXMemberNameAt = (px, py) => {
+  const hit = mainMemberNameTargets.slice().reverse().find(target =>
+    px >= target.box.x && px <= target.box.x + target.box.w &&
+    py >= target.box.y && py <= target.box.y + target.box.h);
+  return hit?.memberId ?? null;
+};
 
 function updateMemberPropertiesTable() {
   const body = document.getElementById("memberPropsBody");
@@ -2182,7 +2198,7 @@ canvas.addEventListener("click", e => {
     const clickedMember = getMemberAt(px, py);
     const gridPoint = getGridMemberIntersection(px, py) || getGridPoint(px, py);
 
-    // In Create Member Mode, clicking an existing member away from a node selects it.
+    // In Create Beams mode, clicking an existing member away from a node selects it.
     // This prevents accidental new-node creation when the user is trying to select a member.
     if (clickedMember && !nearNode && !gridPoint) {
       selectMember(clickedMember.id, additive);
@@ -2268,12 +2284,12 @@ generateGrid.onclick = () => {
   draw();
 };
 
-modeNode.onclick = () => { if (deleteMode) setDeleteMode(false); window.strucForgeXColumnMode = false; model.mode = "node"; model.selectedNodes = []; status("Node Mode."); draw(); };
+modeNode.onclick = () => { if (deleteMode) setDeleteMode(false); window.strucForgeXColumnMode = false; model.mode = "node"; model.selectedNodes = []; status("Create Node active. Click a grid intersection or an existing beam."); draw(); };
 modeMember.onclick = () => { if (deleteMode) setDeleteMode(false);
   window.strucForgeXColumnMode = false;
   model.mode = "member";
   model.selectedNodes = [];
-  status("Create Member Mode. Click first node/intersection, then second.");
+  status("Create Beams active. Click the first node, then continue clicking aligned nodes.");
   draw();
 };
 
@@ -2321,10 +2337,11 @@ if (themeToggleBtn) themeToggleBtn.onclick = () => setTheme(document.body.datase
 document.querySelectorAll("[data-theme-choice]").forEach(btn => {
   btn.onclick = () => setTheme(btn.dataset.themeChoice, true);
 });
-fontScaleSelect.onchange = () => {
+if (fontScaleSelect) fontScaleSelect.onchange = () => {
   fontScale = Number(fontScaleSelect.value) || 1;
   localStorage.setItem("strucforge_font_scale", String(fontScale));
   draw();
+  window.strucForgeRedrawScaledViews?.();
 };
 importJsonBtn.onclick = () => importJsonFile.click();
 importJsonFile.onchange = async () => { const file = importJsonFile.files && importJsonFile.files[0]; if (!file) return; try { const data = JSON.parse(await file.text()); currentFileHandle = null; loadProjectPackage(data, file.name); recordName.value = file.name.replace(/\.json$/i, ""); } catch (err) { status("Could not load JSON file. Check that it is a valid frame model."); } finally { importJsonFile.value = ""; } };
@@ -2618,7 +2635,7 @@ window.addEventListener("load", () => {
   fontScale = Number(localStorage.getItem("strucforge_font_scale")) || 1;
   loadsVisible = true;
   if (typeof toggleLoadsBtn !== "undefined" && toggleLoadsBtn) toggleLoadsBtn.textContent = "Show/Hide Loading";
-  fontScaleSelect.value = String(fontScale);
+  if (fontScaleSelect) fontScaleSelect.value = String(fontScale);
   document.querySelectorAll("[data-theme-choice]").forEach(btn => btn.classList.toggle("active", btn.dataset.themeChoice === document.body.dataset.theme));
   updateDayNightButtons();
   updateLockToggle();

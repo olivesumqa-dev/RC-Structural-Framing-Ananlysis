@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=53" />
+  <link rel="stylesheet" href="styles.css?v=56" />
   <style>
     .structural-sequence {
       display: grid;
@@ -374,7 +374,7 @@
       background: rgba(5, 21, 23, 0.97);
       color: #fff;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.36);
-      font: 700 9px/1.25 Arial, sans-serif;
+      font: 300 9px/1.25 "Aptos Light", Aptos, Arial, sans-serif;
       pointer-events: none;
       white-space: nowrap;
     }
@@ -500,6 +500,7 @@
     .drawing-toolbar.is-iso-mode > *:not(.iso-only-tool):not(.all-view-tool) { display: none; }
     .drawing-toolbar.is-iso-mode > .iso-only-tool { display: inline-flex; }
     canvas.name-editing-active { cursor: pointer !important; }
+    canvas.member-name-editable-hover { cursor: text !important; }
     #isometricCanvas.iso-rotation-active { cursor: ew-resize !important; }
     canvas.selection-tool-active,
     canvas.beam-selection-active { cursor: default !important; }
@@ -566,6 +567,20 @@
       background: #878181;
       border-top: 1px solid #6f6969;
       border-bottom: 1px solid #6f6969;
+    }
+    .unified-sticky-drawing-controls {
+      position: sticky;
+      top: 44px;
+      z-index: 90;
+      width: 100%;
+      background: #878181;
+    }
+    .unified-sticky-drawing-controls .drawing-control-row.plan-control-row {
+      position: static !important;
+      top: auto !important;
+    }
+    .unified-sticky-drawing-controls #statusLabel.unified-general-status {
+      position: static;
     }
     .drawing-control-row .drawing-toolbar {
       flex: 0 0 auto;
@@ -836,7 +851,7 @@
       font-size: 10.8px;
     }
     #beamResultsSection { overflow: visible; }
-    #beamResultsTable { min-width: 1700px !important; }
+    #beamResultsTable { min-width: 0 !important; }
     #beamResultsTable th,
     #beamResultsTable td {
       overflow-wrap: normal !important;
@@ -1371,14 +1386,14 @@
       font-size: 10.8px !important;
     }
     #columnResultsSection {
-      overflow-x: auto;
+      overflow-x: hidden;
     }
     #columnResultsTable {
-      min-width: 1850px;
+      min-width: 0;
     }
-    #columnResultsTable th:nth-child(18),
-    #columnResultsTable td:nth-child(18) {
-      width: 135px;
+    #columnResultsTable th:nth-child(24),
+    #columnResultsTable td:nth-child(24) {
+      width: 94px;
       overflow-wrap: normal;
       word-break: normal;
     }
@@ -1424,7 +1439,8 @@
       gap: 8px;
       min-height: 28px;
       padding: 4px 7px;
-      background: #878181;
+      background: #16845b;
+      color: #fff;
     }
     .member-props-title > .member-props-toggle,
     .results-subsection-title > .member-props-toggle,
@@ -1611,6 +1627,9 @@
     body[data-theme="green_teal"] .drawing-control-row {
       background: #11191b;
       border-color: #374649;
+    }
+    body[data-theme="green_teal"] .unified-sticky-drawing-controls {
+      background: #11191b;
     }
     body[data-theme="green_teal"] .member-results-sheet .member-props-table th,
     body[data-theme="green_teal"] .member-results-table thead tr:last-child th,
@@ -2095,7 +2114,7 @@
       </div>
 
       <section class="sidebar-package" id="uploadCadPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="uploadCadPackageContent" aria-describedby="uploadDrawingsHoverWarning" aria-label="Upload Drawings. This will delete all existing drawings. Are you sure you want to continue?">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (Png image files only).">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Upload Drawings</span>
         </button>
         <div class="sidebar-package-content" id="uploadCadPackageContent">
@@ -2164,7 +2183,7 @@
         </button>
         <div class="sidebar-package-content" id="modelCreationPackageContent">
         <p class="hint">
-          Plan columns: choose Create Column, then click a plan grid intersection. Node Mode can place a junction directly on a girder. In Plan Member mode, click one node and continue through each aligned node. Structural Wall Tool similarly creates continuous slab-supported walls between structural or auxiliary-grid nodes.
+          Plan columns: choose Create Column, then click a plan grid intersection. Create Node can place a junction directly on a girder. In Create Beams mode, click one node and continue through each aligned node. Structural Wall Tool similarly creates continuous slab-supported walls between structural or auxiliary-grid nodes.
         </p>
         <label>Editing Frame</label>
         <select id="activeFrameEditor">
@@ -2173,8 +2192,8 @@
           <option value="PLAN">Structural Plan</option>
         </select>
         <button id="modeColumn" type="button">Create Column</button>
-        <button id="modeNode">Node Mode</button>
-        <button id="modeMember">Create Structural Member</button>
+        <button id="modeNode">Create Node</button>
+        <button id="modeMember">Create Beams</button>
         <button id="modeWall" type="button" title="Create structural walls continuously between plan nodes">Structural Wall Tool</button>
         <button id="modeSelect">Select Member Mode</button>
         <button id="modeSupport">Support Mode</button>
@@ -2443,6 +2462,8 @@
       </section>
     </aside>
 
+    <div id="sidebarHelpTooltip" role="tooltip" hidden></div>
+
     <main>
 
       <section class="structural-sequence" id="structuralSequence">
@@ -2634,7 +2655,7 @@
       <dialog id="wallToolDialog" class="girder-direction-dialog wall-tool-dialog" aria-labelledby="wallToolTitle">
         <div class="girder-direction-dialog-inner">
           <h3 id="wallToolTitle">STRUCTURAL WALL TOOL</h3>
-          <p>Set the wall properties and openings. After Apply, click plan nodes continuously to create connected walls.</p>
+          <p>Set the wall properties and openings. After Apply, click plan nodes continuously to create connected walls. A wall without a coincident supporting beam is flagged as a slab failure and receives a preliminary calculated support-beam recommendation.</p>
           <div class="wall-tool-fields">
             <label for="wallToolUnitWeight">Wall unit weight, kN/m³<input id="wallToolUnitWeight" type="number" min="0.10" max="100" step="0.10" value="19.60"></label>
             <label for="wallToolHeight">Wall height, m<input id="wallToolHeight" type="number" min="0.10" max="20" step="0.01" value="3.00"></label>
@@ -2650,10 +2671,10 @@
         </div>
       </dialog>
 
-      <div id="uploadDrawingsHoverWarning" class="upload-drawings-hover-warning" hidden role="tooltip">This will delete all existing drawings. Are you sure you want to continue?</div>
+      <div id="uploadDrawingsHoverWarning" class="upload-drawings-hover-warning" hidden role="tooltip">Upload drawings (Png image files only).</div>
 
       <div id="memberNameHoverEditor" class="member-name-hover-editor" hidden role="tooltip">
-        <span id="memberNameHoverHint">Click to edit member name</span>
+        <span id="memberNameHoverHint">Click a point on this Beam</span>
       </div>
 
       <dialog id="memberNameDialog" class="girder-direction-dialog" aria-labelledby="memberNameDialogTitle">
@@ -2749,11 +2770,10 @@
         <div class="member-props-table" id="memberPropsTable">
           <div class="member-props-title">
             <button id="memberPropsToggle" class="member-props-toggle" type="button" title="Hide Member Properties / Results" aria-label="Hide Member Properties / Results">Hide</button>
-            <span>Member Properties / Results</span>
+            <span class="mpr-title-text">Member Properties / Results (MPR)</span>
             <span class="member-props-actions" aria-label="Member Properties and Results output tools">
               <button id="mprPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT" aria-label="Print Member Properties / Results" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button>
               <button id="mprPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF" aria-label="Print Member Properties / Results to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
-              <button id="mprExcelBtn" class="member-props-action" type="button" title="Export Member Properties / Results to Excel" aria-label="Export Member Properties / Results to Excel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h10v16H4zM14 7h6v13H10"></path><path d="m7 9 4 6M11 9l-4 6"></path></svg></button>
             </span>
           </div>
           <div class="results-subsection" id="beamResultsSection">
@@ -2774,7 +2794,7 @@
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="width">b, mm<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="height">h, mm<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="length">L, m<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
-                <th>A, mm2</th><th>I, mm4</th><th>E, MPa</th><th>DL, kN/m</th>
+                <th>A, mm2</th><th>I, mm4</th><th>E, MPa</th><th class="mpr-load-heading">DL, kN/m</th><th class="mpr-load-heading">LL, kN/m</th><th class="mpr-load-heading">Point, kN</th><th class="mpr-load-heading">Wall, kN/m</th><th class="mpr-load-heading">WL frame, kN</th><th class="mpr-load-heading">EQ frame, kN</th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="shear">Vu, kN<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="moment">Mu, kN-m<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="rebar">Rebar dia., mm<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
@@ -2782,7 +2802,7 @@
               </tr>
             </thead>
             <tbody id="memberPropsBody">
-              <tr><td colspan="20">No data</td></tr>
+              <tr><td colspan="25">No data</td></tr>
             </tbody>
           </table>
           </div>
@@ -2790,24 +2810,24 @@
             <div class="results-subsection-title"><button id="columnResultsToggle" class="member-props-toggle" type="button">Hide</button><span>COLUMNS</span><span class="results-subsection-actions" aria-label="Column table output tools"><button id="columnResultsPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT COLUMNS" aria-label="Print Columns" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button><button id="columnResultsPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF COLUMNS" aria-label="Print Columns to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button></span></div>
             <table class="column-results-table" id="columnResultsTable">
               <caption>COLUMNS</caption>
-              <thead><tr><th>Item No.</th><th>Column ID</th><th>Level</th><th>b, mm</th><th>h, mm</th><th>L, m</th><th>Ag, mm2</th><th>Pu, kN</th><th>Mux, kN-m</th><th>Muy, kN-m</th><th>Bar dia., mm</th><th>No. bars</th><th>Ast, mm2</th><th>rho, %</th><th>Tie dia., mm</th><th>Tie spacing, mm</th><th>PM ratio</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
-              <tbody id="columnResultsBody"><tr><td colspan="19">No column data. Place columns in the Structural Plan.</td></tr></tbody>
+              <thead><tr><th>Item No.</th><th>Column ID</th><th>Level</th><th>b, mm</th><th>h, mm</th><th>L, m</th><th>Ag, mm2</th><th class="mpr-load-heading">DL, kN</th><th class="mpr-load-heading">LL, kN</th><th class="mpr-load-heading">Point, kN</th><th class="mpr-load-heading">Wall, kN</th><th class="mpr-load-heading">WL frame, kN</th><th class="mpr-load-heading">EQ frame, kN</th><th>Pu, kN</th><th>Mux, kN-m</th><th>Muy, kN-m</th><th>Bar dia., mm</th><th>No. bars</th><th>Ast, mm2</th><th>rho, %</th><th>Tie dia., mm</th><th>Tie spacing, mm</th><th>PM ratio</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
+              <tbody id="columnResultsBody"><tr><td colspan="25">No column data. Place columns in the Structural Plan.</td></tr></tbody>
             </table>
           </div>
           <div class="results-subsection" id="slabResultsSection">
             <div class="results-subsection-title"><button id="slabResultsToggle" class="member-props-toggle" type="button">Hide</button><span>SLABS</span><span class="results-subsection-actions" aria-label="Slab table output tools"><button id="slabResultsPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT SLABS" aria-label="Print Slabs" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button><button id="slabResultsPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF SLABS" aria-label="Print Slabs to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button></span></div>
             <table class="slab-results-table" id="slabResultsTable">
               <caption>SLABS</caption>
-              <thead><tr><th>Item No.</th><th>Level</th><th>SLAB ID</th><th>Type</th><th>Lx, m</th><th>Ly, m</th><th>h, mm</th><th>wu, kPa</th><th>Mux, kN-m/m</th><th>Muy, kN-m/m</th><th>Rebar dia., mm</th><th>Top X spacing, mm</th><th>Top X extent</th><th>Top Y spacing, mm</th><th>Top Y extent</th><th>Bottom X spacing, mm</th><th>Bottom Y spacing, mm</th><th>Min. h, mm</th><th>Shear D/C</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
-              <tbody id="slabResultsBody"><tr><td colspan="21">Calculate to generate the top support and bottom field slab reinforcement layers.</td></tr></tbody>
+              <thead><tr><th>Item No.</th><th>Level</th><th>SLAB ID</th><th>Type</th><th>Lx, m</th><th>Ly, m</th><th>h, mm</th><th class="mpr-load-heading">DL, kPa</th><th class="mpr-load-heading">LL, kPa</th><th class="mpr-load-heading">Point</th><th class="mpr-load-heading">Wall, kPa</th><th class="mpr-load-heading">WL frame</th><th class="mpr-load-heading">EQ frame</th><th>wu, kPa</th><th>Mux, kN-m/m</th><th>Muy, kN-m/m</th><th>Rebar dia., mm</th><th>Top X spacing, mm</th><th>Top X extent</th><th>Top Y spacing, mm</th><th>Top Y extent</th><th>Bottom X spacing, mm</th><th>Bottom Y spacing, mm</th><th>Min. h, mm</th><th>Shear D/C</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
+              <tbody id="slabResultsBody"><tr><td colspan="27">Calculate to generate the top support and bottom field slab reinforcement layers.</td></tr></tbody>
             </table>
           </div>
           <div class="results-subsection" id="footingResultsSection">
             <div class="results-subsection-title"><button id="footingResultsToggle" class="member-props-toggle" type="button">Hide</button><span>FOOTINGS</span><span class="results-subsection-actions" aria-label="Footing table output tools"><button id="footingResultsPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT FOOTINGS" aria-label="Print Footings" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button><button id="footingResultsPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF FOOTINGS" aria-label="Print Footings to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button></span></div>
             <table class="footing-results-table" id="footingResultsTable">
               <caption>FOOTINGS</caption>
-              <thead><tr><th>Item No.</th><th>Footing</th><th>Type</th><th>B, m</th><th>L, m</th><th>h, mm</th><th>P service, kN</th><th>Pu, kN</th><th>q service, kPa</th><th>qu, kPa</th><th>Mux, kN-m/m</th><th>Muy, kN-m/m</th><th>X bar dia., mm</th><th>X spacing, mm</th><th>Y bar dia., mm</th><th>Y spacing, mm</th><th>1-way ratio</th><th>Punch ratio</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
-              <tbody id="footingResultsBody"><tr><td colspan="20">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr></tbody>
+              <thead><tr><th>Item No.</th><th>Footing</th><th>Type</th><th>B, m</th><th>L, m</th><th>h, mm</th><th class="mpr-load-heading">DL, kN</th><th class="mpr-load-heading">LL, kN</th><th class="mpr-load-heading">Point, kN</th><th class="mpr-load-heading">Wall, kN</th><th class="mpr-load-heading">WL frame, kN</th><th class="mpr-load-heading">EQ frame, kN</th><th>P service, kN</th><th>Pu, kN</th><th>q service, kPa</th><th>qu, kPa</th><th>Mux, kN-m/m</th><th>Muy, kN-m/m</th><th>X bar dia., mm</th><th>X spacing, mm</th><th>Y bar dia., mm</th><th>Y spacing, mm</th><th>1-way ratio</th><th>Punch ratio</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
+              <tbody id="footingResultsBody"><tr><td colspan="26">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr></tbody>
             </table>
           </div>
           <div id="coordinatedAnalysisSummary" class="analysis-audit warn">Calculate to audit the X and Y frame models.</div>
@@ -6724,7 +6744,7 @@
 }
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=62"></script>
+  <script src="app.js?v=66"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -6867,8 +6887,10 @@
       let workspaceDeleteMode = false;
       let auxiliaryLabelBoxes = [];
       let drawingGridBubbleBoxes = [];
+      let yFrameNameLabelTargets = [];
       let planSlabLabelTargets = [];
       let planNameLabelTargets = [];
+      const wallSupportRecommendationCache = new Map();
       let pendingMemberRenameTarget = null;
       let hoverMemberRenameTarget = null;
       let memberNameHoverHideTimer = null;
@@ -7521,38 +7543,9 @@
         document.querySelectorAll(".sidebar-package-toggle").forEach(toggle => {
           if (toggle.dataset.ready) return;
           toggle.dataset.ready = "true";
-          if (toggle.closest("#uploadCadPackage")) {
-            const warning = byId("uploadDrawingsHoverWarning");
-            const showWarning = () => {
-              if (!warning) return;
-              warning.hidden = false;
-              const strip = toggle.getBoundingClientRect();
-              const warningWidth = warning.offsetWidth || 190;
-              const fitsBeside = strip.right + warningWidth + 16 <= window.innerWidth;
-              const left = fitsBeside ? strip.right + 8 : Math.min(window.innerWidth - warningWidth - 8, strip.left);
-              const top = fitsBeside ? strip.top + (strip.height - warning.offsetHeight) / 2 : strip.bottom + 6;
-              warning.style.left = `${Math.max(8, left)}px`;
-              warning.style.top = `${Math.max(8, top)}px`;
-            };
-            toggle.addEventListener("mouseenter", showWarning);
-            toggle.addEventListener("focus", showWarning);
-            toggle.addEventListener("mouseleave", () => { if (warning) warning.hidden = true; });
-            toggle.addEventListener("blur", () => { if (warning) warning.hidden = true; });
-            toggle.addEventListener("click", () => { if (warning) warning.hidden = true; });
-          }
           toggle.addEventListener("click", () => {
             const section = toggle.closest(".sidebar-package");
             if (!section) return;
-            if (section.id === "uploadCadPackage" && section.classList.contains("is-collapsed")) {
-              requestUploadDrawingsConfirmation(toggle, () => {
-                triggerConfirmedNewDesign();
-                section.classList.remove("is-collapsed");
-                toggle.setAttribute("aria-expanded", "true");
-                activateCadWorkspace();
-                cadStatus("Existing drawings were cleared. Upload the replacement drawing sheet or titled drawing files.");
-              });
-              return;
-            }
             const collapsed = section.classList.toggle("is-collapsed");
             toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
             if (!collapsed && section.id === "structuralPlanPackage") deactivateCadWorkspace(false);
@@ -9053,6 +9046,214 @@
         }
       }
 
+      function installSidebarLearningHelp() {
+        const panel = document.querySelector(".panel");
+        const tooltip = byId("sidebarHelpTooltip");
+        if (!panel || !tooltip || panel.dataset.learningHelpReady) return;
+        panel.dataset.learningHelpReady = "true";
+        const helpById = {
+          beamWidth: "Precaution: treat this as a starting size and verify architectural clearance, bar fit, shear and fire requirements. What it is: the default horizontal breadth b of newly created beams; it affects shear area, bar arrangement, stiffness and concrete quantity.",
+          beamHeight: "Precaution: verify floor-to-floor headroom and include slab participation only when the adopted design method permits it. What it is: the default overall beam depth h; depth strongly affects flexural stiffness, deflection and moment capacity.",
+          columnWidth: "Precaution: verify minimum code size, reinforcement fit and architectural coordination. What it is: the default plan width b of a new column and the starting section used by automatic design.",
+          columnHeight: "Precaution: verify minimum code size, slenderness and reinforcement fit in the other plan direction. What it is: the default plan depth h of a new column.",
+          beamDim: "Precaution: this read-only text summarizes the active default dimensions; edit the width and height inputs instead. What it is: the beam section label shown in drawings and records.",
+          colDim: "Precaution: this read-only text summarizes the active default dimensions; edit the width and height inputs instead. What it is: the column section label shown in drawings and records.",
+          concreteStrength: "Precaution: use the specified 28-day strength from the structural specifications and approved mix design; do not substitute an unverified site estimate. What it is: f'c is the specified cylinder compressive strength of concrete and is used in member strength, shear and stiffness calculations.",
+          beamLongitudinalBarDiameter: "Precaution: confirm bar availability, spacing, development length, congestion and cover before construction. What it is: the diameter of the main bars running along a beam to resist flexural tension and compression.",
+          beamStirrupDiameter: "Precaution: verify shear demand, minimum transverse reinforcement, hooks and constructible spacing. What it is: the diameter of closed beam stirrups that resist shear and hold the longitudinal bars in position.",
+          rebarYieldStrength: "Precaution: use the certified grade actually supplied and the limit permitted by the selected design code and seismic system. What it is: fy is the stress at which reinforcing steel begins significant permanent yielding and is used to calculate reinforcement strength.",
+          beamClearCover: "Precaution: check exposure, fire rating and bar-size requirements; clear cover is measured to the outside of the stirrup. What it is: the protective concrete thickness between the beam surface and its nearest reinforcement.",
+          columnLongitudinalBarDiameter: "Precaution: check minimum and maximum steel ratio, clear spacing, lap or mechanical splices and joint congestion. What it is: the diameter of the vertical main bars that work with concrete to resist column axial force and bending.",
+          columnTieDiameter: "Precaution: verify seismic confinement zones, hooks and maximum spacing under the governing code. What it is: the diameter of transverse column ties that confine the core and restrain longitudinal bars against buckling.",
+          columnClearCover: "Precaution: confirm exposure and fire requirements and measure cover to the outside face of the tie. What it is: the protective concrete thickness from the column face to its nearest reinforcement.",
+          footingBarDiameter: "Precaution: verify development, spacing, available stock and soil-side cover. What it is: the diameter of the footing's principal flexural reinforcement, normally placed near the bottom to resist upward soil pressure.",
+          footingClearCover: "Precaution: concrete cast directly against earth commonly needs about 75 mm cover, but the project code and exposure class govern. What it is: the protective concrete distance between the footing surface and its nearest reinforcing bar.",
+          footingThickness: "Precaution: this is an initial value; punching shear, one-way shear, anchorage and bearing checks may require a deeper footing. What it is: the reference overall footing depth used to start automatic sizing.",
+          soilAllowableBearing: "Precaution: this number does not identify a soil type. A value such as 150 kPa is only a preliminary assumption; confirm the actual site value and settlement limits in a geotechnical report before design or construction. What it is: allowable soil bearing pressure (ASB) is the maximum service contact pressure permitted at foundation level after considering soil strength, groundwater, settlement and an appropriate safety basis; it is obtained from site investigation and geotechnical analysis.",
+          slabBarDiameter: "Precaution: verify spacing, cover, crack control and congestion at supports and openings. What it is: the selected diameter of slab flexural and shrinkage-temperature reinforcement used with the calculated bar spacing.",
+          slabClearCover: "Precaution: check whether the slab is interior, exposed, roof, ground-supported or fire-rated because required cover changes with exposure. What it is: the protective concrete distance from a slab surface to the nearest reinforcing bar.",
+          autoDesignEnabled: "Precaution: automatic results remain preliminary and require independent engineering review. What it is: ON allows the program to search for economical sizes and reinforcement that pass the implemented checks.",
+          autoDesignDisabled: "Precaution: failed checks will remain until the user revises the member. What it is: OFF keeps the manually entered member sizes as the design basis.",
+          beamStiffnessModifier: "Precaution: use the modifier required by the adopted concrete code and analysis purpose; cracking varies with load history and reinforcement. What it is: Ie/Ig reduces gross beam flexural stiffness to approximate cracked reinforced-concrete behavior.",
+          columnStiffnessModifier: "Precaution: confirm the value for braced or sway analysis and the selected code; it affects drift and moment distribution. What it is: Ie/Ig reduces gross column flexural stiffness to represent cracking.",
+          optimizationConcreteCost: "Precaution: this is a relative weighting, not a contractor quotation; keep all cost factors on a consistent basis. What it is: the optimization penalty assigned to one cubic metre of concrete.",
+          optimizationRebarCost: "Precaution: include fabrication and placement consistently if comparing alternatives. What it is: the relative optimization penalty assigned to one kilogram of reinforcing steel.",
+          optimizationFormworkCost: "Precaution: calibrate it to local labour and repetition; unusual shapes may cost more than their surface area suggests. What it is: the relative optimization penalty assigned to one square metre of formwork.",
+          allowableStoryDrift: "Precaution: select the limit from the governing code, risk category, structural system and nonstructural-component requirements. What it is: allowable interstory drift divided by story height; it limits lateral deformation under wind or earthquake action.",
+          matE: "Precaution: this generated value depends on the assumed concrete model and should agree with project specifications or test data. What it is: E is the concrete modulus of elasticity used to convert strain to stress and to calculate frame stiffness and deflection.",
+          secA: "Precaution: this read-only value follows the active section dimensions. What it is: gross cross-sectional area A used in axial stiffness and self-weight calculations.",
+          secI: "Precaution: this read-only gross value is modified separately for cracking where required. What it is: second moment of area I, a geometric measure governing flexural stiffness about the analysis axis.",
+          loadCodeBasis: "Precaution: select the legally adopted code and edition for the project location; legacy coefficients must not be mixed with a different standard. What it is: the ruleset that defines load values, combinations and wind or seismic procedures.",
+          occupancyType: "Precaution: confirm the actual use of every floor; storage, assembly and corridors can require much larger live loads than residential areas. What it is: the occupancy category used to select a preliminary floor live load.",
+          occupancyLiveLoad: "Precaution: verify the value against the governing code and actual occupancy, including concentrated-load requirements. What it is: a movable gravity load per unit floor area from people, furniture and use, excluding permanent construction.",
+          roofLiveLoad: "Precaution: verify roof access, maintenance, ponding, rain or snow provisions and permitted reductions. What it is: the temporary distributed load assigned to the roof surface.",
+          slabThickness: "Precaution: verify strength, deflection, vibration, fire rating and service penetrations; slab-on-fill rules differ from suspended slabs. What it is: the default reinforced-concrete slab depth used for self-weight and preliminary design.",
+          concreteDensity: "Precaution: use the specified normal-weight or lightweight concrete density; it directly changes dead load and seismic weight. What it is: concrete unit weight used to calculate self-weight from member volume.",
+          gravityLoadPath: "Precaution: the selected preliminary distribution must represent actual support continuity; irregular slabs need a more refined analysis. What it is: the rule used to distribute slab gravity load toward X beams, Y beams or both directions.",
+          floorTile: "Precaution: select only when this finish is present and replace the allowance with the specified assembly weight when known. What it is: an added permanent floor dead load for a 20 mm ceramic or quarry-tile finish.",
+          floorCeiling: "Precaution: include actual ceiling, framing and services when they exceed this allowance. What it is: a superimposed dead-load allowance for the ceiling below a typical floor.",
+          floorPartitions: "Precaution: confirm whether the adopted code permits a uniform partition allowance and separately model heavy masonry walls. What it is: a distributed dead-load allowance representing movable or unspecified internal partitions.",
+          roofWaterproofing: "Precaution: include insulation, screed, ballast and membranes from the actual roof build-up. What it is: a permanent roof dead-load allowance for smooth-surface waterproofing.",
+          roofCeiling: "Precaution: select only when a ceiling is supported from the roof framing and verify the actual assembly weight. What it is: a permanent load allowance applied only at the roof level.",
+          roofSolar: "Application: applied to the Roof Deck and Roof Beams only when selected. Precaution: verify panel, rail, ballast and attachment weights and check concentrated reactions, wind uplift and the existing roof capacity. What it is: an additional roof dead-load allowance for the photovoltaic system; it is not applied to ordinary floor slabs or floor beams.",
+          roofEquipment: "Application: applied to the Roof Deck and Roof Beams only when selected. Precaution: replace the allowance with actual equipment weights and support reactions when available. What it is: an additional roof dead load for mechanical equipment and associated supports; it is excluded from ordinary floor slabs and floor beams.",
+          windVelocity: "Precaution: obtain the code-mapped basic wind speed for the site, risk category and selected unit; do not use a weather forecast wind. What it is: the reference wind speed used to derive design velocity pressure.",
+          windVelocityUnit: "Precaution: confirm the unit before generating loads because an incorrect unit causes a major pressure error. What it is: the measurement unit assigned to the entered basic wind speed.",
+          windExposure: "Precaution: classify surrounding terrain in every direction using the governing code; exposure can change with direction. What it is: the surface-roughness category controlling how wind pressure grows with height.",
+          windDirection: "Precaution: analyze both signs when the structure or pressure distribution is not symmetric. What it is: the selected positive or negative application direction for generated wind forces.",
+          windKd: "Precaution: use the coefficient prescribed for the structure and load case; do not assume 0.85 is universal. What it is: wind directionality factor Kd accounting for the probability that maximum wind acts in the most adverse direction.",
+          windKzt: "Precaution: a site near hills, ridges or escarpments may need a value above 1.0 from a qualified wind assessment. What it is: topographic factor Kzt that modifies wind pressure for speed-up over terrain features.",
+          windNetCp: "Precaution: derive the coefficient from building geometry, enclosure classification and the governing pressure procedure. What it is: the net pressure coefficient combining external and internal pressure effects used by this simplified generator.",
+          eqZ: "Precaution: this is a legacy zone-based seismic input; verify that the selected code actually uses Z and obtain the site value from its seismic map. What it is: a regional seismic hazard factor used in the legacy equivalent-static procedure.",
+          eqI: "Precaution: determine the factor from the building risk or occupancy category in the adopted seismic code. What it is: the seismic importance factor that increases design demand for facilities requiring greater reliability.",
+          eqCa: "Precaution: obtain Ca from the adopted legacy code using seismic zone and site soil profile; do not mix it with modern spectral parameters. What it is: the short-period seismic coefficient used in the legacy base-shear formulation.",
+          eqCv: "Precaution: obtain Cv from the adopted legacy code using seismic zone and site soil profile. What it is: the longer-period seismic coefficient used to define period-dependent demand.",
+          eqNv: "Precaution: determine near-source effects from the applicable fault distance and source type; use 1.0 only when permitted. What it is: a legacy near-source factor modifying the velocity-related seismic coefficient.",
+          eqRx: "Precaution: R must match the actual seismic-force-resisting system and detailing in the X direction; a larger R assumes greater ductility and reduces design force. What it is: the response modification coefficient used to reduce elastic seismic demand to design-level strength demand.",
+          eqRy: "Precaution: R must match the actual seismic-force-resisting system and detailing in the Y direction. What it is: the response modification coefficient used for the Y-direction seismic design forces.",
+          eqCt: "Precaution: select Ct for the actual structural system and code equation, then check any upper period limit. What it is: the empirical coefficient used with building height to estimate the fundamental vibration period.",
+          eqLiveFraction: "Precaution: use the live-load participation required by the governing seismic code and occupancy; storage areas may differ. What it is: the fraction of floor live load included in effective seismic weight.",
+          eqAdditionalWeight: "Precaution: add only permanent mass not already counted, otherwise seismic weight will be duplicated. What it is: extra effective seismic weight assigned to every floor.",
+          eqDirection: "Precaution: check both directions and required combinations or orthogonal effects. What it is: the sign used when applying the generated earthquake forces.",
+          engineeringPointFy: "Precaution: downward load is negative; use the factored or service magnitude appropriate to the chosen analysis case and place it at the true beam location. What it is: a concentrated vertical force applied at the clicked point on a plan beam.",
+          wallDensity: "Precaution: use the actual wall material unit weight, including finishes where required. What it is: wall unit weight multiplied by thickness and net height to calculate line load.",
+          wallThickness: "Precaution: enter the actual structural or nonstructural wall thickness, excluding duplicated finishes. What it is: wall thickness used with height and unit weight to calculate beam or slab load.",
+          wallHeight: "Precaution: use the clear or tributary wall height represented by the model. What it is: vertical wall dimension used in line-load calculation.",
+          wallOpening: "Precaution: deduct only real openings and confirm lintels or concentrated jamb reactions separately. What it is: percentage reduction of gross wall weight for doors, windows and other openings.",
+          loadCase: "Precaution: assign the load to its true category because combinations apply different factors. What it is: the analysis load case—dead, superimposed dead, live, point, wind or earthquake.",
+          loadType: "Precaution: choose the representation that matches how the load enters the structure. What it is: node force, member uniform load or member point load applied to the analysis model.",
+          fx: "Precaution: confirm the sign convention and coordinate direction. What it is: horizontal nodal force component in kN.",
+          fy: "Precaution: confirm the sign convention; downward gravity force is normally negative. What it is: vertical nodal force component in kN.",
+          mz: "Precaution: confirm the positive rotational convention. What it is: applied nodal moment about the frame's out-of-plane axis in kN-m.",
+          wudl: "Precaution: enter force per unit member length and verify the load case. What it is: vertical uniformly distributed member load in kN/m.",
+          wudlX: "Precaution: confirm the local or global horizontal convention used by the frame. What it is: horizontal uniformly distributed member load in kN/m.",
+          pload: "Precaution: confirm magnitude, sign, load case and exact position before assignment. What it is: concentrated force applied to a member in kN.",
+          ploadX: "Precaution: the distance must fall within the member length and use the stated member-end reference. What it is: point-load position along the selected member in metres.",
+          annotationColor: "Precaution: maintain contrast with the active day or night drawing background. What it is: color assigned to new or edited annotation lines and text.",
+          annotationWidth: "Precaution: avoid widths that obscure structural members or dimensions. What it is: display thickness of an annotation line.",
+          annotationLineType: "Precaution: reserve hidden or centre patterns for their intended drafting meaning. What it is: stroke pattern assigned to annotation lines.",
+          annotationTextSize: "Precaution: keep plotted text legible without covering member information. What it is: drawing annotation font size.",
+          planLevelCount: "Precaution: include the foundation as instructed and verify that the generated level list matches the architectural elevations. What it is: total number of modeled levels used to create plan and frame views.",
+          planXFrameLine: "Precaution: confirm the selected grid contains the frame you intend to inspect. What it is: Y-grid location of the displayed X-direction structural frame.",
+          planYFrameLine: "Precaution: confirm the selected grid contains the frame you intend to inspect. What it is: X-grid location of the displayed Y-direction structural frame.",
+          assignSelectedProps: "Precaution: review the selection before applying because the command changes member properties. What it is: assigns the current editable properties to the selected members."
+        };
+        const packageHelpBySectionId = {
+          uploadCadPackage: "Upload drawings (Png image files only).",
+          structuralPlanPackage: "Create your Structural Plans Here.",
+          modelCreationPackage: "Finish you Structl Plans by creating Columns, Beams & Footings",
+          saveLoadPackage: "Save / Open Project/s Here",
+          memberPropertiesPackage: "Default Struct'l Member Properties. Edit later in MPR to adjust sizes, reinforcements etc.",
+          loadAnalysisPackage: "Assign Loadings here & Calculate (e.g. LL, WL, EQ etc.)"
+        };
+        const labelFor = control => {
+          if (!control) return "";
+          if (control.id) {
+            const explicit = Array.from(panel.querySelectorAll("label[for]")).find(label => label.htmlFor === control.id);
+            if (explicit) return explicit.textContent.trim();
+          }
+          const containing = control.closest("label");
+          if (containing) return containing.textContent.trim();
+          const previous = control.previousElementSibling;
+          return previous?.tagName === "LABEL" ? previous.textContent.trim() : "";
+        };
+        const genericHelp = element => {
+          const text = (element.matches("input, select, textarea") ? labelFor(element) : element.textContent).replace(/\s+/g, " ").trim();
+          if (element.classList.contains("sidebar-package-toggle") || element.matches("details.sidebar-subgroup > summary")) return `Section: ${text || "sidebar controls"}. What it is: open or close this related group of project inputs and commands.`;
+          if (element.matches("button")) return `Action: ${text || "run this command"}. Precaution: confirm the current selection and read Current Processes after clicking for the next required action. What it is: a command in the structural drawing and design workflow.`;
+          if (element.matches("input, select, textarea")) return `Precaution: verify this entry, its unit and its project source before relying on the results. What it is: ${text || "this value"} is an input used by the drawing, structural model or calculations.`;
+          return text ? `Data group: ${text}. Precaution: review its inputs before calculation. What it is: related guidance for the structural drawing and design workflow.` : "Precaution: verify the active project data. What it is: guidance for the structural drawing and design workflow.";
+        };
+        const unitById = {
+          beamWidth: "mm", beamHeight: "mm", columnWidth: "mm", columnHeight: "mm",
+          concreteStrength: "MPa", beamLongitudinalBarDiameter: "mm", beamStirrupDiameter: "mm", rebarYieldStrength: "MPa", beamClearCover: "mm",
+          columnLongitudinalBarDiameter: "mm", columnTieDiameter: "mm", columnClearCover: "mm", footingBarDiameter: "mm", footingClearCover: "mm", footingThickness: "mm", soilAllowableBearing: "kPa", slabBarDiameter: "mm", slabClearCover: "mm",
+          optimizationConcreteCost: "relative/m³", optimizationRebarCost: "relative/kg", optimizationFormworkCost: "relative/m²",
+          matE: "MPa", secA: "mm²", secI: "mm⁴", occupancyLiveLoad: "kPa", roofLiveLoad: "kPa", slabThickness: "mm", concreteDensity: "kN/m³",
+          windVelocity: "", engineeringPointFy: "kN", wallDensity: "kN/m³", wallThickness: "m", wallHeight: "m", wallOpening: "%",
+          fx: "kN", fy: "kN", mz: "kN-m", wudl: "kN/m", wudlX: "kN/m", pload: "kN", ploadX: "m"
+        };
+        const displayNameById = {
+          concreteStrength: "Concrete strength f'c", rebarYieldStrength: "Rebar yield strength fy", soilAllowableBearing: "Allowable soil bearing (ASB)",
+          roofSolar: "Solar-panel roof load", windKd: "Wind directionality Kd", windKzt: "Topographic factor Kzt", windNetCp: "Net wind-pressure coefficient",
+          eqZ: "Seismic zone factor Z", eqI: "Seismic importance factor I", eqCa: "Seismic coefficient Ca", eqCv: "Seismic coefficient Cv", eqNv: "Near-source factor Nv",
+          eqRx: "Response modification R-X", eqRy: "Response modification R-Y", eqCt: "Period coefficient Ct"
+        };
+        const currentDataLine = (target, control) => {
+          if (!control || !control.matches?.("input, select, textarea")) return "";
+          const id = control.id || "";
+          const name = displayNameById[id] || labelFor(control).replace(/\s+/g, " ").trim() || id || "Current input";
+          if (control.type === "file") return `Data: ${name} = ${control.files?.length ? `${control.files.length} file(s) selected` : "no file selected"}.`;
+          if (control.type === "checkbox") {
+            const load = control.dataset.load;
+            const output = control.closest(".check-line")?.querySelector("output")?.textContent?.trim();
+            const value = output || (load ? `${load} kPa` : "option");
+            return `Data: ${name} = ${value} (${control.checked ? "selected" : "not selected"}).`;
+          }
+          const value = control.tagName === "SELECT" ? (control.selectedOptions?.[0]?.textContent?.trim() || control.value) : control.value;
+          if (value == null || value === "") return `Data: ${name} has no current value.`;
+          let unit = unitById[id] || "";
+          if (id === "windVelocity") unit = byId("windVelocityUnit")?.selectedOptions?.[0]?.textContent?.trim() || "";
+          return `Data: ${name} = ${value}${unit ? ` ${unit}` : ""}.`;
+        };
+        const candidates = panel.querySelectorAll(".sidebar-package-toggle, details.sidebar-subgroup > summary, label, button, input, select, textarea, .hint, .load-summary, .member-default-dimension-note");
+        candidates.forEach(element => {
+          if (element.type === "hidden" || element.hidden) return;
+          const control = element.matches("label")
+            ? element.querySelector("input, select, textarea") || (element.htmlFor ? byId(element.htmlFor) : null) || element.nextElementSibling
+            : element;
+          const packageHelp = element.classList.contains("sidebar-package-toggle")
+            ? packageHelpBySectionId[element.closest(".sidebar-package")?.id]
+            : "";
+          const help = packageHelp || helpById[control?.id] || helpById[element.id] || genericHelp(element);
+          if (!help) return;
+          element.dataset.sidebarHelp = help;
+          if (control?.id) element.dataset.sidebarHelpControl = control.id;
+          element.setAttribute("aria-describedby", "sidebarHelpTooltip");
+        });
+        let activeTarget = null;
+        const placeTooltip = target => {
+          const help = target?.dataset?.sidebarHelp;
+          if (!help) return;
+          const control = target.dataset.sidebarHelpControl ? byId(target.dataset.sidebarHelpControl) : (target.matches?.("input, select, textarea") ? target : null);
+          const dataLine = currentDataLine(target, control);
+          const text = `${dataLine}${dataLine ? " " : ""}${help}`;
+          activeTarget = target;
+          tooltip.textContent = text;
+          tooltip.hidden = false;
+          const bounds = target.getBoundingClientRect();
+          const tooltipBounds = tooltip.getBoundingClientRect();
+          let left = bounds.right + 8;
+          if (left + tooltipBounds.width > window.innerWidth - 8) left = Math.max(8, bounds.left - tooltipBounds.width - 8);
+          const top = Math.max(8, Math.min(window.innerHeight - tooltipBounds.height - 8, bounds.top + bounds.height / 2 - tooltipBounds.height / 2));
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top = `${top}px`;
+        };
+        const hideTooltip = target => {
+          if (target && activeTarget !== target) return;
+          tooltip.hidden = true;
+          activeTarget = null;
+        };
+        panel.addEventListener("pointerover", event => {
+          const target = event.target.closest("[data-sidebar-help]");
+          if (target && panel.contains(target)) placeTooltip(target);
+        });
+        panel.addEventListener("pointerout", event => {
+          const target = event.target.closest("[data-sidebar-help]");
+          if (target && !target.contains(event.relatedTarget)) hideTooltip(target);
+        });
+        panel.addEventListener("focusin", event => {
+          const target = event.target.closest("[data-sidebar-help]");
+          if (target) placeTooltip(target);
+        });
+        panel.addEventListener("focusout", event => {
+          const target = event.target.closest("[data-sidebar-help]");
+          if (target) hideTooltip(target);
+        });
+        window.addEventListener("scroll", () => activeTarget ? placeTooltip(activeTarget) : null, true);
+        window.addEventListener("resize", () => activeTarget ? placeTooltip(activeTarget) : null);
+      }
+
       function setCalculationDirty(dirty) {
         const nextDirty = !!dirty;
         const changed = calculationDirty !== nextDirty;
@@ -9524,6 +9725,16 @@
         return planState.levelWalls[key];
       }
 
+      function structuralWallWeightAtLevel(levelIndex) {
+        return planLevelWalls(levelIndex).reduce((sum, wall) => {
+          const length = Math.max(0, Number(wall.length) || Math.hypot(
+            Number(wall.endPoint?.x) - Number(wall.startPoint?.x),
+            Number(wall.endPoint?.y) - Number(wall.startPoint?.y)
+          ));
+          return sum + Math.max(0, Number(wall.netLineLoad) || 0) * length;
+        }, 0);
+      }
+
       function planMemberDeletionKey(levelIndex, memberId) {
         return `${Number(levelIndex)}|${String(memberId || "")}`;
       }
@@ -9981,6 +10192,10 @@
         const yCanvas = byId("yAxisCanvas");
         if (!stage || !controlRow || !xSheet || !ySheet || !xCanvas || !yCanvas || stage.dataset.ready) return;
         stage.dataset.ready = "true";
+        const stickyControls = document.createElement("div");
+        stickyControls.className = "unified-sticky-drawing-controls";
+        controlRow.parentElement.insertBefore(stickyControls, controlRow);
+        stickyControls.appendChild(controlRow);
         const commandBank = document.createElement("div");
         commandBank.className = "unified-frame-command-bank";
         commandBank.append(xSheet.querySelector(".drawing-control-row"), ySheet.querySelector(".drawing-control-row"));
@@ -10002,7 +10217,7 @@
         const generalStatus = byId("statusLabel");
         if (generalStatus) {
           generalStatus.className = "unified-general-status";
-          controlRow.insertAdjacentElement("afterend", generalStatus);
+          stickyControls.appendChild(generalStatus);
         }
 
         const routedTools = {
@@ -10466,7 +10681,7 @@
         ctx.fillStyle = canvasTheme("--surface", "#ffffff");
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = canvasTheme("--muted", "#64748b");
-        ctx.font = `300 17px ${DRAWING_FONT_FAMILY}`;
+        ctx.font = `300 ${scaledDrawingTextSize(17, 8)}px ${DRAWING_FONT_FAMILY}`;
         ctx.textAlign = "center";
         ctx.fillText("Source preview is kept in the Upload Drawings sidebar.", canvas.width / 2, canvas.height / 2 - 12);
         ctx.fillText("Choose Import & Analyze to create the native frame view.", canvas.width / 2, canvas.height / 2 + 16);
@@ -10497,7 +10712,7 @@
         ctx.fillStyle = canvasTheme("--surface", "#ffffff");
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = canvasTheme("--muted", "#64748b");
-        ctx.font = `300 18px ${DRAWING_FONT_FAMILY}`;
+        ctx.font = `300 ${scaledDrawingTextSize(18, 8)}px ${DRAWING_FONT_FAMILY}`;
         ctx.textAlign = "center";
         ctx.fillText(cadImportState.sources.length
           ? "Source panels are ready in the sidebar. Choose Import & Analyze to create native drawings."
@@ -11127,7 +11342,7 @@
           ctx.save();
           ctx.translate(x, y);
           ctx.rotate(angle);
-          ctx.font = `300 ${fontSize}px ${DRAWING_FONT_FAMILY}`;
+          ctx.font = `300 ${scaledDrawingTextSize(fontSize)}px ${DRAWING_FONT_FAMILY}`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           // ISO member labels intentionally have no backing rectangle. This keeps
@@ -11227,7 +11442,7 @@
           ctx.fill();
           ctx.stroke();
           ctx.fillStyle = color;
-          ctx.font = `300 11px ${DRAWING_FONT_FAMILY}`;
+          ctx.font = `300 ${scaledDrawingTextSize(11)}px ${DRAWING_FONT_FAMILY}`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(String(label), bubble.x, bubble.y + 0.5);
@@ -11371,9 +11586,9 @@
         ctx.save();
         ctx.fillStyle = ink;
         ctx.textAlign = "left";
-        ctx.font = `300 18px ${DRAWING_FONT_FAMILY}`;
+        ctx.font = `300 ${scaledDrawingTextSize(18, 8)}px ${DRAWING_FONT_FAMILY}`;
         ctx.fillText("3D ISOMETRIC STRUCTURAL VIEW", 28, 38);
-        ctx.font = `300 11px ${DRAWING_FONT_FAMILY}`;
+        ctx.font = `300 ${scaledDrawingTextSize(11)}px ${DRAWING_FONT_FAMILY}`;
         ctx.fillStyle = "#ff7a00";
         ctx.fillText(`X-AXIS FRAME @ GRID ${selectedY}`, 28, 61);
         ctx.fillStyle = "#00d43b";
@@ -11462,7 +11677,7 @@
         const label = `${Math.hypot(annotation.p2.x - annotation.p1.x, annotation.p2.y - annotation.p1.y).toFixed(2)} m`;
         context.translate((q1.x + q2.x) / 2 - nx * 9, (q1.y + q2.y) / 2 - ny * 9);
         context.rotate(angle);
-        context.font = `300 12px ${DRAWING_FONT_FAMILY}`;
+        context.font = `300 ${scaledDrawingTextSize(12)}px ${DRAWING_FONT_FAMILY}`;
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.fillText(label, 0, 0);
@@ -11490,7 +11705,7 @@
             drawAnnotationDimension(context, annotation, point, projectPoint(annotation.p2), dimensionPlacements.get(annotation.id) || (annotation.p3 ? projectPoint(annotation.p3) : null));
           } else if (annotation.kind === "TEXT") {
             context.setLineDash([]);
-            context.font = `300 ${Math.max(8, Number(annotation.textSize) || 14)}px ${DRAWING_FONT_FAMILY}`;
+            context.font = `300 ${scaledDrawingTextSize(Math.max(8, Number(annotation.textSize) || 14), 8)}px ${DRAWING_FONT_FAMILY}`;
             context.textAlign = "left";
             context.textBaseline = "middle";
             context.fillText(annotation.text || "", point.x, point.y);
@@ -11888,7 +12103,7 @@
             }
           } else if (annotation.kind === "TEXT") {
             context.save();
-            context.font = `300 ${Math.max(8, Number(annotation.textSize) || 14)}px ${DRAWING_FONT_FAMILY}`;
+            context.font = `300 ${scaledDrawingTextSize(Math.max(8, Number(annotation.textSize) || 14), 8)}px ${DRAWING_FONT_FAMILY}`;
             const width = context.measureText(annotation.text || "").width;
             context.restore();
             const dx = Math.max(point.x - canvasPoint.x, 0, canvasPoint.x - point.x - width);
@@ -12156,7 +12371,7 @@
             );
           } else if (annotation.kind === "TEXT") {
             context.save();
-            context.font = `${Math.max(300, Number(annotation.textWeight) || 300)} ${Math.max(8, Number(annotation.textSize) || 14)}px ${DRAWING_FONT_FAMILY}`;
+            context.font = `${Math.max(300, Number(annotation.textWeight) || 300)} ${scaledDrawingTextSize(Math.max(8, Number(annotation.textSize) || 14), 8)}px ${DRAWING_FONT_FAMILY}`;
             const width = context.measureText(annotation.text || "").width;
             context.restore();
             const dx = Math.max(point.x - canvasPoint.x, 0, canvasPoint.x - point.x - width);
@@ -12663,7 +12878,7 @@
         }
       }
 
-      function nearestPlanMemberHit(canvasPoint, data) {
+      function nearestPlanMemberHit(canvasPoint, data, maximumScreenDistance = 14) {
         const canvas = byId("structuralPlanCanvas");
         if (!canvas) return null;
         const totalX = data.xPos[data.xPos.length - 1] || 1;
@@ -12682,7 +12897,7 @@
           const a = {x: t.x(endpoints.start.x), y: t.y(endpoints.start.y)};
           const b = {x: t.x(endpoints.end.x), y: t.y(endpoints.end.y)};
           const distance = distanceToSegment(local.x, local.y, a, b);
-          if (distance > 14 / planView.zoom || (nearest && distance >= nearest.distance)) return;
+          if (distance > maximumScreenDistance / planView.zoom || (nearest && distance >= nearest.distance)) return;
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const denominator = dx * dx + dy * dy || 1;
@@ -12863,6 +13078,319 @@
         return true;
       }
 
+      function planBeamSegmentsForLevel(levelIndex, data = makePlanData()) {
+        const segments = [];
+        const isGroundPlan = Number(levelIndex) === 0;
+        const coreX = isGroundPlan ? data.xLabels.slice(1, -1) : data.xLabels.slice();
+        const coreY = isGroundPlan ? data.yLabels.slice(1, -1) : data.yLabels.slice();
+        const memberType = isGroundPlan ? "Tie Beam" : "Beam";
+        const memberPrefix = isGroundPlan ? "TB1" : `B${Number(levelIndex) + 1}`;
+        coreY.forEach(yLabel => {
+          const drawnGroups = new Set();
+          for (let index = 0; index < coreX.length - 1; index += 1) {
+            const memberId = `${memberPrefix}-${yLabel}-${coreX[index]}${coreX[index + 1]}`;
+            if (isGeneratedPlanMemberDeleted(levelIndex, memberId)) continue;
+            const group = generatedBeamGroup(levelIndex, "X", yLabel, index, coreX, memberPrefix);
+            if (drawnGroups.has(group.designGroupId)) continue;
+            drawnGroups.add(group.designGroupId);
+            const startIndex = data.xLabels.indexOf(coreX[group.startIndex]);
+            const endIndex = data.xLabels.indexOf(coreX[group.endIndex]);
+            const lineIndex = data.yLabels.indexOf(yLabel);
+            if (startIndex < 0 || endIndex < 0 || lineIndex < 0) continue;
+            segments.push({
+              id: group.id,
+              name: group.name,
+              type: memberType,
+              levelIndex: Number(levelIndex),
+              axis: "X",
+              frameLine: yLabel,
+              components: group.components.slice(),
+              generated: true,
+              startPoint: {x: data.xPos[startIndex], y: data.yPos[lineIndex]},
+              endPoint: {x: data.xPos[endIndex], y: data.yPos[lineIndex]}
+            });
+          }
+        });
+        coreX.forEach(xLabel => {
+          const drawnGroups = new Set();
+          for (let index = 0; index < coreY.length - 1; index += 1) {
+            const memberId = `${memberPrefix}-${xLabel}-${coreY[index]}${coreY[index + 1]}`;
+            if (isGeneratedPlanMemberDeleted(levelIndex, memberId)) continue;
+            const group = generatedBeamGroup(levelIndex, "Y", xLabel, index, coreY, memberPrefix);
+            if (drawnGroups.has(group.designGroupId)) continue;
+            drawnGroups.add(group.designGroupId);
+            const lineIndex = data.xLabels.indexOf(xLabel);
+            const startIndex = data.yLabels.indexOf(coreY[group.startIndex]);
+            const endIndex = data.yLabels.indexOf(coreY[group.endIndex]);
+            if (lineIndex < 0 || startIndex < 0 || endIndex < 0) continue;
+            segments.push({
+              id: group.id,
+              name: group.name,
+              type: memberType,
+              levelIndex: Number(levelIndex),
+              axis: "Y",
+              frameLine: xLabel,
+              components: group.components.slice(),
+              generated: true,
+              startPoint: {x: data.xPos[lineIndex], y: data.yPos[startIndex]},
+              endPoint: {x: data.xPos[lineIndex], y: data.yPos[endIndex]}
+            });
+          }
+        });
+        planLevelMembers(levelIndex).forEach(member => {
+          const points = planMemberModelPoints(member, data);
+          const axis = planMemberAxis(member, data);
+          if (!points || !axis || !["Beam", "Tie Beam"].includes(member.type || "Beam")) return;
+          segments.push({
+            ...member,
+            name: member.name || member.id,
+            type: member.type || "Beam",
+            levelIndex: Number(levelIndex),
+            axis,
+            frameLine: member.frameLine || (axis === "X" ? member.y1 : member.x1),
+            sourcePlanMemberId: member.id,
+            components: member.components?.length ? member.components.slice() : [],
+            generated: false,
+            startPoint: points.start,
+            endPoint: points.end
+          });
+        });
+        return segments;
+      }
+
+      function wallSupportingBeamCoverage(wall, data = makePlanData()) {
+        const start = wall?.startPoint || {};
+        const end = wall?.endPoint || {};
+        const dx = Number(end.x) - Number(start.x);
+        const dy = Number(end.y) - Number(start.y);
+        const length = Math.hypot(dx, dy);
+        if (!(length > 1e-6)) return {supported: false, length: 0, coverage: 0, matches: []};
+        const ux = dx / length;
+        const uy = dy / length;
+        const tolerance = 0.025;
+        const matches = [];
+        planBeamSegmentsForLevel(Number(wall.levelIndex), data).forEach(member => {
+          const a = member.startPoint;
+          const b = member.endPoint;
+          const memberDx = Number(b.x) - Number(a.x);
+          const memberDy = Number(b.y) - Number(a.y);
+          const memberLength = Math.hypot(memberDx, memberDy);
+          if (!(memberLength > 1e-6)) return;
+          const parallelError = Math.abs(ux * memberDy / memberLength - uy * memberDx / memberLength);
+          const distanceA = Math.abs((Number(a.x) - Number(start.x)) * uy - (Number(a.y) - Number(start.y)) * ux);
+          const distanceB = Math.abs((Number(b.x) - Number(start.x)) * uy - (Number(b.y) - Number(start.y)) * ux);
+          if (parallelError > 0.01 || Math.max(distanceA, distanceB) > tolerance) return;
+          const projectionA = (Number(a.x) - Number(start.x)) * ux + (Number(a.y) - Number(start.y)) * uy;
+          const projectionB = (Number(b.x) - Number(start.x)) * ux + (Number(b.y) - Number(start.y)) * uy;
+          const intervalStart = Math.max(0, Math.min(projectionA, projectionB));
+          const intervalEnd = Math.min(length, Math.max(projectionA, projectionB));
+          if (intervalEnd - intervalStart <= tolerance) return;
+          matches.push({member, start: intervalStart, end: intervalEnd, overlapLength: intervalEnd - intervalStart});
+        });
+        const merged = matches
+          .map(match => ({start: match.start, end: match.end}))
+          .sort((left, right) => left.start - right.start)
+          .reduce((intervals, interval) => {
+            const previous = intervals[intervals.length - 1];
+            if (previous && interval.start <= previous.end + tolerance) previous.end = Math.max(previous.end, interval.end);
+            else intervals.push({...interval});
+            return intervals;
+          }, []);
+        const coverage = merged.reduce((sum, interval) => sum + Math.max(0, interval.end - interval.start), 0);
+        const continuous = merged.length === 1 && merged[0].start <= tolerance && merged[0].end >= length - tolerance;
+        return {supported: continuous, length, coverage, matches};
+      }
+
+      function wallTouchesSlabRegion(wall, region, data = makePlanData()) {
+        return wallLengthInsideSlabRegion(wall, region, data) > 1e-7;
+      }
+
+      function wallLengthInsideSlabRegion(wall, region, data = makePlanData()) {
+        if (Number(wall?.levelIndex) !== Number(region?.levelIndex)) return 0;
+        const start = wall?.startPoint || {};
+        const end = wall?.endPoint || {};
+        const x0 = Number(start.x);
+        const y0 = Number(start.y);
+        const dx = Number(end.x) - x0;
+        const dy = Number(end.y) - y0;
+        const length = Math.hypot(dx, dy);
+        if (!(length > 1e-8)) return 0;
+        const intervals = [];
+        (region?.cells || []).forEach(cell => {
+          const minX = Math.min(data.xPos[cell.xIndex], data.xPos[cell.xIndex + 1]);
+          const maxX = Math.max(data.xPos[cell.xIndex], data.xPos[cell.xIndex + 1]);
+          const minY = Math.min(data.yPos[cell.yIndex], data.yPos[cell.yIndex + 1]);
+          const maxY = Math.max(data.yPos[cell.yIndex], data.yPos[cell.yIndex + 1]);
+          let entry = 0;
+          let exit = 1;
+          const tests = [[-dx, x0 - minX], [dx, maxX - x0], [-dy, y0 - minY], [dy, maxY - y0]];
+          for (const [direction, distance] of tests) {
+            if (Math.abs(direction) < 1e-12) {
+              if (distance < -1e-9) return;
+              continue;
+            }
+            const ratio = distance / direction;
+            if (direction < 0) entry = Math.max(entry, ratio);
+            else exit = Math.min(exit, ratio);
+          }
+          if (exit > entry + 1e-9) intervals.push({start: Math.max(0, entry), end: Math.min(1, exit)});
+        });
+        intervals.sort((left, right) => left.start - right.start);
+        const merged = [];
+        intervals.forEach(interval => {
+          const previous = merged[merged.length - 1];
+          if (previous && interval.start <= previous.end + 1e-9) previous.end = Math.max(previous.end, interval.end);
+          else merged.push({...interval});
+        });
+        return merged.reduce((sum, interval) => sum + Math.max(0, interval.end - interval.start) * length, 0);
+      }
+
+      function slabWallLoadSummary(region, data = makePlanData()) {
+        const slabArea = (region?.cells || []).reduce((sum, cell) => {
+          const width = Math.abs(Number(data.xPos[cell.xIndex + 1]) - Number(data.xPos[cell.xIndex]));
+          const height = Math.abs(Number(data.yPos[cell.yIndex + 1]) - Number(data.yPos[cell.yIndex]));
+          return sum + width * height;
+        }, 0);
+        const receivingRegions = slabRegions(region.levelIndex, data).filter(candidate => !candidate.open);
+        const walls = planLevelWalls(region.levelIndex).map(wall => {
+          const lengthInside = wallLengthInsideSlabRegion(wall, region, data);
+          const support = wallSupportingBeamCoverage(wall, data);
+          const wallLength = Math.max(0, Number(wall.length) || Math.hypot(
+            Number(wall.endPoint?.x) - Number(wall.startPoint?.x),
+            Number(wall.endPoint?.y) - Number(wall.startPoint?.y)
+          ));
+          const summedReceivingLength = receivingRegions.reduce((sum, candidate) => sum + wallLengthInsideSlabRegion(wall, candidate, data), 0);
+          const allocationFactor = summedReceivingLength > wallLength + 1e-8 ? wallLength / summedReceivingLength : 1;
+          const force = Math.max(0, Number(wall.netLineLoad) || 0) * lengthInside * allocationFactor;
+          return {wall, support, lengthInside, allocationFactor, force};
+        }).filter(item => item.lengthInside > 1e-7);
+        const slabCarriedWalls = walls.filter(item => !item.support.supported);
+        const totalForce = slabCarriedWalls.reduce((sum, item) => sum + item.force, 0);
+        return {
+          walls,
+          slabCarriedWalls,
+          slabArea,
+          totalForce,
+          equivalentDeadPressure: slabArea > 1e-9 ? totalForce / slabArea : 0
+        };
+      }
+
+      function wallBeamTributaryWidth(wall, data = makePlanData()) {
+        const dx = Number(wall.endPoint?.x) - Number(wall.startPoint?.x);
+        const dy = Number(wall.endPoint?.y) - Number(wall.startPoint?.y);
+        const length = Math.hypot(dx, dy) || 1;
+        const normalX = -dy / length;
+        const normalY = dx / length;
+        let width = 0;
+        slabRegions(Number(wall.levelIndex), data).filter(region => !region.open && wallTouchesSlabRegion(wall, region, data)).forEach(region => {
+          region.cells.forEach(cell => {
+            const cellWidth = Math.abs(Number(data.xSpans[cell.xIndex]) || 0);
+            const cellHeight = Math.abs(Number(data.ySpans[cell.yIndex]) || 0);
+            width = Math.max(width, Math.abs(normalX) * cellWidth + Math.abs(normalY) * cellHeight);
+          });
+        });
+        return Math.max(0, width);
+      }
+
+      function wallSupportBeamRecommendation(wall, data = makePlanData()) {
+        const length = Math.max(0.10, Number(wall.length) || Math.hypot(Number(wall.endPoint?.x) - Number(wall.startPoint?.x), Number(wall.endPoint?.y) - Number(wall.startPoint?.y)));
+        const tributaryWidth = wallBeamTributaryWidth(wall, data);
+        const areaLoads = gravityAreaLoads();
+        const roof = Number(wall.levelIndex) === data.levels.length - 1;
+        const areaDead = roof ? areaLoads.roofDead : areaLoads.floorDead;
+        const areaLive = roof ? areaLoads.roofLive : areaLoads.floorLive;
+        const wallLineLoad = Math.max(0, Number(wall.netLineLoad) || 0);
+        const deadLineLoad = wallLineLoad + areaDead * tributaryWidth;
+        const liveLineLoad = areaLive * tributaryWidth;
+        const cacheKey = JSON.stringify({
+          id: wall.id, length, wallLineLoad, tributaryWidth, areaDead, areaLive,
+          fc: detailingValue("concreteStrength", 28, 1),
+          fy: detailingValue("rebarYieldStrength", 415, 200),
+          cover: detailingValue("beamClearCover", 40, 20),
+          density: numericInput("concreteDensity", 24),
+          stiffness: numericInput("beamStiffnessModifier", 0.35),
+          concreteCost: numericInput("optimizationConcreteCost", 1),
+          rebarCost: numericInput("optimizationRebarCost", 0.01),
+          formworkCost: numericInput("optimizationFormworkCost", 0.10),
+          rx: numericInput("eqRx", 8.5), ry: numericInput("eqRy", 8.5)
+        });
+        if (wallSupportRecommendationCache.has(cacheKey)) return wallSupportRecommendationCache.get(cacheKey);
+        const frameModel = {
+          nodes: [{id: 1, x: 0, y: 0}, {id: 2, x: length, y: 0}],
+          members: [],
+          loads: [
+            {kind: "member_udl", case: "DL", member: "WALL-SUPPORT", w: deadLineLoad, wx: 0, source: "wall-support-check"},
+            {kind: "member_udl", case: "LL", member: "WALL-SUPPORT", w: liveLineLoad, wx: 0, source: "wall-support-check"}
+          ],
+          supports: {1: "PIN", 2: "ROLLER"}
+        };
+        const member = {
+          id: "WALL-SUPPORT",
+          name: `SB-${wall.name || "WALL"}`,
+          type: "Beam",
+          i: 1,
+          j: 2,
+          E: 4700 * Math.sqrt(detailingValue("concreteStrength", 28, 1)),
+          stiffnessModifier: numericInput("beamStiffnessModifier", 0.35)
+        };
+        frameModel.members.push(member);
+        const minimumDepth = Math.max(300, Math.ceil(length * 1000 / 16 / 25) * 25);
+        let best = null;
+        for (let height = minimumDepth; height <= Math.max(1000, minimumDepth + 350); height += 25) {
+          const minimumWidth = Math.ceil(Math.max(200, columnMinimumDimension(), 0.30 * height) / 25) * 25;
+          for (let width = minimumWidth; width <= Math.min(600, Math.max(minimumWidth, height)); width += 25) {
+            member.width = width;
+            member.height = height;
+            member.A = width * height;
+            member.I = width * Math.pow(height, 3) / 12;
+            const beamSelfWeight = width * height / 1000000 * Math.max(0, numericInput("concreteDensity", 24));
+            const factoredDead = deadLineLoad + beamSelfWeight;
+            const factoredLineLoad = Math.max(1.4 * factoredDead, 1.2 * factoredDead + 1.6 * liveLineLoad);
+            const demand = {
+              shear: factoredLineLoad * length / 2,
+              positiveMoment: factoredLineLoad * length * length / 8,
+              negativeMoment: 0,
+              shearCombination: "simply-supported wall beam",
+              positiveCombination: "simply-supported wall beam",
+              negativeCombination: "minimum steel"
+            };
+            for (const barDiameter of STANDARD_LONGITUDINAL_BARS) {
+              for (const stirrupDiameter of STANDARD_STIRRUP_BARS) {
+                const candidate = evaluateBeamCandidate("X", frameModel, member, width, height, barDiameter, stirrupDiameter, demand);
+                if (!candidate.pass) continue;
+                const fullCandidate = {...candidate, beamSelfWeight, factoredLineLoad, deadLineLoad, liveLineLoad, tributaryWidth, wallLineLoad};
+                if (!best || fullCandidate.cost < best.cost - 1e-9 || (Math.abs(fullCandidate.cost - best.cost) < 1e-9 && width * height < best.width * best.height)) best = fullCandidate;
+              }
+            }
+          }
+        }
+        const recommendation = best ? {
+          ...best,
+          found: true,
+          summary: `${best.width}×${best.height} mm support beam; midspan ${best.midspanBottom}-D${best.barDiameter} bottom / ${best.midspanTop}-D${best.barDiameter} top; supports ${best.supportTop}-D${best.barDiameter} top / ${best.supportBottom}-D${best.barDiameter} bottom; D${best.stirrupDiameter} stirrups @${best.supportSpacing} mm in ${best.supportZone} mm end zones and @${best.fieldSpacing} mm in the central zone`,
+          equationSummary: `Tributary width=${best.tributaryWidth.toFixed(2)} m; wall=${best.wallLineLoad.toFixed(2)} kN/m; D excluding beam=${best.deadLineLoad.toFixed(2)} kN/m; L=${best.liveLineLoad.toFixed(2)} kN/m; beam self-weight=${best.beamSelfWeight.toFixed(2)} kN/m; wu=max[1.4D, 1.2D+1.6L]=${best.factoredLineLoad.toFixed(2)} kN/m; Mu=wuL²/8=${best.designMoment.toFixed(2)} kN·m; Vu=wuL/2=${best.designShear.toFixed(2)} kN; flexure D/C=${best.flexureRatio.toFixed(2)}; shear D/C=${best.shearRatio.toFixed(2)}; deflection=${best.serviceDeflection.toFixed(2)}/${best.deflectionLimit.toFixed(2)} mm.`
+        } : {
+          found: false,
+          length,
+          tributaryWidth,
+          wallLineLoad,
+          deadLineLoad,
+          liveLineLoad,
+          summary: "No passing standard support-beam candidate was found within the 200–600 mm width and searched depth range. A licensed structural engineer must redesign the load path.",
+          equationSummary: `Wall=${wallLineLoad.toFixed(2)} kN/m; tributary width=${tributaryWidth.toFixed(2)} m; D excluding beam=${deadLineLoad.toFixed(2)} kN/m; L=${liveLineLoad.toFixed(2)} kN/m.`
+        };
+        wallSupportRecommendationCache.set(cacheKey, recommendation);
+        return recommendation;
+      }
+
+      function slabWallSupportFailures(region, data = makePlanData()) {
+        return planLevelWalls(region.levelIndex)
+          .filter(wall => wallTouchesSlabRegion(wall, region, data))
+          .map(wall => ({wall, support: wallSupportingBeamCoverage(wall, data)}))
+          .filter(check => !check.support.supported)
+          .map(check => ({...check, recommendation: wallSupportBeamRecommendation(check.wall, data)}));
+      }
+
       function wallClearSegments(wall) {
         const start = wall.startPoint;
         const end = wall.endPoint;
@@ -12919,8 +13447,8 @@
           ctx.setLineDash([7, 5]);
           strokeWallLine(-boundaryOffset);
           strokeWallLine(boundaryOffset);
-          ctx.strokeStyle = "#434a4c";
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 0.8;
           ctx.setLineDash([]);
           strokeWallLine(0);
           let textAngle = Math.atan2(dy, dx);
@@ -12936,7 +13464,7 @@
           const labelOffset = pixelWidth / 2 + 8;
           drawNonOverlappingText(ctx, wall.name, (start.x + end.x) / 2 + labelNormalX * labelOffset, (start.y + end.y) / 2 + labelNormalY * labelOffset, {
             font: `300 9px ${DRAWING_FONT_FAMILY}`,
-            color: "#F3AD4B",
+            color: "#00c853",
             rotate: textAngle
           }, [{x: 0, y: -12}, {x: 0, y: 12}]);
           ctx.restore();
@@ -13076,7 +13604,15 @@
         planState.wallStart = endpoint;
         setCalculationDirty(true);
         drawPlan(data);
-        if (typeof status === "function") status(`${wall.name} created (${length.toFixed(2)} m long × ${wall.height.toFixed(2)} m high × ${wall.width.toFixed(2)} m wide; opening-deducted wall load ${wall.netLineLoad.toFixed(2)} kN/m). Continue clicking nodes or use Clear Selection to finish.`);
+        if (typeof status === "function") {
+          const support = wallSupportingBeamCoverage(wall, data);
+          if (support.supported) {
+            status(`${wall.name} created; its ${wall.netLineLoad.toFixed(2)} kN/m opening-deducted load is transferred to the coincident supporting beam. Continue clicking nodes or use Clear Selection to finish.`);
+          } else {
+            const recommendation = wallSupportBeamRecommendation(wall, data);
+            status(`SLAB FAILS below ${wall.name}: no continuous supporting beam was found. Recommended preliminary beam: ${recommendation.summary}. ${recommendation.equationSummary} Verify its end supports and final design with the responsible structural engineer.`);
+          }
+        }
         return true;
       }
 
@@ -13200,12 +13736,15 @@
           x: (canvasPoint.x - planView.pan.x) / planView.zoom,
           y: (canvasPoint.y - planView.pan.y) / planView.zoom
         };
-        const padding = 5 / Math.max(0.35, planView.zoom);
+        const inset = 6 / Math.max(0.35, planView.zoom);
         const targets = planNameLabelTargets.filter(item => {
           if (Number(item.levelIndex) !== Number(planState.activeLevelIndex)) return false;
           const box = item.box;
-          return box && local.x >= box.x - padding && local.x <= box.x + box.w + padding &&
-            local.y >= box.y - padding && local.y <= box.y + box.h + padding;
+          if (!box) return false;
+          const insetX = Math.min(inset, Math.max(0, (box.w - 4) / 2));
+          const insetY = Math.min(inset, Math.max(0, (box.h - 4) / 2));
+          return local.x >= box.x + insetX && local.x <= box.x + box.w - insetX &&
+            local.y >= box.y + insetY && local.y <= box.y + box.h - insetY;
         });
         targets.sort((a, b) => {
           const aDistance = Math.hypot(local.x - (a.box.x + a.box.w / 2), local.y - (a.box.y + a.box.h / 2));
@@ -13797,7 +14336,7 @@
             if (typeof status === "function") status("Point loads are assigned in Plan Views only, excluding the Foundation plan.");
             return;
           }
-          const hit = nearestPlanMemberHit(canvasPoint, data);
+          const hit = nearestPlanMemberHit(canvasPoint, data, 6);
           if (!hit?.member || !["Beam", "Tie Beam"].includes(hit.member.type)) {
             if (typeof status === "function") status("No beam was found at that point. Click directly on a beam line in the active Plan View.");
             return;
@@ -14182,6 +14721,12 @@
         let scale = 1;
         try { scale = Number(fontScale) || 1; } catch (error) {}
         return source.replace(/(\d+(?:\.\d+)?)px/, (match, size) => `${(Number(size) * scale).toFixed(1)}px`);
+      }
+
+      function scaledDrawingTextSize(size, minimum = 6) {
+        let scale = 1;
+        try { scale = Number(fontScale) || 1; } catch (error) {}
+        return Math.max(minimum, Number(size || 0) * scale).toFixed(1);
       }
 
       function canvasFontPixelSize(value, fallback = 10) {
@@ -14809,6 +15354,7 @@
         ctx.scale(yAxisView.zoom, yAxisView.zoom);
         drawingGridBubbleBoxes = [];
         auxiliaryLabelBoxes = [];
+        yFrameNameLabelTargets = [];
         renderedLoadTargets.Y = [];
 
         const levels = data.levels.length ? data.levels : ["Grnd", "2nd", "Rf"];
@@ -14910,13 +15456,21 @@
               groupedBeamLabels.get(key).points.push({x: ax, y: ay}, {x: bx, y: by});
             } else {
               const columnSide = (ax + bx) / 2 < canvas.width / 2 ? 1 : -1;
-              drawNonOverlappingText(ctx, member.name || `${member.type === "Column" ? "C" : "B"}${member.id}`, (ax + bx) / 2 + (member.type === "Column" ? columnSide * 9 : 0), (ay + by) / 2 + (member.type === "Column" ? 0 : 13), {
+              const memberLabel = member.name || `${member.type === "Column" ? "C" : "B"}${member.id}`;
+              const labelOptions = {
                 font: "700 10px Arial",
                 color: member.type === "Column" ? "#00c853" : "#c1121f",
                 rotate: member.type === "Column" ? -Math.PI / 2 : 0
-              }, member.type === "Column"
+              };
+              const placement = drawNonOverlappingText(ctx, memberLabel, (ax + bx) / 2 + (member.type === "Column" ? columnSide * 9 : 0), (ay + by) / 2 + (member.type === "Column" ? 0 : 13), labelOptions, member.type === "Column"
                 ? [{x: 0, y: 0}, {x: -columnSide * 18, y: 0}, {x: columnSide * 4, y: 14}, {x: columnSide * 4, y: -14}]
                 : [{x: 0, y: 0}, {x: 28, y: 0}, {x: -28, y: 0}, {x: 0, y: -26}]);
+              if (member.type === "Beam") {
+                yFrameNameLabelTargets.push({
+                  memberId: member.id,
+                  box: auxiliaryTextBox(ctx, memberLabel, placement.x, placement.y, {...labelOptions, padding: 1})
+                });
+              }
             }
 
             const memberLoads = displayedTieBeamLoads(member, yModel.loads.filter(load => String(load.member) === String(member.id) && load.kind === "member_udl"));
@@ -14929,10 +15483,16 @@
             if (points.length < 2) return;
             const a = points[0];
             const b = points[points.length - 1];
-            drawNonOverlappingText(ctx, group.member.designGroupName || group.member.name, (a.x + b.x) / 2, (a.y + b.y) / 2 + 13, {
+            const memberLabel = group.member.designGroupName || group.member.name;
+            const labelOptions = {
               font: "700 10px Arial",
               color: "#c1121f"
-            }, [{x: 0, y: 0}, {x: 30, y: 0}, {x: -30, y: 0}, {x: 0, y: -26}]);
+            };
+            const placement = drawNonOverlappingText(ctx, memberLabel, (a.x + b.x) / 2, (a.y + b.y) / 2 + 13, labelOptions, [{x: 0, y: 0}, {x: 30, y: 0}, {x: -30, y: 0}, {x: 0, y: -26}]);
+            yFrameNameLabelTargets.push({
+              memberId: group.member.id,
+              box: auxiliaryTextBox(ctx, memberLabel, placement.x, placement.y, {...labelOptions, padding: 1})
+            });
           });
           drawAnnotationsForView("Y", ctx, annotation => ({x: t.x(annotation.x), y: t.y(annotation.y)}));
 
@@ -15153,6 +15713,18 @@
           }
         });
         return best;
+      }
+
+      function yFrameMemberNameAt(canvasPoint) {
+        const local = {
+          x: (canvasPoint.x - yAxisView.pan.x) / yAxisView.zoom,
+          y: (canvasPoint.y - yAxisView.pan.y) / yAxisView.zoom
+        };
+        const hit = yFrameNameLabelTargets.slice().reverse().find(target =>
+          local.x >= target.box.x && local.x <= target.box.x + target.box.w &&
+          local.y >= target.box.y && local.y <= target.box.y + target.box.h);
+        if (!hit) return null;
+        return (yFrameState.model?.members || []).find(member => String(member.id) === String(hit.memberId)) || null;
       }
 
       function ySnapPoint(canvasPoint, data) {
@@ -15790,7 +16362,7 @@
               ]);
               ctx.textAlign = "right";
               ctx.textBaseline = "middle";
-              ctx.font = `300 ${Math.max(7, scaled(9)).toFixed(1)}px ${DRAWING_FONT_FAMILY}`;
+              ctx.font = `300 ${Math.max(7, scaled(9) * (Number(fontScale) || 1)).toFixed(1)}px ${DRAWING_FONT_FAMILY}`;
               ctx.fillText(levelLabel, p.x, p.y);
               ctx.textAlign = "left";
               ctx.textBaseline = "alphabetic";
@@ -16173,7 +16745,7 @@
         const elevations = levelElevations(data);
         const slabLoad = Math.max(0, numericInput("slabThickness", 150)) / 1000 * Math.max(0, numericInput("concreteDensity", 24));
         const floorSdl = selectedComponentLoad(["floorTile", "floorCeiling", "floorPartitions"]);
-        const roofSdl = selectedComponentLoad(["roofWaterproofing", "roofCeiling", "roofSolar", "roofEquipment"]);
+        const roofSdl = selectedComponentLoad(["roofWaterproofing", "roofCeiling"]) + selectedRoofOnlyComponentLoad();
         const floorLl = Math.max(0, numericInput("occupancyLiveLoad", 1.9));
         const roofLl = Math.max(0, numericInput("roofLiveLoad", 1));
         const groundElevation = elevations[1] || 0;
@@ -16216,11 +16788,13 @@
           }, 0);
           const planLevelIndex = levelIndex - 1;
           const slabArea = concreteSlabArea(planLevelIndex, data);
+          const wallWeight = structuralWallWeightAtLevel(planLevelIndex);
           storyWeights.push({
             elevation: elevations[levelIndex],
             height: elevations[levelIndex] - groundElevation,
             slabArea,
-            weight: slabArea * ((slabLoad + (roof ? roofSdl : floorSdl)) + liveFraction * (roof ? roofLl : floorLl)) + beamWeight + columnWeight + additionalWeight
+            wallWeight,
+            weight: slabArea * ((slabLoad + (roof ? roofSdl : floorSdl)) + liveFraction * (roof ? roofLl : floorLl)) + beamWeight + columnWeight + wallWeight + additionalWeight
           });
         }
         const totalWeight = storyWeights.reduce((sum, story) => sum + story.weight, 0);
@@ -17096,7 +17670,7 @@
         const elevations = levelElevations(data);
         const slabLoad = Math.max(0, numericInput("slabThickness", 150)) / 1000 * Math.max(0, numericInput("concreteDensity", 24));
         const floorSdl = selectedComponentLoad(["floorTile", "floorCeiling", "floorPartitions"]);
-        const roofSdl = selectedComponentLoad(["roofWaterproofing", "roofCeiling", "roofSolar", "roofEquipment"]);
+        const roofSdl = selectedComponentLoad(["roofWaterproofing", "roofCeiling"]) + selectedRoofOnlyComponentLoad();
         const floorLl = Math.max(0, numericInput("occupancyLiveLoad", 1.9));
         const roofLl = Math.max(0, numericInput("roofLiveLoad", 1));
         const path = byId("gravityLoadPath")?.value || "TWO";
@@ -17164,11 +17738,14 @@
           const areaLive = isRoof ? roofLl : floorLl;
           const storyHeight = Math.max(0, elevations[levelIndex] - elevations[levelIndex - 1]);
           const columnFramingWeight = placedColumnCount * storyHeight * columnAreaM2 * Math.max(0, numericInput("concreteDensity", 24));
-          const slabArea = concreteSlabArea(levelIndex - 1, data);
+          const planLevelIndex = levelIndex - 1;
+          const slabArea = concreteSlabArea(planLevelIndex, data);
+          const wallWeight = structuralWallWeightAtLevel(planLevelIndex);
           storyWeights.push({
             elevation: elevations[levelIndex],
             height: elevations[levelIndex] - groundElevation,
-            weight: slabArea * (areaDead + liveFraction * areaLive) + beamFramingWeightPerFloor + columnFramingWeight + additionalWeight
+            wallWeight,
+            weight: slabArea * (areaDead + liveFraction * areaLive) + beamFramingWeightPerFloor + columnFramingWeight + wallWeight + additionalWeight
           });
         }
         const totalWeight = storyWeights.reduce((sum, story) => sum + story.weight, 0);
@@ -17215,10 +17792,70 @@
         ].filter(Boolean).some(id => recordIds.has(String(id)));
       }
 
+      function applyStructuralWallToolLoadsToFrame(frameModel, axis, frameLine, data = makePlanData()) {
+        const totalY = data.yPos[data.yPos.length - 1] || 0;
+        Object.values(planState.levelWalls || {}).flat().forEach(wall => {
+          const support = wallSupportingBeamCoverage(wall, data);
+          if (!support.supported) return;
+          const wallStartCoordinate = axis === "X" ? Number(wall.startPoint?.x) : totalY - Number(wall.startPoint?.y);
+          const wallEndCoordinate = axis === "X" ? Number(wall.endPoint?.x) : totalY - Number(wall.endPoint?.y);
+          const wallMinimum = Math.min(wallStartCoordinate, wallEndCoordinate);
+          const wallMaximum = Math.max(wallStartCoordinate, wallEndCoordinate);
+          const appliedMembers = new Set();
+          support.matches
+            .filter(match => match.member.axis === axis && String(match.member.frameLine) === String(frameLine))
+            .forEach(match => {
+              const record = {
+                levelIndex: wall.levelIndex,
+                planMemberId: match.member.id,
+                sourcePlanMemberId: match.member.sourcePlanMemberId,
+                componentIds: match.member.components || []
+              };
+              (frameModel.members || []).filter(member => member.type !== "Column" && planWallLoadMatchesFrameMember(record, member)).forEach(member => {
+                const applicationKey = `${wall.id}|${member.id}`;
+                if (appliedMembers.has(applicationKey)) return;
+                const a = frameNode(frameModel, member.i);
+                const b = frameNode(frameModel, member.j);
+                if (!a || !b) return;
+                const memberMinimum = Math.min(Number(a.x), Number(b.x));
+                const memberMaximum = Math.max(Number(a.x), Number(b.x));
+                const overlapStart = Math.max(wallMinimum, memberMinimum);
+                const overlapEnd = Math.min(wallMaximum, memberMaximum);
+                const overlapLength = Math.max(0, overlapEnd - overlapStart);
+                const length = Math.max(0.001, memberLength(frameModel, member));
+                if (overlapLength <= 1e-6) return;
+                appliedMembers.add(applicationKey);
+                if (overlapLength >= length - 1e-6) {
+                  frameModel.loads.push({
+                    kind: "member_udl",
+                    case: "SDL",
+                    member: member.id,
+                    w: Number(wall.netLineLoad) || 0,
+                    wx: 0,
+                    source: "structural-wall-plan",
+                    planWallId: wall.id
+                  });
+                } else {
+                  const resultantCoordinate = (overlapStart + overlapEnd) / 2;
+                  frameModel.loads.push({
+                    kind: "member_point",
+                    case: "SDL",
+                    member: member.id,
+                    p: (Number(wall.netLineLoad) || 0) * overlapLength,
+                    x: Math.max(0, Math.min(length, Math.abs(resultantCoordinate - Number(a.x)))),
+                    source: "structural-wall-plan",
+                    planWallId: wall.id
+                  });
+                }
+              });
+            });
+        });
+      }
+
       function applyStoredPlanLoadsToFrame(frameModel, axis, frameLine) {
         if (!frameModel) return frameModel;
         frameModel.loads ||= [];
-        frameModel.loads = frameModel.loads.filter(load => !["manual-wall-plan", "manual-point-plan"].includes(load.source));
+        frameModel.loads = frameModel.loads.filter(load => !["manual-wall-plan", "manual-point-plan", "structural-wall-plan"].includes(load.source));
         (planState.wallBeamLoads || [])
           .filter(record => record.axis === axis && String(record.frameLine) === String(frameLine))
           .forEach(record => {
@@ -17234,6 +17871,7 @@
               });
             });
           });
+        applyStructuralWallToolLoadsToFrame(frameModel, axis, frameLine, makePlanData());
         (planState.pointLoads || [])
           .filter(record => record.axis === axis && String(record.frameLine) === String(frameLine))
           .forEach(record => {
@@ -17463,6 +18101,10 @@
         byId("assignEngineeringPointLoad")?.classList.toggle("is-active", planPointLoadPlacementActive);
         byId("assignEngineeringPointLoad")?.setAttribute("aria-pressed", planPointLoadPlacementActive ? "true" : "false");
         byId("structuralPlanCanvas")?.classList.toggle("beam-selection-active", planPointLoadPlacementActive);
+        if (!planPointLoadPlacementActive) {
+          hideMemberNameHoverEditor();
+          byId("structuralPlanCanvas")?.classList.remove("member-name-editable-hover");
+        }
         updateDrawingInteractionUi();
       }
 
@@ -19132,9 +19774,9 @@
       }
 
       const additionalMprSortDefinitions = {
-        columnResultsTable: {textColumns: new Set([1, 2, 17])},
-        slabResultsTable: {textColumns: new Set([1, 2, 3, 12, 14, 19])},
-        footingResultsTable: {textColumns: new Set([1, 2, 18])}
+        columnResultsTable: {textColumns: new Set([1, 2, 23])},
+        slabResultsTable: {textColumns: new Set([1, 2, 3, 18, 20, 25])},
+        footingResultsTable: {textColumns: new Set([1, 2, 24])}
       };
 
       function installMprTableScrolling() {
@@ -19270,15 +19912,118 @@
         });
       }
 
+      function memberPermanentLoadBreakdown(frameModel, member) {
+        const length = Math.max(0.001, memberLength(frameModel, member));
+        const selfWeight = Math.max(0, Number(member?.A) || 0) * Math.max(0, numericInput("concreteDensity", 24)) / 1000000;
+        let distributed = 0;
+        let pointEquivalent = 0;
+        let wallEquivalent = 0;
+        const wallIds = new Set();
+        (frameModel?.loads || []).forEach(load => {
+          if (String(load.member) !== String(member?.id) || !["DL", "SDL"].includes(String(load.case || "").toUpperCase())) return;
+          let equivalent = 0;
+          if (load.kind === "member_udl") {
+            equivalent = Math.abs(Number(load.w) || 0);
+            distributed += equivalent;
+          } else if (load.kind === "member_point") {
+            equivalent = Math.abs(Number(load.p) || 0) / length;
+            pointEquivalent += equivalent;
+          }
+          if (load.source === "structural-wall-plan") {
+            wallEquivalent += equivalent;
+            if (load.planWallId) wallIds.add(String(load.planWallId));
+          }
+        });
+        return {
+          total: selfWeight + distributed + pointEquivalent,
+          selfWeight,
+          distributed,
+          pointEquivalent,
+          wallEquivalent,
+          wallIds: Array.from(wallIds)
+        };
+      }
+
+      function mprLoadCell(value, title = "") {
+        const numeric = Number(value);
+        const hasLoad = Number.isFinite(numeric) && Math.abs(numeric) > 1e-9;
+        return `<td class="mpr-load-cell${hasLoad ? "" : " is-not-applied"}"${title ? ` title="${escapeHtml(title)}"` : ""}>${hasLoad ? valueCell(numeric) : "&mdash;"}</td>`;
+      }
+
+      function mprUnavailableLoadCell(title) {
+        return `<td class="mpr-load-cell is-not-applied" title="${escapeHtml(title)}">&mdash;</td>`;
+      }
+
+      function frameLoadCaseTotals(frameModel) {
+        const totals = {point: 0, wall: 0, wind: 0, earthquake: 0};
+        const members = new Map((frameModel?.members || []).map(member => [String(member.id), member]));
+        (frameModel?.loads || []).forEach(load => {
+          const member = members.get(String(load.member));
+          const length = member ? Math.max(0.001, memberLength(frameModel, member)) : 1;
+          let magnitude = 0;
+          if (load.kind === "member_udl") magnitude = Math.abs(Number(load.w) || 0) * length;
+          else if (load.kind === "member_point") magnitude = Math.abs(Number(load.p) || 0);
+          else if (load.kind === "member_point_vector" || load.kind === "node") magnitude = Math.hypot(Number(load.fx) || 0, Number(load.fy) || 0);
+          if (!magnitude) return;
+          const loadCase = loadCaseLabel(load.case);
+          if (load.source === "structural-wall-plan") totals.wall += magnitude;
+          else if (load.kind === "member_point" || load.kind === "member_point_vector" || loadCase === "P") totals.point += magnitude;
+          if (["WL", "W"].includes(loadCase)) totals.wind += magnitude;
+          if (["EQ", "E"].includes(loadCase)) totals.earthquake += magnitude;
+        });
+        return totals;
+      }
+
+      function memberLoadSourceBreakdown(frameModel, member) {
+        const length = Math.max(0.001, memberLength(frameModel, member));
+        const result = {
+          dead: Math.max(0, Number(member?.A) || 0) * Math.max(0, numericInput("concreteDensity", 24)) / 1000000,
+          live: 0,
+          point: 0,
+          wall: 0
+        };
+        (frameModel?.loads || []).forEach(load => {
+          if (String(load.member) !== String(member?.id)) return;
+          const loadCase = loadCaseLabel(load.case);
+          if (load.kind === "member_udl") {
+            const intensity = Math.abs(Number(load.w) || 0);
+            if (load.source === "structural-wall-plan") result.wall += intensity;
+            else if (["DL", "SDL"].includes(loadCase)) result.dead += intensity;
+            else if (loadCase === "LL") result.live += intensity;
+          } else if (load.kind === "member_point" || load.kind === "member_point_vector") {
+            const force = load.kind === "member_point"
+              ? Math.abs(Number(load.p) || 0)
+              : Math.hypot(Number(load.fx) || 0, Number(load.fy) || 0);
+            if (load.source === "structural-wall-plan") result.wall += force / length;
+            else result.point += force;
+          }
+        });
+        const frameTotals = frameLoadCaseTotals(frameModel);
+        result.wind = frameTotals.wind;
+        result.earthquake = frameTotals.earthquake;
+        return result;
+      }
+
+      function governingBeamLoadSources(frameModel, members) {
+        const memberSources = (members || []).map(member => memberLoadSourceBreakdown(frameModel, member));
+        const maximum = key => memberSources.reduce((value, source) => Math.max(value, Number(source[key]) || 0), 0);
+        return {
+          dead: maximum("dead"),
+          live: maximum("live"),
+          point: memberSources.reduce((value, source) => value + (Number(source.point) || 0), 0),
+          wall: maximum("wall"),
+          wind: maximum("wind"),
+          earthquake: maximum("earthquake")
+        };
+      }
+
       function resultTableMemberRows(axis, frameLine, frameModel, result, startIndex = 0) {
         return beamDesignGroups(frameModel).map((group, index) => {
           const member = group.members[0];
           if (axis === "X") group.members.forEach(normalizeMemberProperties);
           const memberValues = group.members.map(item => result?.memberResults?.[item.id] || computedMemberDiagramValues(frameModel, item));
           const length = group.members.reduce((sum, item) => sum + memberLength(frameModel, item), 0);
-          const deadLoad = Math.max(...group.members.map(item => axis === "X"
-            ? memberAutoDeadLoad(item)
-            : ((Number(item.A) || 0) * Math.max(0, numericInput("concreteDensity", 24)) / 1000000) + (frameModel.loads || []).filter(load => load.kind === "member_udl" && String(load.member) === String(item.id) && String(load.case).toUpperCase() === "DL").reduce((sum, load) => sum + Math.abs(Number(load.w) || 0), 0)));
+          const loadSources = governingBeamLoadSources(frameModel, group.members);
           const schedules = group.members.map(item => beamReinforcementSchedule(axis, frameModel, item)).filter(Boolean);
           const governingSchedule = governingBeamGroupSchedule(schedules);
           const reinforcement = governingSchedule
@@ -19323,7 +20068,13 @@
             `<td><input class="member-dim-input" type="number" min="100" step="25" ${dimensionAttribute}="${member.id}" data-name-axis="${axis}" data-frame-line="${frameLineAttribute}" data-beam-group="${groupAttribute}" data-field="width" value="${escapeHtml(member.width)}" /></td>` +
             `<td><input class="member-dim-input" type="number" min="150" step="25" ${dimensionAttribute}="${member.id}" data-name-axis="${axis}" data-frame-line="${frameLineAttribute}" data-beam-group="${groupAttribute}" data-field="height" value="${escapeHtml(member.height)}" /></td>` +
             `<td>${valueCell(length)}</td><td>${propertyText(member.A, "")}</td><td>${propertyText(member.I, "")}</td><td>${propertyText(member.E, "")}</td>` +
-            `<td>${valueCell(deadLoad)}</td><td>${valueCell(displayedShear)}</td><td>${valueCell(displayedMoment)}</td>` +
+            `${mprLoadCell(loadSources.dead, "Beam self-weight and other distributed dead loads; Wall Tool loads are listed separately.")}` +
+            `${mprLoadCell(loadSources.live, "Distributed live load carried by this beam.")}` +
+            `${mprLoadCell(loadSources.point, "Total member point load acting on this beam or girder group.")}` +
+            `${mprLoadCell(loadSources.wall, "Equivalent line load from Wall Tool walls supported by this beam.")}` +
+            `${mprLoadCell(loadSources.wind, "Total wind load applied to this connected analysis frame; member forces are reported in Vu and Mu.")}` +
+            `${mprLoadCell(loadSources.earthquake, "Total earthquake load applied to this connected analysis frame; member forces are reported in Vu and Mu.")}` +
+            `<td>${valueCell(displayedShear)}</td><td>${valueCell(displayedMoment)}</td>` +
             `${reinforcementCells}${mprVisibilityCell(visibilityKey, displayName)}</tr>`;
         });
       }
@@ -19335,12 +20086,22 @@
         }, 0);
       }
 
+      function selectedRoofOnlyComponentLoad() {
+        return checkedLoadTotal(["roofSolar", "roofEquipment"]);
+      }
+
       function gravityAreaLoads() {
         const slab = Math.max(0, numericInput("slabThickness", 150)) / 1000 * Math.max(0, numericInput("concreteDensity", 24));
+        const floorFinishes = checkedLoadTotal(["floorTile", "floorCeiling", "floorPartitions"]);
+        const roofFinishes = checkedLoadTotal(["roofWaterproofing", "roofCeiling"]);
+        const roofOnlyEquipment = selectedRoofOnlyComponentLoad();
         return {
           slab,
-          floorDead: slab + checkedLoadTotal(["floorTile", "floorCeiling", "floorPartitions"]),
-          roofDead: slab + checkedLoadTotal(["roofWaterproofing", "roofCeiling", "roofSolar", "roofEquipment"]),
+          floorDead: slab + floorFinishes,
+          roofDead: slab + roofFinishes + roofOnlyEquipment,
+          floorFinishes,
+          roofFinishes,
+          roofOnlyEquipment,
           floorLive: Math.max(0, numericInput("occupancyLiveLoad", 1.9)),
           roofLive: Math.max(0, numericInput("roofLiveLoad", 1.0))
         };
@@ -20118,6 +20879,24 @@
         });
       }
 
+      function connectedColumnLoadSources(key, design) {
+        const [xLabel, yLabel] = String(key || "").split("|");
+        const models = [
+          engineeringState.frameCatalog?.X?.[yLabel]?.model,
+          engineeringState.frameCatalog?.Y?.[xLabel]?.model
+        ].filter(Boolean);
+        const frameTotals = models.map(frameLoadCaseTotals);
+        const maximum = source => frameTotals.reduce((value, totals) => Math.max(value, Number(totals[source]) || 0), 0);
+        return {
+          dead: Math.max(0, Number(design?.tributary?.dead) || 0),
+          live: Math.max(0, Number(design?.tributary?.live) || 0),
+          point: maximum("point"),
+          wall: maximum("wall"),
+          wind: maximum("wind"),
+          earthquake: maximum("earthquake")
+        };
+      }
+
       function columnResultRows() {
         const data = makePlanData();
         const rows = [];
@@ -20132,12 +20911,20 @@
             if (renderedRuns.has(runKey) || storyIndex !== Math.min(...storyRun)) return;
             renderedRuns.add(runKey);
             const design = columnDesignResult(key, Math.min(...storyRun));
+            const loadSources = connectedColumnLoadSources(key, design);
             const visibilityKey = mprVisibilityKey("column", design.overrideKey);
             rows.push(`<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="column-design" data-column-key="${escapeHtml(key)}" data-story-index="${Math.min(...storyRun)}">` +
               `<td>${mprItemNumber(itemIndex)}</td><td><input class="member-id-input" data-member-rename="column" data-name-key="${escapeHtml(design.overrideKey)}" value="${escapeHtml(design.name)}" aria-label="${escapeHtml(design.level)} column ID"></td><td>${escapeHtml(design.level)}</td>` +
               `<td><input class="design-input" type="number" min="250" step="25" data-column-design="${escapeHtml(design.overrideKey)}" data-field="width" value="${design.width}"></td>` +
               `<td><input class="design-input" type="number" min="250" step="25" data-column-design="${escapeHtml(design.overrideKey)}" data-field="height" value="${design.height}"></td>` +
-              `<td>${valueCell(design.length)}</td><td>${valueCell(design.grossArea)}</td><td>${valueCell(design.pu)}</td><td>${valueCell(design.momentX)}</td><td>${valueCell(design.momentY)}</td>` +
+              `<td>${valueCell(design.length)}</td><td>${valueCell(design.grossArea)}</td>` +
+              `${mprLoadCell(loadSources.dead, "Cumulative tributary dead load delivered to this column story.")}` +
+              `${mprLoadCell(loadSources.live, "Cumulative tributary live load delivered to this column story.")}` +
+              `${mprLoadCell(loadSources.point, "Point-load actions present on a connected frame.")}` +
+              `${mprLoadCell(loadSources.wall, "Wall Tool load carried by a connected frame and delivered through this column line.")}` +
+              `${mprLoadCell(loadSources.wind, "Total wind load on the governing connected frame; Pu, Mux and Muy contain the calculated column effects.")}` +
+              `${mprLoadCell(loadSources.earthquake, "Total earthquake load on the governing connected frame; Pu, Mux and Muy contain the calculated column effects.")}` +
+              `<td>${valueCell(design.pu)}</td><td>${valueCell(design.momentX)}</td><td>${valueCell(design.momentY)}</td>` +
               `<td><input class="design-input" type="number" min="12" step="1" data-column-design="${escapeHtml(design.overrideKey)}" data-field="barDiameter" value="${design.barDiameter}"></td>` +
               `<td><input class="design-input" type="number" min="4" step="2" data-column-design="${escapeHtml(design.overrideKey)}" data-field="barCount" value="${design.barCount}"></td><td>${valueCell(design.steelArea)}</td><td>${valueCell(design.steelRatio)}</td>` +
               `<td><input class="design-input" type="number" min="6" step="1" data-column-design="${escapeHtml(design.overrideKey)}" data-field="tieDiameter" value="${design.tieDiameter}"></td>` +
@@ -20549,6 +21336,7 @@
         });
         return footings.map((footing, index) => {
           const design = footingDesignResult(footing);
+          const loadSources = connectedColumnLoadSources(footing.key, design.column);
           const longTermCase = design.serviceCases?.find(entry => entry.name === "D+L") || {};
           const visibilityKey = mprVisibilityKey("footing", footing.key);
           return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="footing-design" data-footing-key="${escapeHtml(footing.key)}">` +
@@ -20556,6 +21344,12 @@
             `<td><input class="design-input" type="number" min="0.6" step="0.1" data-footing-design="${escapeHtml(footing.key)}" data-field="width" value="${design.width.toFixed(2)}"></td>` +
             `<td><input class="design-input" type="number" min="0.6" step="0.1" data-footing-design="${escapeHtml(footing.key)}" data-field="length" value="${design.length.toFixed(2)}"></td>` +
             `<td><input class="design-input" type="number" min="250" step="25" data-footing-design="${escapeHtml(footing.key)}" data-field="thickness" value="${design.thickness}"></td>` +
+            `${mprLoadCell(loadSources.dead, "Dead load delivered by the supported column to this footing.")}` +
+            `${mprLoadCell(loadSources.live, "Live load delivered by the supported column to this footing.")}` +
+            `${mprLoadCell(loadSources.point, "Point-load actions present on a frame connected to this footing's column.")}` +
+            `${mprLoadCell(loadSources.wall, "Wall Tool load delivered through the connected beam-column system.")}` +
+            `${mprLoadCell(loadSources.wind, "Total wind load on the governing connected frame; footing pressure and moments include the calculated support effects.")}` +
+            `${mprLoadCell(loadSources.earthquake, "Total earthquake load on the governing connected frame; footing pressure and moments include the calculated support effects.")}` +
             `<td>${valueCell(design.serviceLoad)}</td><td>${valueCell(design.pu)}</td><td>${valueCell(design.servicePressure)}</td><td>${valueCell(design.ultimatePressure)}</td>` +
             `<td>${valueCell(design.momentX)}</td><td>${valueCell(design.momentY)}</td>` +
             `<td><input class="design-input" type="number" min="10" step="1" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterX" value="${design.barDiameterX}"></td><td>${design.spacingX}</td>` +
@@ -20692,6 +21486,9 @@
             spanX,
             spanY,
             thickness: 0,
+            deadLoad: 0,
+            liveLoad: 0,
+            wallDeadPressure: 0,
             wu: 0,
             momentX: 0,
             momentY: 0,
@@ -20719,7 +21516,10 @@
         const loads = gravityAreaLoads();
         const dead = roof ? loads.roofDead : loads.floorDead;
         const live = roof ? loads.roofLive : loads.floorLive;
-        const wu = Math.max(1.4 * dead, 1.2 * dead + 1.6 * live);
+        const wallLoadSummary = slabWallLoadSummary(region, data);
+        const wallDeadPressure = Math.max(0, Number(wallLoadSummary.equivalentDeadPressure) || 0);
+        const deadWithWall = dead + wallDeadPressure;
+        const wu = Math.max(1.4 * deadWithWall, 1.2 * deadWithWall + 1.6 * live);
         let allocationX = 0;
         let allocationY = 0;
         if (isTwoWay) {
@@ -20822,11 +21622,19 @@
           : !!topX && !!topY && !!bottomX && !!bottomY && [topSteelX, topSteelY, bottomSteelX, bottomSteelY].every(Number.isFinite);
         const typeGeometryPass = isSlabOnFill ? levelIndex === 0 : !isTwoWay || aspectRatio < 2;
         const topologyPass = region.rectangular !== false;
-        const strengthPass = thickness >= minimumThickness && reinforcementPass && shearRatio <= 1 + 1e-9 && typeGeometryPass && topologyPass;
+        const wallSupportFailures = slabWallSupportFailures(region, data);
+        const wallSupportPass = wallSupportFailures.length === 0;
+        const governingWallFailure = wallSupportFailures[0] || null;
+        const strengthPass = thickness >= minimumThickness && reinforcementPass && shearRatio <= 1 + 1e-9 && typeGeometryPass && topologyPass && wallSupportPass;
         const readiness = coordinatedDesignReadiness();
         const pass = strengthPass && readiness.ready;
         let statusText = readiness.status;
-        if (readiness.ready) {
+        if (!wallSupportPass) {
+          const recommendation = governingWallFailure.recommendation;
+          statusText = recommendation.found
+            ? `SLAB FAILS - ${governingWallFailure.wall.name} NEEDS ${recommendation.width}×${recommendation.height} mm SUPPORT BEAM; MIDSPAN ${recommendation.midspanBottom}-D${recommendation.barDiameter} BOTTOM; D${recommendation.stirrupDiameter} @${recommendation.supportSpacing}/${recommendation.fieldSpacing} mm`
+            : `SLAB FAILS - ${governingWallFailure.wall.name} HAS NO SUPPORT BEAM; ENGINEERED LOAD PATH REQUIRED`;
+        } else if (readiness.ready) {
           if (!topologyPass) statusText = "IRREGULAR PANEL - VERIFY BY FE/STRIP ANALYSIS";
           else if (isSlabOnFill && levelIndex !== 0) statusText = "SLAB ON FILL REQUIRES GROUND LEVEL";
           else if (isTwoWay && aspectRatio >= 2) statusText = "USE ONE-WAY: ASPECT RATIO >= 2";
@@ -20848,7 +21656,15 @@
           spanY,
           thickness,
           maximumThickness: isSlabOnFill ? 100 : null,
+          deadLoad: dead,
+          liveLoad: live,
           wu,
+          wallDeadPressure,
+          wallTotalLoad: wallLoadSummary.totalForce,
+          wallLoadNames: wallLoadSummary.slabCarriedWalls.map(item => item.wall.name),
+          wallLoadNote: wallLoadSummary.slabCarriedWalls.length
+            ? `Slab demand includes ${wallLoadSummary.totalForce.toFixed(2)} kN from unsupported wall line load(s) ${wallLoadSummary.slabCarriedWalls.map(item => item.wall.name).join(", ")}, distributed over ${wallLoadSummary.slabArea.toFixed(2)} m² as ${wallDeadPressure.toFixed(2)} kPa additional dead load.`
+            : "No unsupported wall line load is carried directly by this slab panel.",
           momentX,
           momentY,
           barDiameter,
@@ -20865,11 +21681,17 @@
           minimumThickness,
           shearRatio,
           topologyPass,
+          wallSupportPass,
+          wallSupportFailures,
+          supportBeamRecommendation: governingWallFailure?.recommendation || null,
+          supportBeamDesignNote: governingWallFailure
+            ? `Slab calculation includes ${wallLoadSummary.totalForce.toFixed(2)} kN wall load (${wallDeadPressure.toFixed(2)} kPa equivalent dead load). ${governingWallFailure.wall.name}: ${governingWallFailure.recommendation.summary}. ${governingWallFailure.recommendation.equationSummary} Design assumes simple supports at the selected wall endpoints; verify the supporting columns/girders and final detailing.`
+            : "",
           reinforcementPass,
           strengthPass,
           pass,
           status: statusText,
-          statusClass: readiness.ready ? (strengthPass ? (isSlabOnFill ? "warn" : "pass") : "fail") : readiness.statusClass
+          statusClass: !wallSupportPass ? "fail" : readiness.ready ? (strengthPass ? (isSlabOnFill ? "warn" : "pass") : "fail") : readiness.statusClass
         };
       }
 
@@ -20931,7 +21753,7 @@
             }
             : {
               thickness: `<input class="design-input" type="number" min="100"${design.slabType === "SLAB_ON_FILL" ? ' max="100" title="Slab on fill is economically limited to 100 mm because it is continuously supported by earth fill."' : ""} step="5" data-slab-design="${escapeHtml(design.key)}" data-field="thickness" value="${design.thickness}">`,
-              wu: valueCell(design.wu), momentX: valueCell(design.momentX), momentY: valueCell(design.momentY),
+              wu: `<span title="${escapeHtml(design.wallLoadNote || "")}">${valueCell(design.wu)}</span>`, momentX: valueCell(design.momentX), momentY: valueCell(design.momentY),
               bar: `<input class="design-input" type="number" min="8" step="1" data-slab-design="${escapeHtml(design.key)}" data-field="barDiameter" value="${design.barDiameter}">`,
               topSpacingX: design.topSpacingX, topExtentX: escapeHtml(design.topExtentX),
               topSpacingY: design.topSpacingY, topExtentY: escapeHtml(design.topExtentY),
@@ -20939,10 +21761,17 @@
               minimumThickness: design.minimumThickness, shearRatio: valueCell(design.shearRatio)
             };
           return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="slab-design" data-slab-key="${escapeHtml(design.key)}"><td>${mprItemNumber(index)}</td><td>${escapeHtml(design.level)}</td><td><input class="member-id-input" data-member-rename="slab" data-name-key="${escapeHtml(design.key)}" value="${escapeHtml(design.slabId)}" aria-label="${escapeHtml(design.level)} slab ID"></td><td><select class="slab-type-select" data-slab-type="${escapeHtml(design.key)}" aria-label="${escapeHtml(design.slabId)} slab type">${slabTypeOptions(design.slabType)}</select></td>` +
-          `<td>${valueCell(design.spanX)}</td><td>${valueCell(design.spanY)}</td><td>${designValues.thickness}</td><td>${designValues.wu}</td><td>${designValues.momentX}</td><td>${designValues.momentY}</td>` +
+          `<td>${valueCell(design.spanX)}</td><td>${valueCell(design.spanY)}</td><td>${designValues.thickness}</td>` +
+          `${design.openSpace ? mprUnavailableLoadCell("Open Space is excluded from slab loads and design.") : mprLoadCell(design.deadLoad, "Area dead load used for this slab panel, excluding the separately listed Wall Tool pressure.")}` +
+          `${design.openSpace ? mprUnavailableLoadCell("Open Space is excluded from slab loads and design.") : mprLoadCell(design.liveLoad, "Area live load used for this slab panel.")}` +
+          `${mprUnavailableLoadCell("Member point loads are assigned to beams; a direct concentrated slab-load model is not active in this preliminary slab table.")}` +
+          `${design.openSpace ? mprUnavailableLoadCell("Open Space is excluded from slab loads and design.") : mprLoadCell(design.wallDeadPressure, design.wallLoadNote || "Equivalent area pressure from unsupported Wall Tool walls.")}` +
+          `${mprUnavailableLoadCell("Wind is resolved through the X and Y lateral frames, not as a direct slab gravity pressure in this table.")}` +
+          `${mprUnavailableLoadCell("Earthquake action is resolved through the X and Y lateral frames, not as a direct slab gravity pressure in this table.")}` +
+          `<td>${designValues.wu}</td><td>${designValues.momentX}</td><td>${designValues.momentY}</td>` +
           `<td>${designValues.bar}</td><td>${designValues.topSpacingX}</td><td>${designValues.topExtentX}</td><td>${designValues.topSpacingY}</td><td>${designValues.topExtentY}</td>` +
           `<td>${designValues.bottomSpacingX}</td><td>${designValues.bottomSpacingY}</td>` +
-          `<td>${designValues.minimumThickness}</td><td>${designValues.shearRatio}</td><td class="design-status ${design.statusClass}">${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.slabId)}</tr>`;
+          `<td>${designValues.minimumThickness}</td><td>${designValues.shearRatio}</td><td class="design-status ${design.statusClass}"${design.supportBeamDesignNote ? ` title="${escapeHtml(design.supportBeamDesignNote)}"` : ""}>${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.slabId)}</tr>`;
         });
       }
 
@@ -20959,14 +21788,14 @@
             rows.push(...resultTableMemberRows(axis, frameLine, entry.model, result, rows.length));
           });
         });
-        body.innerHTML = rows.join("") || '<tr><td colspan="20">No analyzed beam data. Place columns so coordinated X and Y frame lines can be generated, then Calculate.</td></tr>';
+        body.innerHTML = rows.join("") || '<tr><td colspan="25">No analyzed beam data. Place columns so coordinated X and Y frame lines can be generated, then Calculate.</td></tr>';
         applyBeamMprSort();
         const columnRows = columnResultRows();
-        columnBody.innerHTML = columnRows.join("") || '<tr><td colspan="19">No column data. Place columns in the Structural Plan.</td></tr>';
+        columnBody.innerHTML = columnRows.join("") || '<tr><td colspan="25">No column data. Place columns in the Structural Plan.</td></tr>';
         const footingRows = footingResultRows();
-        footingBody.innerHTML = footingRows.join("") || '<tr><td colspan="20">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr>';
+        footingBody.innerHTML = footingRows.join("") || '<tr><td colspan="26">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr>';
         const slabRows = slabResultRows();
-        slabBody.innerHTML = slabRows.join("") || '<tr><td colspan="21">No supported slab panels evaluated. Place columns on at least two X and two Y grid lines, then Calculate.</td></tr>';
+        slabBody.innerHTML = slabRows.join("") || '<tr><td colspan="27">No supported slab panels evaluated. Place columns on at least two X and two Y grid lines, then Calculate.</td></tr>';
         byId("memberPropsTable")?.querySelectorAll("[data-member-rename]").forEach(input => {
           input.title = "Double-click to view the step-by-step academic design solution";
         });
@@ -21414,19 +22243,29 @@
         }, delay);
       }
 
-      function showMemberNameHoverEditor(event, target) {
+      function clearMemberNameEditableHover(canvas) {
+        canvas?.classList.remove("member-name-editable-hover");
+        window.clearTimeout(memberNameHoverHideTimer);
+        const editor = byId("memberNameHoverEditor");
+        if (editor) editor.hidden = true;
+        hoverMemberRenameTarget = null;
+      }
+
+      function setMemberNameEditableHover(canvas, target) {
+        window.clearTimeout(memberNameHoverHideTimer);
+        const editor = byId("memberNameHoverEditor");
+        if (editor) editor.hidden = true;
+        hoverMemberRenameTarget = target || null;
+        canvas?.classList.toggle("member-name-editable-hover", Boolean(target));
+      }
+
+      function showPointLoadBeamHoverHint(event) {
         const editor = byId("memberNameHoverEditor");
         const hint = byId("memberNameHoverHint");
-        if (!editor || !hint || !target) return hideMemberNameHoverEditor();
+        if (!editor || !hint) return;
         window.clearTimeout(memberNameHoverHideTimer);
-        hoverMemberRenameTarget = target;
-        const rawKind = String(target.kind || "member").toLowerCase();
-        const kind = rawKind.includes("column") ? "column"
-          : rawKind.includes("slab") ? "slab"
-          : rawKind.includes("footing") ? "footing"
-          : rawKind.includes("beam") || rawKind.includes("girder") || rawKind === "member" ? "beam"
-          : rawKind;
-        hint.textContent = `Click to edit ${kind} name`;
+        hoverMemberRenameTarget = null;
+        hint.textContent = "Click a point on this Beam";
         editor.hidden = false;
         const left = Math.min(window.innerWidth - editor.offsetWidth - 8, event.clientX + 10);
         const top = Math.min(window.innerHeight - editor.offsetHeight - 8, event.clientY + 10);
@@ -21442,33 +22281,39 @@
         const canShowHint = () => ["pan", "rename", "annotation_edit_text"].includes(planState.mode);
         const planCanvas = byId("structuralPlanCanvas");
         planCanvas?.addEventListener("mousemove", event => {
-          if (planState.activeView !== "PLAN" || !canShowHint()) return hideMemberNameHoverEditor();
-          const target = planNameLabelAt(yCanvasPoint(event, planCanvas));
-          if (target) showMemberNameHoverEditor(event, target);
-          else hideMemberNameHoverEditor(80);
+          if (planState.activeView !== "PLAN") return clearMemberNameEditableHover(planCanvas);
+          const canvasPoint = yCanvasPoint(event, planCanvas);
+          if (planPointLoadPlacementActive) {
+            planCanvas.classList.remove("member-name-editable-hover");
+            const hit = nearestPlanMemberHit(canvasPoint, makePlanData(), 6);
+            if (hit?.member && ["Beam", "Tie Beam"].includes(hit.member.type)) showPointLoadBeamHoverHint(event);
+            else hideMemberNameHoverEditor();
+            return;
+          }
+          if (!canShowHint()) return clearMemberNameEditableHover(planCanvas);
+          setMemberNameEditableHover(planCanvas, planNameLabelAt(canvasPoint));
         });
-        planCanvas?.addEventListener("mouseleave", () => hideMemberNameHoverEditor(140));
+        planCanvas?.addEventListener("mouseleave", () => clearMemberNameEditableHover(planCanvas));
 
         const xCanvas = byId("canvas");
         xCanvas?.addEventListener("mousemove", event => {
-          if (planState.activeView !== "X" || !canShowHint()) return hideMemberNameHoverEditor();
+          if (planState.activeView !== "X" || !canShowHint()) return clearMemberNameEditableHover(xCanvas);
           const canvasPoint = eventToCanvas(event);
-          const member = getMemberAt(canvasPoint.x, canvasPoint.y) || nearestXAxisMemberAt(canvasPoint.x, canvasPoint.y);
+          const memberId = window.strucForgeXMemberNameAt?.(canvasPoint.x, canvasPoint.y);
+          const member = memberId == null ? null : getMember(memberId);
           const target = frameMemberRenameTarget(member, "X", activeFrameLines.X || byId("planXFrameLine")?.value || "");
-          if (target) showMemberNameHoverEditor(event, target);
-          else hideMemberNameHoverEditor(80);
+          setMemberNameEditableHover(xCanvas, target);
         });
-        xCanvas?.addEventListener("mouseleave", () => hideMemberNameHoverEditor(140));
+        xCanvas?.addEventListener("mouseleave", () => clearMemberNameEditableHover(xCanvas));
 
         const yCanvas = byId("yAxisCanvas");
         yCanvas?.addEventListener("mousemove", event => {
-          if (planState.activeView !== "Y" || !canShowHint()) return hideMemberNameHoverEditor();
-          const nearest = yNearestMember(yCanvasPoint(event, yCanvas), makePlanData(), 36);
-          const target = frameMemberRenameTarget(nearest?.member, "Y", activeFrameLines.Y || byId("planYFrameLine")?.value || "");
-          if (target) showMemberNameHoverEditor(event, target);
-          else hideMemberNameHoverEditor(80);
+          if (planState.activeView !== "Y" || !canShowHint()) return clearMemberNameEditableHover(yCanvas);
+          const member = yFrameMemberNameAt(yCanvasPoint(event, yCanvas));
+          const target = frameMemberRenameTarget(member, "Y", activeFrameLines.Y || byId("planYFrameLine")?.value || "");
+          setMemberNameEditableHover(yCanvas, target);
         });
-        yCanvas?.addEventListener("mouseleave", () => hideMemberNameHoverEditor(140));
+        yCanvas?.addEventListener("mouseleave", () => clearMemberNameEditableHover(yCanvas));
       }
 
       function installDrawingMemberNameEditing() {
@@ -21680,6 +22525,21 @@
             academicStep(5, "Select reinforcement spacing from the required steel area", "As,provided/m = (πdb²/4)(1000/s)", `Top X ≈ ${academicNumber(providedX, 0)} mm²/m; Top Y ≈ ${academicNumber(providedY, 0)} mm²/m using D${academicNumber(bar, 0)}`),
             academicStep(6, "Verify one-way shear", "Shear D/C = Vu / φVc ≤ 1.00", `Shear D/C = ${mprRowCellText(row, 18)}; status: ${mprRowCellText(row, 19)}`)
           ]});
+          const currentSlabDesign = slabDesignResults().find(design => String(design.key) === String(input.dataset.nameKey));
+          const wallFailure = currentSlabDesign?.wallSupportFailures?.[0];
+          const recommendation = wallFailure?.recommendation;
+          if (wallFailure && recommendation) {
+            const supportResult = recommendation.found
+              ? `${recommendation.width} × ${recommendation.height} mm; midspan ${recommendation.midspanBottom}-D${recommendation.barDiameter} bottom / ${recommendation.midspanTop}-D${recommendation.barDiameter} top; supports ${recommendation.supportTop}-D${recommendation.barDiameter} top / ${recommendation.supportBottom}-D${recommendation.barDiameter} bottom`
+              : recommendation.summary;
+            sections.push({title: "3. Unsupported wall load path and support-beam solution", steps: [
+              academicStep(7, `Trace ${wallFailure.wall.name} to a coincident beam`, "Continuous beam coverage below the wall must equal 100% of wall length", `Detected coverage = ${academicNumber(100 * wallFailure.support.coverage / Math.max(wallFailure.support.length, 1e-9), 1)}%; therefore the slab load path fails.`),
+              academicStep(8, "Convert wall and slab-strip loads to beam line loads", "D = wwall + qD bt + wbeam; L = qL bt", `wwall = ${academicNumber(recommendation.wallLineLoad)} kN/m; bt = ${academicNumber(recommendation.tributaryWidth)} m; D excluding beam = ${academicNumber(recommendation.deadLineLoad)} kN/m; L = ${academicNumber(recommendation.liveLineLoad)} kN/m`),
+              academicStep(9, "Solve the preliminary simply-supported beam actions", "wu = max(1.4D, 1.2D + 1.6L); Mu = wuL²/8; Vu = wuL/2", recommendation.found ? `wu = ${academicNumber(recommendation.factoredLineLoad)} kN/m; Mu = ${academicNumber(recommendation.designMoment)} kN·m; Vu = ${academicNumber(recommendation.designShear)} kN` : recommendation.equationSummary),
+              academicStep(10, "Select the least-cost passing searched RC beam section", "φMn ≥ Mu; φ(Vc+Vs) ≥ Vu; ΔD+L ≤ L/240", supportResult),
+              academicStep(11, "Detail transverse reinforcement", "Use the governing strength, minimum-shear-steel, spacing and seismic end-zone limits", recommendation.found ? `D${recommendation.stirrupDiameter} @${recommendation.supportSpacing} mm within ${recommendation.supportZone} mm end zones; @${recommendation.fieldSpacing} mm central zone; flexure/shear/deflection D/C = ${academicNumber(recommendation.flexureRatio)}/${academicNumber(recommendation.shearRatio)}/${academicNumber(recommendation.deflectionRatio)}` : "A project-specific engineered load path is required.")
+            ]});
+          }
         } else if (kind === "footing") {
           const width = mprRowNumber(row, 3), length = mprRowNumber(row, 4), thickness = mprRowNumber(row, 5);
           const service = mprRowNumber(row, 6), pu = mprRowNumber(row, 7), qService = mprRowNumber(row, 8), qu = mprRowNumber(row, 9);
@@ -22499,6 +23359,7 @@
         installNewDesignConfirmation();
         installSidebarPackageToggles();
         installSidebarSubgroups();
+        installSidebarLearningHelp();
         installCadImport();
         expandDefaultSidebarPackages();
         installTemplateSaving();
@@ -22592,8 +23453,9 @@
         renderStructuralPlanEditors();
         renderStructuralSequence({resetViews: true, activeView: "PLAN"});
         try {
-          fontScale = 1.25;
-          byId("fontScaleSelect").value = "1.25";
+          const storedFontScale = Number(localStorage.getItem("strucforge_font_scale"));
+          fontScale = storedFontScale || Number(byId("fontScaleSelect")?.value) || 1.25;
+          if (byId("fontScaleSelect")) byId("fontScaleSelect").value = String(fontScale);
           draw();
           drawYAxisCanvas(makePlanData());
         } catch (error) {}
@@ -22660,10 +23522,12 @@
         byId("calculateBtn")?.addEventListener("click", () => setTimeout(runCoordinatedAnalysis, 0));
         byId("showDiagramBtn")?.addEventListener("click", () => drawYAxisCanvas(makePlanData()));
         byId("toggleLoadsBtn")?.addEventListener("click", () => drawYAxisCanvas(makePlanData()));
-        byId("fontScaleSelect")?.addEventListener("change", () => {
+        window.strucForgeRedrawScaledViews = () => {
           drawPlan(makePlanData());
           drawYAxisCanvas(makePlanData());
-        });
+          if (planState.activeView === "ISO") drawIsometricStructure(makePlanData());
+          redrawAnnotationView(planState.activeView);
+        };
         byId("modeColumn")?.addEventListener("click", () => {
           if (workspaceDeleteMode) setWorkspaceDeleteMode(false);
           const activeEditor = byId("activeFrameEditor")?.value;

@@ -9,6 +9,11 @@ const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 assert(html.includes("Default member dimensions; you can edit them later in Member Properties / Results."), "Member Dimensions hover guidance is missing");
 assert(css.includes("font:700 9px/1.3 Arial,sans-serif"), "Member Dimensions hover guidance must use a compact 9 px font");
 assert(html.includes("function installMprTableScrolling()"), "MPR scroll-region installer is missing");
+assert(html.includes('<span class="mpr-title-text">Member Properties / Results (MPR)</span>'), "The main results heading must use the requested full MPR title");
+assert(css.includes('.mpr-title-text{font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:16px;font-weight:300;line-height:1;color:#fff'), "The MPR title must use white Aptos Light text on the green strip");
+assert(css.includes('letter-spacing:.08em;background:#16845b;color:#fff'), "The main MPR strip must use the calculated-state green with white text");
+assert(css.includes('.results-subsection.is-collapsed,.member-props-table.is-collapsed{overflow:hidden!important;scrollbar-width:none!important}'), "Collapsed MPR tables must not show a vertical scrollbar");
+assert(css.includes(".mpr-table-scroll{position:relative;width:100%;max-height:420px;overflow-x:hidden;overflow-y:auto"), "MPR tables must keep vertical scrolling without a horizontal slider");
 assert(css.includes(".mpr-table-scroll thead tr:last-child>th{position:sticky"), "MPR column headings must remain sticky while rows scroll");
 assert(!css.includes(".mpr-table-scroll thead tr:last-child>th{position:sticky;top:0;z-index:6;background:"), "Sticky MPR headers must not override the established high-contrast theme colors");
 

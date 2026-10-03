@@ -57,6 +57,6 @@ assert.strictEqual(
 assert(!html.includes('"DETAILING"'), "The ambiguous DETAILING status remains in the column design code");
 assert(html.includes("required 1.00%-6.00%"), "The MPR tooltip does not explain the longitudinal steel limits");
 assert(html.includes("columnCandidateReason({demandCaseCount: demandCases.length"), "The active column evaluator does not use the precise status helper");
-assert(html.includes("#columnResultsTable td:nth-child(18)"), "The column status width is not protected from broken diagnostic text");
+assert(html.includes("#columnResultsTable td:nth-child(24)"), "The column status width is not protected from broken diagnostic text");
 
 console.log("column detailing status regression tests: passed");

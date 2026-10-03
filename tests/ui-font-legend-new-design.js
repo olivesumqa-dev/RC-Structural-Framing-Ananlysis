@@ -14,7 +14,7 @@ assert(html.includes('<table class="legend-table"'), "Legend must use a structur
 assert(html.includes("function installLegendMenu()") && css.includes(".legend-menu[open] .legend-content{display:block}"), "Legend must have a working explicit open/close controller");
 assert(html.includes("Gross concrete section area") && html.includes("Demand-to-capacity ratio") && html.includes("Strength-reduction factor"), "Expanded structural legend items are missing");
 assert(!html.includes("DL+SW kN/m") && !html.includes("SW kN/m"), "Separate MPR self-weight columns must be removed");
-assert(html.includes("<th>DL, kN/m</th>"), "Combined dead load must be labeled DL");
+assert(html.includes('class="mpr-load-heading">DL, kN/m</th>'), "Beam dead load must be labeled DL");
 assert(html.includes("Structural Design Tools"), "Sidebar title was not updated");
 assert(html.includes("CREATE NEW DESIGN") && html.includes("This will delete all existing drawing"), "CREATE NEW DESIGN label or warning tooltip is missing");
 assert(html.includes("Are you sure to continue?") && html.includes('id="newDesignConfirmNo"') && html.includes('id="newDesignConfirmYes"'), "New Design No/Yes confirmation is missing");
