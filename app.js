@@ -837,6 +837,7 @@ function draw(options = {}) {
   drawNodes();
   const showCalculatedLoads = loadsVisible && (typeof window.strucForgeFrameLoadsReady !== "function" || window.strucForgeFrameLoadsReady());
   if (showCalculatedLoads) drawLoads();
+  else if (loadsVisible) drawLoads({assignedOnly: true});
   if (showCalculatedLoads) drawSupportReactions();
   drawMainDiagramTitle();
   if (diagramsVisible) drawResultsInMainCanvas();
@@ -1452,11 +1453,15 @@ function typicalColumnArrowLength() {
   return Math.max(scaled(14), columnSpan * 0.25);
 }
 
-function drawLoads() {
+function drawLoads(options = {}) {
   const memberUdlMap = {};
   const memberPointStack = {};
   const nodeLoadMap = {};
-  for (const L of model.loads) {
+  const assignedSources = new Set(["structural-wall-plan", "manual-wall-plan", "manual-wall", "manual-point-plan"]);
+  const visibleLoads = options.assignedOnly
+    ? (model.loads || []).filter(load => assignedSources.has(String(load.source || "")))
+    : (model.loads || []);
+  for (const L of visibleLoads) {
     if (L.kind === "node") {
       const key = L.node;
       if (!nodeLoadMap[key]) nodeLoadMap[key] = {kind:"node", case:"P", node:key, fx:0, fy:0, mz:0};

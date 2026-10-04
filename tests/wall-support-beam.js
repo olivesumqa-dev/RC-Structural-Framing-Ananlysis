@@ -52,6 +52,24 @@ const unsupportedApi = Function(`
 const unsupported = unsupportedApi.wallSupportingBeamCoverage(wall, {});
 assert.strictEqual(unsupported.supported, false, "A partial or crossing beam must not be accepted as continuous support below the wall");
 
+const offGridApi = Function(`
+  ${sourceFunction("structuralWallCoordinatesInFrame")}
+  ${sourceFunction("structuralWallSupportMatchesFrame")}
+  return {structuralWallCoordinatesInFrame, structuralWallSupportMatchesFrame};
+`)();
+const offGridCoordinates = offGridApi.structuralWallCoordinatesInFrame(
+  {startPoint: {x: 10, y: 20}, endPoint: {x: 14, y: 20}},
+  {planTransferBeam: true, transferEndpoints: [{x: 10, y: 20}, {x: 14, y: 20}]},
+  "X",
+  30
+);
+assert.deepStrictEqual(offGridCoordinates, {start: 0, end: 4}, "Off-grid Wall Tool loads must be converted to the transfer frame's local coordinates");
+assert.strictEqual(
+  offGridApi.structuralWallSupportMatchesFrame({member: {axis: "X", id: "PLAN-7", generated: false}}, "X", "OFFSET:PLAN-7"),
+  true,
+  "An off-grid supporting beam must match its generated transfer-frame line"
+);
+
 const clippingApi = Function(`
   const makePlanData = () => ({});
   ${sourceFunction("wallLengthInsideSlabRegion")}
@@ -71,6 +89,9 @@ assert(html.includes("function wallSupportBeamRecommendation"), "Unsupported wal
 assert(html.includes("Mu=wuL²/8") && html.includes("Vu=wuL/2"), "Support-beam calculation must expose the governing engineering equations");
 assert(html.includes("SLAB FAILS") && html.includes("wallSupportFailures"), "Affected slab results must fail when a wall has no continuous beam below it");
 assert(html.includes('source: "structural-wall-plan"'), "Supported Wall Tool loads must enter the analytical frame model");
+assert(html.includes("function synchronizeStructuralWallOutputs") && (html.match(/synchronizeStructuralWallOutputs\(data\)/g) || []).length >= 2, "Wall creation and deletion must immediately synchronize frame and MPR data");
+assert(html.includes("applyStoredPlanLoadsToFrame(source.model, axis, frameLine)") && html.includes("applyStoredPlanLoadsToFrame(transferModel, axis, frameLine)"), "Grid and off-grid frame catalog entries must refresh stored plan loads");
+assert(app.includes("drawLoads({assignedOnly: true})") && html.includes("const assignedMemberLoads = rawMemberLoads.filter"), "Assigned wall loads must remain visible in X and Y frames while recalculation is pending");
 assert(html.includes("recommendation.midspanBottom") && html.includes("recommendation.stirrupDiameter"), "The recommendation must include longitudinal bars and stirrups");
 assert(html.includes("function structuralWallWeightAtLevel"), "Wall Tool dead load must be included in story weight");
 assert((html.match(/\+ wallWeight \+ additionalWeight/g) || []).length >= 2, "Wall weight must enter both current story-weight calculation paths");

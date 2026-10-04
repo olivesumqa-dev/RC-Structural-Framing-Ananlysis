@@ -14409,7 +14409,7 @@
 }
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=69"></script>
+  <script src="app.js?v=70"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -21379,8 +21379,7 @@
         pushWorkspaceHistory();
         planLevelWalls().push(wall);
         planState.wallStart = endpoint;
-        setCalculationDirty(true);
-        drawPlan(data);
+        synchronizeStructuralWallOutputs(data);
         if (typeof status === "function") {
           const support = wallSupportingBeamCoverage(wall, data);
           if (support.supported) {
@@ -22261,8 +22260,7 @@
             pushWorkspaceHistory();
             planState.levelWalls[String(planState.activeLevelIndex)] = planLevelWalls().filter(item => item.id !== wall.id);
             planState.wallStart = null;
-            setCalculationDirty(true);
-            drawPlan(data);
+            synchronizeStructuralWallOutputs(data);
             if (typeof status === "function") status(`Structural wall ${wall.name} deleted. Undo is available.`);
             return;
           }
@@ -23227,7 +23225,8 @@
         ctx.lineJoin = "round";
         const yModel = yFrameState.model;
         if (yModel) {
-          const showCalculatedLoads = !calculationDirty && (typeof loadsVisible === "undefined" || loadsVisible);
+          const loadsAreVisible = typeof loadsVisible === "undefined" || loadsVisible;
+          const showCalculatedLoads = !calculationDirty && loadsAreVisible;
           const groupedBeamLabels = new Map();
           yModel.members.forEach(member => {
             const a = yModelNode(member.i);
@@ -23267,8 +23266,10 @@
               }
             }
 
-            const memberLoads = displayedTieBeamLoads(member, yModel.loads.filter(load => String(load.member) === String(member.id) && load.kind === "member_udl"));
-            if (memberLoads.length && showCalculatedLoads) {
+            const rawMemberLoads = yModel.loads.filter(load => String(load.member) === String(member.id) && load.kind === "member_udl");
+            const assignedMemberLoads = rawMemberLoads.filter(load => ["structural-wall-plan", "manual-wall-plan", "manual-wall"].includes(String(load.source || "")));
+            const memberLoads = showCalculatedLoads ? displayedTieBeamLoads(member, rawMemberLoads) : assignedMemberLoads;
+            if (memberLoads.length && loadsAreVisible) {
               drawYAxisUdlBox(ctx, member, {x: ax, y: ay}, {x: bx, y: by}, memberLoads);
             }
           });
@@ -24866,6 +24867,7 @@
                 if (removedGroundBeamIds.has(String(source.pointLoads[index]?.member))) source.pointLoads.splice(index, 1);
               }
             }
+            applyStoredPlanLoadsToFrame(source.model, axis, frameLine);
             const prepared = preparedAnalysisModel(source.model, source.pointLoads);
             if (!(prepared.members || []).some(member => member.type === "Column")) return;
             catalog[axis][frameLine] = {...source, model: prepared, frameLine, axis};
@@ -24876,6 +24878,7 @@
           if (!transferModel) return;
           const axis = transferModel.axis;
           const frameLine = transferModel.frameLine;
+          applyStoredPlanLoadsToFrame(transferModel, axis, frameLine);
           catalog[axis][frameLine] = {
             model: preparedAnalysisModel(transferModel),
             pointLoads: [],
@@ -25609,18 +25612,43 @@
         ].filter(Boolean).some(id => recordIds.has(String(id)));
       }
 
+      function structuralWallCoordinatesInFrame(wall, frameModel, axis, totalY) {
+        if (frameModel?.planTransferBeam && Array.isArray(frameModel.transferEndpoints) && frameModel.transferEndpoints.length >= 2) {
+          const origin = frameModel.transferEndpoints[0] || {};
+          const destination = frameModel.transferEndpoints[1] || {};
+          const dx = Number(destination.x) - Number(origin.x);
+          const dy = Number(destination.y) - Number(origin.y);
+          const length = Math.hypot(dx, dy);
+          if (length > 1e-6) {
+            const project = point => ((Number(point?.x) - Number(origin.x)) * dx + (Number(point?.y) - Number(origin.y)) * dy) / length;
+            return {start: project(wall.startPoint), end: project(wall.endPoint)};
+          }
+        }
+        return axis === "X"
+          ? {start: Number(wall.startPoint?.x), end: Number(wall.endPoint?.x)}
+          : {start: totalY - Number(wall.startPoint?.y), end: totalY - Number(wall.endPoint?.y)};
+      }
+
+      function structuralWallSupportMatchesFrame(match, axis, frameLine) {
+        if (match.member.axis !== axis) return false;
+        if (String(match.member.frameLine) === String(frameLine)) return true;
+        const sourcePlanMemberId = match.member.sourcePlanMemberId || (!match.member.generated ? match.member.id : null);
+        return sourcePlanMemberId != null && String(frameLine) === `OFFSET:${sourcePlanMemberId}`;
+      }
+
       function applyStructuralWallToolLoadsToFrame(frameModel, axis, frameLine, data = makePlanData()) {
         const totalY = data.yPos[data.yPos.length - 1] || 0;
         Object.values(planState.levelWalls || {}).flat().forEach(wall => {
           const support = wallSupportingBeamCoverage(wall, data);
           if (!support.supported) return;
-          const wallStartCoordinate = axis === "X" ? Number(wall.startPoint?.x) : totalY - Number(wall.startPoint?.y);
-          const wallEndCoordinate = axis === "X" ? Number(wall.endPoint?.x) : totalY - Number(wall.endPoint?.y);
+          const wallCoordinates = structuralWallCoordinatesInFrame(wall, frameModel, axis, totalY);
+          const wallStartCoordinate = wallCoordinates.start;
+          const wallEndCoordinate = wallCoordinates.end;
           const wallMinimum = Math.min(wallStartCoordinate, wallEndCoordinate);
           const wallMaximum = Math.max(wallStartCoordinate, wallEndCoordinate);
           const appliedMembers = new Set();
           support.matches
-            .filter(match => match.member.axis === axis && String(match.member.frameLine) === String(frameLine))
+            .filter(match => structuralWallSupportMatchesFrame(match, axis, frameLine))
             .forEach(match => {
               const record = {
                 levelIndex: wall.levelIndex,
@@ -25725,6 +25753,22 @@
             });
           });
         return frameModel;
+      }
+
+      function synchronizeStructuralWallOutputs(data = makePlanData()) {
+        const {catalog} = buildFrameCatalog(data);
+        persistFrameCatalog(catalog);
+        engineeringState.designEnvelopes = null;
+        engineeringState.allFrameResults = {X: {}, Y: {}};
+        engineeringState.allFrameEnvelopes = {X: {}, Y: {}};
+        engineeringState.lastAudit = null;
+        yFrameState.lastResult = null;
+        try { lastAnalysisResult = null; } catch (error) {}
+        setCalculationDirty(true);
+        appendCoordinatedResults();
+        drawPlan(data);
+        try { draw({skipMpr: true}); } catch (error) {}
+        drawYAxisCanvas(data);
       }
 
       function selectedFrameMembers() {
