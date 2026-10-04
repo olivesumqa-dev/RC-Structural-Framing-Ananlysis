@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=59" />
+  <link rel="stylesheet" href="styles.css?v=60" />
   <style>
     .structural-sequence {
       display: grid;
@@ -2605,6 +2605,18 @@
             <button id="uploadDrawingsConfirmYes" type="button">YES</button>
           </div>
         </div>
+      </dialog>
+
+      <dialog id="overlapObjectDialog" class="girder-direction-dialog overlap-object-dialog" aria-labelledby="overlapObjectTitle">
+        <form method="dialog" class="girder-direction-dialog-inner">
+          <h3 id="overlapObjectTitle">SELECT OBJECT/S TO DELETE</h3>
+          <p id="overlapObjectMessage">Select object/s to delete</p>
+          <div id="overlapObjectList" class="overlap-object-list" role="group" aria-labelledby="overlapObjectTitle"></div>
+          <div class="girder-direction-actions">
+            <button id="overlapObjectApply" type="button">Delete Selected</button>
+            <button id="overlapObjectCancel" class="girder-direction-cancel" type="button">Cancel</button>
+          </div>
+        </form>
       </dialog>
 
       <dialog id="annotationEditDialog" class="girder-direction-dialog" aria-labelledby="annotationEditTitle">
@@ -14409,7 +14421,7 @@
 }
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=70"></script>
+  <script src="app.js?v=72"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -14884,6 +14896,55 @@
       function byId(id) {
         return document.getElementById(id);
       }
+
+      window.strucForgeOpenOverlapChooser = function openOverlapObjectChooser(options = {}) {
+        const mode = options.mode === "delete" ? "delete" : "select";
+        const candidates = Array.isArray(options.candidates) ? options.candidates.filter(candidate => candidate && candidate.label) : [];
+        const applySelection = typeof options.onApply === "function" ? options.onApply : () => {};
+        if (candidates.length <= 1) {
+          if (candidates.length) applySelection(candidates);
+          return false;
+        }
+        const dialog = byId("overlapObjectDialog");
+        const title = byId("overlapObjectTitle");
+        const message = byId("overlapObjectMessage");
+        const list = byId("overlapObjectList");
+        const applyButton = byId("overlapObjectApply");
+        const cancelButton = byId("overlapObjectCancel");
+        if (!dialog || !title || !message || !list || !applyButton || !cancelButton) return false;
+        title.textContent = mode === "delete" ? "SELECT OBJECT/S TO DELETE" : "SELECT OBJECT/S";
+        message.textContent = mode === "delete" ? "Select object/s to delete" : "Select one or more overlapping objects";
+        applyButton.textContent = mode === "delete" ? "Delete Selected" : "Select Chosen";
+        list.replaceChildren();
+        candidates.forEach((candidate, index) => {
+          const label = document.createElement("label");
+          label.className = "overlap-object-option";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = index === 0;
+          checkbox.dataset.candidateIndex = String(index);
+          const text = document.createElement("span");
+          text.textContent = candidate.label;
+          label.append(checkbox, text);
+          list.appendChild(label);
+        });
+        const updateApplyState = () => {
+          applyButton.disabled = !list.querySelector("input:checked");
+        };
+        list.onchange = updateApplyState;
+        applyButton.onclick = () => {
+          const selected = Array.from(list.querySelectorAll("input:checked"))
+            .map(input => candidates[Number(input.dataset.candidateIndex)])
+            .filter(Boolean);
+          if (!selected.length) return;
+          dialog.close("apply");
+          applySelection(selected);
+        };
+        cancelButton.onclick = () => dialog.close("cancel");
+        updateApplyState();
+        dialog.showModal();
+        return true;
+      };
 
       const DRAWING_FONT_FAMILY = '"Aptos Light", Aptos, Arial, sans-serif';
 
@@ -15420,6 +15481,18 @@
         };
       }
 
+      function standardTwoByThreeDividerEvidence(xScores, yScores, width, height) {
+        const peakNear = (values, target, radius) => {
+          const start = Math.max(0, Math.floor(target - radius));
+          const end = Math.min(values.length - 1, Math.ceil(target + radius));
+          return Math.max(0, ...values.slice(start, end + 1));
+        };
+        const verticalEvidence = peakNear(xScores, width / 2, width * 0.08) >= height * 0.18;
+        const horizontalEvidence = [height / 3, height * 2 / 3]
+          .every(target => peakNear(yScores, target, height * 0.08) >= width * 0.18);
+        return verticalEvidence && horizontalEvidence;
+      }
+
       async function reconcileCadPanelRoles(panels) {
         const planPanels = panels.filter(panel => !(panel.rowCount === 3 && panel.rowIndex === panel.rowCount - 1));
         for (const panel of planPanels) {
@@ -15479,9 +15552,14 @@
         let yIntervals = yBounds.slice(0, -1).map((start, index) => ({start, end: yBounds[index + 1]})).filter(interval => interval.end - interval.start >= height * 0.12);
         if (xIntervals.length !== 2 || yIntervals.length !== 3) {
           const standardBounds = standardTwoByThreeSheetBounds(xScores, yScores, width, height);
-          if (standardBounds) {
-            xBounds = standardBounds.xBounds;
-            yBounds = standardBounds.yBounds;
+          if (standardBounds || (width / Math.max(1, height) >= 1.20 && width / Math.max(1, height) <= 1.75
+            && standardTwoByThreeDividerEvidence(xScores, yScores, width, height))) {
+            const bounds = standardBounds || {
+              xBounds: [0, Math.round(width / 2), width - 1],
+              yBounds: [0, Math.round(height / 3), Math.round(height * 2 / 3), height - 1]
+            };
+            xBounds = bounds.xBounds;
+            yBounds = bounds.yBounds;
             xIntervals = xBounds.slice(0, -1).map((start, index) => ({start, end: xBounds[index + 1]}));
             yIntervals = yBounds.slice(0, -1).map((start, index) => ({start, end: yBounds[index + 1]}));
           }
@@ -15905,32 +15983,43 @@
           .slice(0, count)
           .sort((a, b) => a - b);
         const xCoordinates = strongest(xProjection, referenceSpans.length + 1, Math.max(6, width * 0.018), width * 0.14, width * 0.92);
-        const yCoordinates = strongest(yProjection, expectedCount + 1, Math.max(6, height * 0.018), height * 0.15, height * 0.84);
+        // Frame sheets commonly place an overall dimension line above the roof.
+        // Start below that annotation band so the selected rows are the actual
+        // foundation and floor framing lines, including the short first storey.
+        const yCoordinates = projectionPeaks(yProjection, Math.max(6, height * 0.018), 0.28)
+          .filter(position => position > height * 0.24 && position < height * 0.84)
+          .sort((a, b) => yProjection[b] - yProjection[a])
+          .slice(0, expectedCount + 1)
+          .sort((a, b) => a - b);
         if (xCoordinates.length !== referenceSpans.length + 1 || yCoordinates.length !== expectedCount + 1) return [];
+        const horizontalScales = referenceSpans.map((span, index) => span / Math.max(1, xCoordinates[index + 1] - xCoordinates[index]));
+        if (Math.max(...horizontalScales) / Math.max(0.0001, Math.min(...horizontalScales)) > 1.25) return [];
         const metresPerPixel = referenceSpans.reduce((sum, value) => sum + value, 0) / Math.max(1, xCoordinates[xCoordinates.length - 1] - xCoordinates[0]);
         return yCoordinates.slice(0, -1).map((coordinate, index) => (yCoordinates[index + 1] - coordinate) * metresPerPixel)
-          .reverse().map(value => Number((Math.round(value * 20) / 20).toFixed(2)));
+          .reverse().map(value => {
+            const quarterMetre = Math.round(value * 4) / 4;
+            const snapped = Math.abs(value - quarterMetre) <= 0.08 ? quarterMetre : Math.round(value * 20) / 20;
+            return Number(snapped.toFixed(2));
+          });
       }
 
       async function analyzeRasterFrameDimensions(source, expectedCount, referenceDetected) {
         if (!source?.image || !expectedCount) return null;
+        let recognized = {blocks: [], text: ""};
         try {
-          const recognized = await recognizeCadImageText(source.image);
-          const candidates = cadNumericTextCandidates(source.image, recognized.blocks);
-          const printedHeights = chooseFrameStoreyHeights(candidates, expectedCount, source.image);
-          const referenceSpans = source.role === "Y-AXIS FRAME" ? referenceDetected?.ySpans : referenceDetected?.xSpans;
-          const geometricHeights = frameStoreyHeightsFromGeometry(source.image, expectedCount, referenceSpans);
-          const levelHeights = printedHeights.length === expectedCount ? printedHeights : geometricHeights;
-          source.frameAnalysis = {
-            levelHeights,
-            ocrText: recognized.text,
-            dimensionCalibration: printedHeights.length === expectedCount ? "drawing-text" : geometricHeights.length === expectedCount ? "scaled-frame-geometry" : "unresolved"
-          };
-          return source.frameAnalysis;
-        } catch (error) {
-          source.frameAnalysis = {levelHeights: [], ocrText: "", dimensionCalibration: "unresolved"};
-          return source.frameAnalysis;
-        }
+          recognized = await recognizeCadImageText(source.image);
+        } catch (error) {}
+        const candidates = cadNumericTextCandidates(source.image, recognized.blocks || []);
+        const printedHeights = chooseFrameStoreyHeights(candidates, expectedCount, source.image);
+        const referenceSpans = source.role === "Y-AXIS FRAME" ? referenceDetected?.ySpans : referenceDetected?.xSpans;
+        const geometricHeights = frameStoreyHeightsFromGeometry(source.image, expectedCount, referenceSpans);
+        const levelHeights = printedHeights.length === expectedCount ? printedHeights : geometricHeights;
+        source.frameAnalysis = {
+          levelHeights,
+          ocrText: recognized.text || "",
+          dimensionCalibration: printedHeights.length === expectedCount ? "drawing-text" : geometricHeights.length === expectedCount ? "scaled-frame-geometry" : "unresolved"
+        };
+        return source.frameAnalysis;
       }
 
       function inferImportedFrameGridLines(source, xLabels, yLabelsTopDown) {
@@ -15993,10 +16082,10 @@
         return coordinates;
       }
 
-      function projectionPeaks(values, minimumGap = 8) {
+      function projectionPeaks(values, minimumGap = 8, thresholdRatio = 0.58) {
         const max = Math.max(...values, 0);
         if (!(max > 0)) return [];
-        const threshold = max * 0.58;
+        const threshold = max * thresholdRatio;
         const candidates = [];
         let start = -1;
         for (let index = 0; index <= values.length; index += 1) {
@@ -16296,6 +16385,72 @@
         return detected;
       }
 
+      function coordinateRasterPlanGrids(sources) {
+        const plans = sources.filter(source => /^(?:FOUNDATION|LEVEL-\d+)$/.test(source.role || "") && source.kind === "image" && source.detected && source.image);
+        const levels = plans.filter(source => /^LEVEL-\d+$/.test(source.role || ""));
+        if (levels.length < 2) return null;
+        const evidence = levels.map(source => {
+          const detected = source.detected;
+          const columnX = Array.from(new Set((detected.columnPoints || []).map(point => point.xIndex))).sort((a, b) => a - b);
+          const columnY = Array.from(new Set((detected.columnPoints || []).map(point => point.yIndex))).sort((a, b) => a - b);
+          return {
+            source,
+            xCount: columnX.length >= 2 ? columnX.length : detected.xCoordinates.length,
+            yCount: columnY.length >= 2 ? columnY.length : detected.yCoordinates.length,
+            columnX,
+            columnY
+          };
+        }).filter(item => item.xCount >= 2 && item.yCount >= 2);
+        if (evidence.length < 2) return null;
+        const groups = new Map();
+        evidence.forEach(item => {
+          const key = `${item.xCount}x${item.yCount}`;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(item);
+        });
+        const consensus = Array.from(groups.values()).sort((a, b) => b.length - a.length || (a[0].xCount * a[0].yCount) - (b[0].xCount * b[0].yCount))[0];
+        if (!consensus || consensus.length < 2) return null;
+        const xCount = consensus[0].xCount;
+        const yCount = consensus[0].yCount;
+        const reference = consensus.find(item => item.source.detected.xCoordinates.length === xCount && item.source.detected.yCoordinates.length === yCount) || consensus[0];
+        const referenceDetected = reference.source.detected;
+        const xIndices = referenceDetected.xCoordinates.length === xCount
+          ? referenceDetected.xCoordinates.map((_, index) => index)
+          : reference.columnX.slice(0, xCount);
+        const yIndices = referenceDetected.yCoordinates.length === yCount
+          ? referenceDetected.yCoordinates.map((_, index) => index)
+          : reference.columnY.slice(0, yCount);
+        if (xIndices.length !== xCount || yIndices.length !== yCount) return null;
+        const normalizedX = xIndices.map(index => referenceDetected.xCoordinates[index] / Math.max(1, referenceDetected.sourceWidth));
+        const normalizedY = yIndices.map(index => referenceDetected.yCoordinates[index] / Math.max(1, referenceDetected.sourceHeight));
+        if (normalizedX.some(value => !Number.isFinite(value)) || normalizedY.some(value => !Number.isFinite(value))) return null;
+        plans.forEach(source => {
+          const detected = source.detected;
+          const localColumnX = Array.from(new Set((detected.columnPoints || []).map(point => point.xIndex))).sort((a, b) => a - b);
+          const localColumnY = Array.from(new Set((detected.columnPoints || []).map(point => point.yIndex))).sort((a, b) => a - b);
+          const localXIndices = detected.xCoordinates.length === xCount
+            ? detected.xCoordinates.map((_, index) => index)
+            : (localColumnX.length === xCount ? localColumnX : []);
+          const localYIndices = detected.yCoordinates.length === yCount
+            ? detected.yCoordinates.map((_, index) => index)
+            : (localColumnY.length === yCount ? localColumnY : []);
+          const naturalX = localXIndices.length === xCount
+            ? localXIndices.map(index => detected.xCoordinates[index] / Math.max(1, detected.sourceWidth) * source.image.naturalWidth)
+            : normalizedX.map(value => value * source.image.naturalWidth);
+          const naturalY = localYIndices.length === yCount
+            ? localYIndices.map(index => detected.yCoordinates[index] / Math.max(1, detected.sourceHeight) * source.image.naturalHeight)
+            : normalizedY.map(value => value * source.image.naturalHeight);
+          rebuildRasterDetectionAtGrid(
+            source.image,
+            detected,
+            naturalX,
+            naturalY
+          );
+          source.detected.coordinatedGridCalibration = `${xCount}x${yCount}`;
+        });
+        return {xCount, yCount, supportingPanels: consensus.length};
+      }
+
       function parseAsciiDxf(text) {
         const rows = String(text || "").replace(/\r/g, "").split("\n");
         const lines = [];
@@ -16407,6 +16562,7 @@
               throw new Error(`${file.name} is not supported. Import an AutoCAD DXF, JPEG, or PNG file.`);
             }
           }
+          const coordinatedGrid = coordinateRasterPlanGrids(sources);
           cadImportState.sources = sources;
           renderCadSourceReview(sources);
           const maximumUploadedLevel = validateCadSourceSequence(sources);
@@ -16447,7 +16603,7 @@
             deactivateCadWorkspace(true);
             cadStatus(`Conversion accuracy check stopped the build: ${cadImportState.audit.errors.join(" ")}`, true);
           } else {
-            cadStatus(`${sources.length} titled panels passed the accuracy check. Converting detected geometry and labels to native app drawings...`);
+            cadStatus(`${sources.length} titled panels passed the accuracy check${coordinatedGrid ? ` using the repeated ${coordinatedGrid.xCount}\u00d7${coordinatedGrid.yCount} plan grid` : ""}. Converting detected geometry and labels to native app drawings...`);
             buildDetectedCadModel({automatic: true});
           }
         } catch (error) {
@@ -16632,6 +16788,47 @@
         });
       }
 
+      const sidebarSubgroupHelp = {
+        "X-Grid Labels": "Enter the ordered letter labels for the vertical plan grid lines, or keep the generated A, B, C sequence. Use one unique label per grid line.",
+        "X-Grid Spans": "Enter each horizontal bay width in metres between consecutive X-grid lines, or accept the default values. The number of spans must be one less than the number of labels.",
+        "Y-Grid Labels": "Enter the ordered number labels for the horizontal plan grid lines, or keep the generated 1, 2, 3 sequence. Use one unique label per grid line.",
+        "Y-Grid Spans": "Enter each vertical plan bay width in metres between consecutive Y-grid lines, or accept the default values. The number of spans must be one less than the number of labels.",
+        "No. of Level": "Enter the total number of structural levels, including the foundation level. The app generates the level names and height rows from this value.",
+        "Levels": "Review the generated foundation and floor level names in bottom-to-top order. Change the number of levels if this list does not match the project.",
+        "Level Heights": "Input the floor-to-floor height in metres for every adjacent level pair, or accept the default values. Confirm these heights against the elevations before analysis.",
+        "Frame Selection": "Choose the Y-grid line used for the X-axis frame and the X-grid line used for the Y-axis frame. Select lines that represent the frames you intend to inspect and design.",
+        "Drawing Source": "Choose one combined titled PNG/JPEG sheet or separate PNG, JPEG, or ASCII DXF drawings. Include FOUNDATION, consecutive LEVEL plans, and frame elevations where available.",
+        "Detection & Conversion": "Run Import & Analyze, review each detected drawing title and grid count, then convert the reviewed drawings into editable native structural plans and frames.",
+        "Creation Modes": "Choose the active drawing tool, then click valid nodes, grid intersections, or members in the current view. Use Selection to work with existing objects.",
+        "Column Shape & Placement": "Define or choose a column section, apply it to the Structural Plan, then click the required grid nodes. Verify dimensions and reinforcement before design.",
+        "Drawing Annotations": "Choose a line, text, edit, match, or dimension tool and set its color, width, line type, and text size before placing annotations.",
+        "Support": "Choose Fixed, Pinned, or Roller support, activate Support mode, and click the required frame node. Confirm the restraint matches the real foundation condition.",
+        "History & Cleanup": "Undo the latest drawing changes, clear the active selection, or remove model objects. Review the current view before using cleanup commands.",
+        "CURRENT PROJECT": "Enter the current project name, then save or update its browser-stored record. Use a clear unique name so the correct project can be reopened.",
+        "SAVED PROJECTS": "Choose a saved project record to open, rename, or delete. Confirm the selected record before replacing the current workspace.",
+        "Project File": "Export the complete project as a JSON backup or import a previously exported StrucForge project file. Importing replaces the active workspace after confirmation.",
+        "Member Dimensions": "Input the working beam and column dimensions in millimetres. Edit and recalculate repeatedly until PASS; individual MPR member sizes remain independent.",
+        "Material & Reinforcement": "Input concrete strength, steel yield strength, bar diameters, covers, slab data, footing data, and soil capacity from the project design criteria.",
+        "Design & Optimization": "Choose design optimization preferences and apply edited properties to selected members. Recalculate and review every affected member after changes.",
+        "Code Basis": "Select the governing load and design-code basis used to generate combinations and checks. Keep it consistent with the project jurisdiction and design brief.",
+        "Occupancy and gravity": "Select the occupancy and enter dead, live, roof, slab, and superimposed gravity loads in the displayed units. Use project-specific values where available.",
+        "Wind load": "Input the site wind speed and exposure, directionality, topographic, pressure, and importance factors required by the selected code.",
+        "Earthquake load": "Input the seismic zone, site, importance, response, period, and near-source factors required by the selected code and structural system.",
+        "Member point load": "Enter the point-load components and position, then select the intended member or plan beam. Check the sign convention and displayed units before assigning.",
+        "Wall load along beam": "Enter wall density, thickness, height, and opening percentage, then select every supporting beam that receives the wall line load.",
+        "Load Generation": "Generate code-based load cases and combinations from the completed gravity, wind, earthquake, point-load, and wall-load inputs. Review the summary before analysis.",
+        "Analysis": "Run the structural analysis after the model, supports, member properties, and loads are complete. Resolve model warnings before relying on design results."
+      };
+
+      function attachSidebarSubgroupHelp(summary, title) {
+        if (!summary) return;
+        const help = sidebarSubgroupHelp[title];
+        if (!help) return;
+        summary.dataset.sidebarHelp = help;
+        summary.setAttribute("aria-describedby", "sidebarHelpTooltip");
+        summary.title = help;
+      }
+
       function installSidebarSubgroups() {
         const createSubgroup = (parent, title, nodes, open = true) => {
           const items = nodes.filter(node => node && node.parentElement === parent);
@@ -16641,20 +16838,7 @@
           details.open = open;
           const summary = document.createElement("summary");
           summary.textContent = title;
-          if (title === "Member Dimensions") {
-            const note = document.createElement("span");
-            note.className = "sidebar-hover-note";
-            note.setAttribute("role", "tooltip");
-            note.textContent = "Working beam and column dimensions. Edit and recalculate repeatedly until PASS; individual MPR member sizes remain independent.";
-            summary.appendChild(note);
-            const placeNote = () => {
-              const bounds = summary.getBoundingClientRect();
-              note.style.left = `${Math.max(6, Math.min(window.innerWidth - 228, bounds.right + 7))}px`;
-              note.style.top = `${Math.max(6, Math.min(window.innerHeight - 48, bounds.top + (bounds.height / 2) - 18))}px`;
-            };
-            summary.addEventListener("pointerenter", placeNote);
-            summary.addEventListener("focus", placeNote);
-          }
+          attachSidebarSubgroupHelp(summary, title);
           const body = document.createElement("div");
           body.className = "sidebar-subgroup-body";
           parent.insertBefore(details, items[0]);
@@ -16741,6 +16925,7 @@
             details.classList.add("sidebar-subgroup");
             const summary = details.querySelector(":scope > summary");
             if (!summary || details.querySelector(":scope > .sidebar-subgroup-body")) return;
+            attachSidebarSubgroupHelp(summary, summary.textContent.replace(/\s+/g, " ").trim());
             const body = document.createElement("div");
             body.className = "sidebar-subgroup-body";
             Array.from(details.children).filter(child => child !== summary).forEach(child => body.appendChild(child));
@@ -16910,7 +17095,7 @@
           const packageHelp = element.classList.contains("sidebar-package-toggle")
             ? packageHelpBySectionId[element.closest(".sidebar-package")?.id]
             : "";
-          const help = packageHelp || helpById[control?.id] || helpById[element.id] || genericHelp(element);
+          const help = element.dataset.sidebarHelp || packageHelp || helpById[control?.id] || helpById[element.id] || genericHelp(element);
           if (!help) return;
           element.dataset.sidebarHelp = help;
           if (control?.id) element.dataset.sidebarHelpControl = control.id;
@@ -18339,7 +18524,7 @@
       }
 
       function drawPlanWallBeamSelections(ctx, data, point, members) {
-        if (!wallBeamSelectionState.active || wallBeamSelectionState.axis !== "PLAN") return;
+        if (!(wallBeamSelectionState.active && wallBeamSelectionState.axis === "PLAN") && !drawingSelectionState.PLAN) return;
         ctx.save();
         ctx.lineCap = "round";
         (members || []).forEach(member => {
@@ -20606,8 +20791,12 @@
       }
 
       function nearestPlanMemberHit(canvasPoint, data, maximumScreenDistance = 14) {
+        return planMemberHits(canvasPoint, data, maximumScreenDistance)[0] || null;
+      }
+
+      function planMemberHits(canvasPoint, data, maximumScreenDistance = 14) {
         const canvas = byId("structuralPlanCanvas");
-        if (!canvas) return null;
+        if (!canvas) return [];
         const totalX = data.xPos[data.xPos.length - 1] || 1;
         const totalY = data.yPos[data.yPos.length - 1] || 1;
         const t = fitDrawingTransform(canvas, {minX: 0, maxX: totalX, minY: 0, maxY: totalY});
@@ -20615,7 +20804,7 @@
           x: (canvasPoint.x - planView.pan.x) / planView.zoom,
           y: (canvasPoint.y - planView.pan.y) / planView.zoom
         };
-        let nearest = null;
+        const hits = [];
         planState.members
           .filter(member => ["Beam", "Tie Beam"].includes(member.type))
           .forEach(member => {
@@ -20624,21 +20813,21 @@
           const a = {x: t.x(endpoints.start.x), y: t.y(endpoints.start.y)};
           const b = {x: t.x(endpoints.end.x), y: t.y(endpoints.end.y)};
           const distance = distanceToSegment(local.x, local.y, a, b);
-          if (distance > maximumScreenDistance / planView.zoom || (nearest && distance >= nearest.distance)) return;
+          if (distance > maximumScreenDistance / planView.zoom) return;
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const denominator = dx * dx + dy * dy || 1;
           const ratio = Math.max(0, Math.min(1, ((local.x - a.x) * dx + (local.y - a.y) * dy) / denominator));
-          nearest = {
+          hits.push({
             member,
             distance,
             point: {
               x: endpoints.start.x + (endpoints.end.x - endpoints.start.x) * ratio,
               y: endpoints.start.y + (endpoints.end.y - endpoints.start.y) * ratio
             }
-          };
+          });
         });
-        return nearest;
+        return hits.sort((a, b) => a.distance - b.distance);
       }
 
       function nearestPlanMember(canvasPoint, data) {
@@ -22104,6 +22293,25 @@
         return true;
       }
 
+      function deletePlanMemberObject(member, data = makePlanData()) {
+        if (!member) return false;
+        pushWorkspaceHistory();
+        if (member.generated) {
+          const componentIds = member.components?.length ? member.components : [member.id];
+          componentIds.forEach(componentId => {
+            planState.deletedPlanMembers.add(planMemberDeletionKey(member.levelIndex, componentId));
+            synchronizeGeneratedPlanMemberDeletion({...member, id: componentId, sourcePlanGeneratedId: componentId});
+          });
+        } else {
+          planState.levelMembers[String(planState.activeLevelIndex)] = planLevelMembers().filter(item => item.id !== member.id);
+          synchronizePlanMember(member, false);
+        }
+        drawPlan(data);
+        updatePlanMemberTable();
+        if (typeof status === "function") status(`Deleted plan member ${member.name || member.id}.`);
+        return true;
+      }
+
       function handlePlanCanvasClick(canvasPoint) {
         if (byId("activeFrameEditor") && byId("activeFrameEditor").value !== "PLAN") byId("activeFrameEditor").value = "PLAN";
         const data = makePlanData();
@@ -22160,6 +22368,24 @@
           wallBeamSelectionState.planMemberIds.add(planWallBeamSelectionKey(member));
           drawPlan(data);
           reportWallBeamSelection("PLAN", selectedPlanWallBeamMembers(), member);
+          return;
+        }
+        if (drawingSelectionState.PLAN) {
+          const hits = planMemberHits(canvasPoint, data);
+          const applyPlanSelection = selected => {
+            wallBeamSelectionState.planMemberIds.clear();
+            selected.forEach(candidate => wallBeamSelectionState.planMemberIds.add(planWallBeamSelectionKey(candidate.value || candidate.member)));
+            drawPlan(data);
+            if (typeof status === "function") status(selected.length
+              ? `Selected ${selected.length} plan member${selected.length === 1 ? "" : "s"}.`
+              : "No plan member selected.");
+          };
+          if (hits.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
+            mode: "select",
+            candidates: hits.map(hit => ({label: `${hit.member.type || "Member"} ${hit.member.name || hit.member.id}`, value: hit.member})),
+            onApply: applyPlanSelection
+          })) return;
+          applyPlanSelection(hits.length ? [{value: hits[0].member}] : []);
           return;
         }
         if (planState.mode === "pan") {
@@ -22237,6 +22463,12 @@
         }
         if (planState.mode === "delete") {
           if (deleteAnnotationAt("PLAN", canvasPoint, canvas.getContext("2d"), projectPoint)) return;
+          const overlappingMembers = planMemberHits(canvasPoint, data);
+          if (overlappingMembers.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
+            mode: "delete",
+            candidates: overlappingMembers.map(hit => ({label: `${hit.member.type || "Member"} ${hit.member.name || hit.member.id}`, value: hit.member})),
+            onApply: selected => selected.forEach(candidate => deletePlanMemberObject(candidate.value, makePlanData()))
+          })) return;
           const auxiliaryGrid = auxiliaryGridAtPoint(canvasPoint, data);
           if (auxiliaryGrid) {
             pushWorkspaceHistory();
@@ -22271,23 +22503,7 @@
           const intersection = planIntersectionAt(canvasPoint, data, true);
           if (intersection) return requestPlanNodeDeletion(intersection, canvasPoint, data);
           const member = nearestPlanMember(canvasPoint, data);
-          if (member) {
-            pushWorkspaceHistory();
-            if (member.generated) {
-              const componentIds = member.components?.length ? member.components : [member.id];
-              componentIds.forEach(componentId => {
-                planState.deletedPlanMembers.add(planMemberDeletionKey(member.levelIndex, componentId));
-                synchronizeGeneratedPlanMemberDeletion({...member, id: componentId, sourcePlanGeneratedId: componentId});
-              });
-            } else {
-              planState.levelMembers[String(planState.activeLevelIndex)] = planLevelMembers().filter(item => item.id !== member.id);
-              synchronizePlanMember(member, false);
-            }
-            drawPlan(data);
-            updatePlanMemberTable();
-            if (typeof status === "function") status(`Deleted plan member ${member.name}.`);
-            return;
-          }
+          if (member) return deletePlanMemberObject(member, data);
           const slab = slabPanelAt(canvasPoint, data);
           if (slab) {
             pushWorkspaceHistory();
@@ -23517,6 +23733,17 @@
         return best;
       }
 
+      function yMemberHits(canvasPoint, data, maximum = 24) {
+        const canvas = byId("yAxisCanvas");
+        return (yFrameState.model?.members || []).map(member => {
+          const aNode = yModelNode(member.i);
+          const bNode = yModelNode(member.j);
+          if (!aNode || !bNode) return null;
+          const projection = segmentProjection(canvasPoint, yFrameScreenPoint(aNode, data, canvas), yFrameScreenPoint(bNode, data, canvas));
+          return projection.distance <= maximum ? {member, distance: projection.distance, ratio: projection.ratio} : null;
+        }).filter(Boolean).sort((a, b) => a.distance - b.distance);
+      }
+
       function yFrameMemberNameAt(canvasPoint) {
         const local = {
           x: (canvasPoint.x - yAxisView.pan.x) / yAxisView.zoom,
@@ -23680,6 +23907,46 @@
         return true;
       }
 
+      function deleteSingleYFrameObject(candidate, data) {
+        if (!candidate || !yFrameState.model) return false;
+        const memberHit = candidate.kind === "member" ? {member: candidate.member} : null;
+        if (memberHit?.member?.type === "Column" && deleteFrameColumnStory(memberHit.member, "Y", data)) return true;
+        pushYHistory();
+        if (candidate.kind === "node") {
+          const node = candidate.node;
+          const identity = setFramePlanNodeHidden("Y", node, true, data);
+          if (identity) {
+            yFrameState.selectedNodes = [];
+            yFrameState.selectedMemberIds = [];
+            yFrameState.selectedNode = null;
+            drawYAxisCanvas(data);
+            if (typeof status === "function") status(`Y-axis node ${identity.xLabel}/${identity.yLabel} hidden. Its column and connected structural members were preserved; Node mode can restore this joint.`);
+            return true;
+          }
+          const connected = new Set(yFrameState.model.members.filter(member => String(member.i) === String(node.id) || String(member.j) === String(node.id)).map(member => String(member.id)));
+          yFrameState.model.members.filter(member => connected.has(String(member.id))).forEach(registerFrameMemberDeletion);
+          yFrameState.model.nodes = yFrameState.model.nodes.filter(item => String(item.id) !== String(node.id));
+          yFrameState.model.members = yFrameState.model.members.filter(member => !connected.has(String(member.id)));
+          delete yFrameState.model.supports[node.id];
+          yFrameState.model.loads = yFrameState.model.loads.filter(load => String(load.node) !== String(node.id) && !connected.has(String(load.member)));
+          if (typeof status === "function") status(`Deleted Y-axis Node ${node.id} and its connected members.`);
+        } else if (candidate.kind === "member") {
+          const member = candidate.member;
+          registerFrameMemberDeletion(member);
+          yFrameState.model.members = yFrameState.model.members.filter(item => String(item.id) !== String(member.id));
+          yFrameState.model.loads = yFrameState.model.loads.filter(load => String(load.member) !== String(member.id));
+          if (typeof status === "function") status(`Deleted Y-axis ${member.type || "Member"} ${member.name || member.id}.`);
+        } else return false;
+        renumberFrameNodes(yFrameState.model, yFrameState);
+        yFrameState.lastResult = null;
+        engineeringState.designEnvelopes = null;
+        engineeringState.frameCatalog = {X: {}, Y: {}};
+        drawPlan(data);
+        updatePlanMemberTable();
+        drawYAxisCanvas(data);
+        return true;
+      }
+
       function handleYAxisClick(canvasPoint) {
         if (!yFrameState.model) return;
         const activeFrame = byId("activeFrameEditor");
@@ -23687,8 +23954,28 @@
         const data = makePlanData();
         const mode = yFrameState.mode;
         if (mode === "select" || mode === "pan") {
-          const hit = yNearestMember(canvasPoint, data);
+          const hits = yMemberHits(canvasPoint, data);
+          const hit = hits[0] || null;
           const wallSelectionActive = wallBeamSelectionState.active && wallBeamSelectionState.axis === "Y";
+          if (hits.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function") {
+            const selectableHits = wallSelectionActive ? hits.filter(item => item.member.type === "Beam") : hits;
+            if (selectableHits.length > 1 && window.strucForgeOpenOverlapChooser({
+              mode: "select",
+              candidates: selectableHits.map(item => ({label: `${item.member.type || "Member"} ${item.member.name || item.member.id}`, value: item.member})),
+              onApply: selected => {
+                const ids = selected.map(candidate => candidate.value.id);
+                if (wallSelectionActive) {
+                  ids.forEach(id => { if (!yFrameState.selectedMemberIds.some(current => String(current) === String(id))) yFrameState.selectedMemberIds.push(id); });
+                } else yFrameState.selectedMemberIds = ids;
+                yFrameState.selectedNode = null;
+                const selectedLabel = byId("ySelectedLabel");
+                if (selectedLabel) selectedLabel.textContent = `Selected: ${ids.length} member(s)`;
+                if (wallSelectionActive) reportWallBeamSelection("Y", yFrameState.selectedMemberIds.map(yModelMember).filter(Boolean), selected[0]?.value || null);
+                else if (typeof status === "function") status(`Selected ${ids.length} overlapping Y-axis member${ids.length === 1 ? "" : "s"}.`);
+                drawYAxisCanvas(data);
+              }
+            })) return;
+          }
           if (wallSelectionActive) {
             if (hit?.member?.type === "Beam" && !yFrameState.selectedMemberIds.some(id => String(id) === String(hit.member.id))) {
               yFrameState.selectedMemberIds.push(hit.member.id);
@@ -23723,43 +24010,18 @@
         if (mode === "delete") {
           if (deleteYLoadAt(canvasPoint)) return;
           const node = yNearestNode(canvasPoint, data);
-          const memberHit = node ? null : yNearestMember(canvasPoint, data);
-          if (!node && !memberHit) return;
-          if (memberHit?.member?.type === "Column" && deleteFrameColumnStory(memberHit.member, "Y", data)) return;
-          pushYHistory();
-          if (node) {
-            const identity = setFramePlanNodeHidden("Y", node, true, data);
-            if (identity) {
-              yFrameState.selectedNodes = [];
-              yFrameState.selectedMemberIds = [];
-              yFrameState.selectedNode = null;
-              drawYAxisCanvas(data);
-              if (typeof status === "function") status(`Y-axis node ${identity.xLabel}/${identity.yLabel} hidden. Its column and connected structural members were preserved; Node mode can restore this joint.`);
-              return;
-            }
-          }
-          const linkedPlanMembers = node
-            ? yFrameState.model.members.filter(member => String(member.i) === String(node.id) || String(member.j) === String(node.id))
-            : [memberHit.member];
-          linkedPlanMembers.forEach(registerFrameMemberDeletion);
-          if (node) {
-            const connected = new Set(yFrameState.model.members.filter(member => String(member.i) === String(node.id) || String(member.j) === String(node.id)).map(member => String(member.id)));
-            yFrameState.model.nodes = yFrameState.model.nodes.filter(item => String(item.id) !== String(node.id));
-            yFrameState.model.members = yFrameState.model.members.filter(member => !connected.has(String(member.id)));
-            delete yFrameState.model.supports[node.id];
-            yFrameState.model.loads = yFrameState.model.loads.filter(load => String(load.node) !== String(node.id) && !connected.has(String(load.member)));
-          } else {
-            const memberId = String(memberHit.member.id);
-            yFrameState.model.members = yFrameState.model.members.filter(member => String(member.id) !== memberId);
-            yFrameState.model.loads = yFrameState.model.loads.filter(load => String(load.member) !== memberId);
-          }
-          renumberFrameNodes(yFrameState.model, yFrameState);
-          yFrameState.lastResult = null;
-          engineeringState.designEnvelopes = null;
-          engineeringState.frameCatalog = {X: {}, Y: {}};
-          drawPlan(data);
-          updatePlanMemberTable();
-          drawYAxisCanvas(data);
+          const hits = yMemberHits(canvasPoint, data);
+          const candidates = [
+            ...(node ? [{kind: "node", node, label: `Node ${node.id}`}] : []),
+            ...hits.map(item => ({kind: "member", member: item.member, label: `${item.member.type || "Member"} ${item.member.name || item.member.id}`}))
+          ];
+          if (!candidates.length) return;
+          if (candidates.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
+            mode: "delete",
+            candidates,
+            onApply: selected => selected.forEach(candidate => deleteSingleYFrameObject(candidate, makePlanData()))
+          })) return;
+          deleteSingleYFrameObject(candidates[0], data);
           return;
         }
         if (!['node', 'member', 'column'].includes(mode)) return;
@@ -31728,7 +31990,9 @@
           if (byId("activeFrameEditor")?.value === "PLAN") {
             planState.memberStart = null;
             planState.wallStart = null;
+            wallBeamSelectionState.planMemberIds.clear();
             drawPlan(makePlanData());
+            if (typeof status === "function") status("Plan selection cleared.");
             return;
           }
           if (byId("activeFrameEditor")?.value !== "Y") return;

@@ -330,6 +330,27 @@ function getMemberAt(px, py) {
   return best ? best.m : null;
 }
 
+function getMemberHitsAt(px, py, tolerance = scaled(28)) {
+  return (model.members || []).map(member => {
+    normalizeMemberProperties(member);
+    const a = getNode(member.i);
+    const b = getNode(member.j);
+    if (!a || !b) return null;
+    const distance = distanceToSegment(px, py, toCanvas(a.x, a.y), toCanvas(b.x, b.y));
+    return distance <= tolerance ? {kind: "member", object: member, distance} : null;
+  }).filter(Boolean).sort((a, b) => a.distance - b.distance);
+}
+
+function getFrameObjectHitsAt(px, py) {
+  const nodes = (model.nodes || []).map(node => {
+    if (node.hiddenPlanNode) return null;
+    const point = toCanvas(node.x, node.y);
+    const distance = Math.hypot(px - point.x, py - point.y);
+    return distance <= scaled(14) ? {kind: "node", object: node, distance} : null;
+  }).filter(Boolean);
+  return [...nodes, ...getMemberHitsAt(px, py)].sort((a, b) => a.distance - b.distance);
+}
+
 function renumberNodesSystematically() {
   const selectedCoord = model.selectedNode ? {x: model.selectedNode.x, y: model.selectedNode.y} : null;
   const oldToNew = {};
@@ -1754,6 +1775,50 @@ function getRecordNames() {
   }
 }
 
+const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261004a";
+const bundledPersistenceVersionsKey = "strucforge_bundled_persistence_versions_v1";
+let bundledStartupProject = null;
+
+async function installBundledPersistence() {
+  try {
+    const response = await fetch(bundledPersistenceManifestUrl, {cache: "no-store"});
+    if (!response.ok) return;
+    const manifest = await response.json();
+    if (!manifest || typeof manifest.id !== "string" || !Array.isArray(manifest.projects)) return;
+
+    let installedVersions = [];
+    try {
+      const savedVersions = JSON.parse(localStorage.getItem(bundledPersistenceVersionsKey) || "[]");
+      if (Array.isArray(savedVersions)) installedVersions = savedVersions.map(String);
+    } catch {}
+
+    if (!installedVersions.includes(manifest.id)) {
+      const names = getRecordNames();
+      for (const project of manifest.projects) {
+        const name = String(project?.name || "").trim();
+        const source = String(project?.source || "").trim();
+        if (!name || !source || localStorage.getItem("strucforge_record_" + name)) continue;
+        const projectResponse = await fetch(source, {cache: "no-store"});
+        if (!projectResponse.ok) continue;
+        const payload = await projectResponse.json();
+        if (!payload?.model || typeof payload.model !== "object") continue;
+        localStorage.setItem("strucforge_record_" + name, JSON.stringify(payload));
+        if (!names.includes(name)) names.push(name);
+      }
+      saveRecordNames(names);
+      installedVersions.push(manifest.id);
+      localStorage.setItem(bundledPersistenceVersionsKey, JSON.stringify(installedVersions));
+    }
+
+    const defaultProject = String(manifest.defaultProject || "").trim();
+    if (defaultProject && localStorage.getItem("strucforge_record_" + defaultProject)) {
+      bundledStartupProject = defaultProject;
+    }
+  } catch (error) {
+    console.warn("Bundled StrucForge data could not be installed.", error);
+  }
+}
+
 function refreshRecords() {
   const names = getRecordNames();
   savedRecords.innerHTML = "";
@@ -1812,6 +1877,14 @@ function loadProjectPackage(data, sourceName, options = {}) {
 
 async function loadDefaultProject() {
   try {
+    if (bundledStartupProject) {
+      const raw = localStorage.getItem("strucforge_record_" + bundledStartupProject);
+      if (raw) {
+        loadProjectPackage(JSON.parse(raw), bundledStartupProject, {pushHistory: false, applyTheme: false});
+        recordName.value = bundledStartupProject;
+        return;
+      }
+    }
     let data = null;
     const embedded = document.getElementById("defaultProjectData");
     if (embedded && embedded.textContent.trim()) {
@@ -1851,41 +1924,27 @@ function loadRecord() {
 }
 
 
-function deleteObjectAtPoint(px, py) {
-  const node = getNodeAt(px, py);
-  const member = node ? null : getMemberAt(px, py);
-  if (!node && !member) {
-    status("Delete tool: no node or member found at click point.");
-    return;
-  }
-
+function deleteFrameObjects(candidates) {
+  if (!candidates.length) return;
   pushHistory();
-  if (node) {
+  const hardNodeIds = new Set();
+  const memberIds = new Set(candidates.filter(candidate => candidate.kind === "member").map(candidate => candidate.object.id));
+  let hiddenNodes = 0;
+  candidates.filter(candidate => candidate.kind === "node").forEach(candidate => {
+    const node = candidate.object;
     const identity = window.strucForgeHideFrameNode?.("X", node);
-    if (identity) {
-      model.selectedNodes = [];
-      model.selectedMemberIds = [];
-      model.selectedNode = null;
-      lastAnalysisResult = null;
-      diagramsVisible = false;
-      showDiagramBtn.textContent = "Show/Hide S&M Diagram";
-      status(`X-axis node ${identity.xLabel}/${identity.yLabel} hidden. Its column and connected structural members were preserved; Node mode can restore this joint.`);
-      draw();
-      return;
-    }
-    const nodeId = node.id;
-    const connectedMemberIds = new Set(model.members.filter(m => sameId(m.i, nodeId) || sameId(m.j, nodeId)).map(m => m.id));
-    model.nodes = model.nodes.filter(n => !sameId(n.id, nodeId));
-    model.members = model.members.filter(m => !connectedMemberIds.has(m.id));
-    delete model.supports[nodeId];
-    model.loads = model.loads.filter(L => !sameId(L.node, nodeId) && !connectedMemberIds.has(L.member));
-    status(`Deleted Node ${nodeId} and connected member(s).`);
-  } else {
-    model.members = model.members.filter(m => !sameId(m.id, member.id));
-    model.loads = model.loads.filter(L => !sameId(L.member, member.id));
-    status(`Deleted Member ${member.id}.`);
+    if (identity) hiddenNodes += 1;
+    else hardNodeIds.add(node.id);
+  });
+  if (hardNodeIds.size) {
+    model.members.forEach(member => {
+      if (idSetHas(hardNodeIds, member.i) || idSetHas(hardNodeIds, member.j)) memberIds.add(member.id);
+    });
+    model.nodes = model.nodes.filter(node => !idSetHas(hardNodeIds, node.id));
+    hardNodeIds.forEach(nodeId => delete model.supports[nodeId]);
   }
-
+  model.members = model.members.filter(member => !idSetHas(memberIds, member.id));
+  model.loads = model.loads.filter(load => !(load.node && idSetHas(hardNodeIds, load.node)) && !(load.member && idSetHas(memberIds, load.member)));
   model.selectedNodes = [];
   model.selectedMemberIds = [];
   model.selectedNode = null;
@@ -1893,7 +1952,29 @@ function deleteObjectAtPoint(px, py) {
   lastAnalysisResult = null;
   diagramsVisible = false;
   showDiagramBtn.textContent = "Show/Hide S&M Diagram";
+  const deletedCount = hardNodeIds.size + memberIds.size;
+  status(`${deletedCount ? `Deleted ${deletedCount} X-axis object${deletedCount === 1 ? "" : "s"}.` : ""}${hiddenNodes ? ` Hidden ${hiddenNodes} coordinated plan node${hiddenNodes === 1 ? "" : "s"} while retaining connected members.` : ""}`.trim());
   draw();
+}
+
+function deleteObjectAtPoint(px, py) {
+  const hits = getFrameObjectHitsAt(px, py);
+  if (!hits.length) {
+    status("Delete tool: no node or member found at click point.");
+    return;
+  }
+  if (hits.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function") {
+    const opened = window.strucForgeOpenOverlapChooser({
+      mode: "delete",
+      candidates: hits.map(hit => ({
+        label: hit.kind === "node" ? `Node ${nodeDisplayName(hit.object)}` : `${hit.object.type || "Member"} ${hit.object.name || hit.object.id}`,
+        value: hit
+      })),
+      onApply: selected => deleteFrameObjects(selected.map(candidate => candidate.value))
+    });
+    if (opened) return;
+  }
+  deleteFrameObjects([hits[0]]);
 }
 
 function deleteSelectedItems() {
@@ -2163,7 +2244,23 @@ canvas.addEventListener("click", e => {
   // Dedicated selection mode: this is the most reliable way to select existing members
   // because it ignores grid intersections and node creation.
   if (model.mode === "select") {
-    const clickedMember = getMemberAt(px, py);
+    const memberHits = getMemberHitsAt(px, py);
+    const clickedMember = memberHits[0]?.object || null;
+    if (memberHits.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function") {
+      const opened = window.strucForgeOpenOverlapChooser({
+        mode: "select",
+        candidates: memberHits.map(hit => ({label: `${hit.object.type || "Member"} ${hit.object.name || hit.object.id}`, value: hit.object})),
+        onApply: selected => {
+          selected.forEach((candidate, index) => selectMember(candidate.value.id, index > 0 || additive));
+          status(`Selected ${selected.length} overlapping X-axis member${selected.length === 1 ? "" : "s"}.`);
+          draw();
+        }
+      });
+      if (opened) {
+        e.stopImmediatePropagation();
+        return;
+      }
+    }
     if (clickedMember) {
       selectMember(clickedMember.id, additive);
       if (window.strucForgeWallBeamSelectionActive !== "X") {
@@ -2644,8 +2741,9 @@ function downloadProjectJson(filename) { const blob = new Blob([JSON.stringify(m
 async function saveProjectFile(forcePicker) { const filename = `${(recordName.value || "frame-model").trim() || "frame-model"}.json`; try { if (filePickerSupported) { if (forcePicker || !currentFileHandle) { currentFileHandle = await window.showSaveFilePicker({suggestedName: filename, types: [{description:"StrucForge JSON", accept:{"application/json":[".json"]}}]}); } const writable = await currentFileHandle.createWritable(); await writable.write(JSON.stringify(modelPackage(), null, 2)); await writable.close(); status(forcePicker ? "Saved as JSON file." : "Saved JSON file."); return; } downloadProjectJson(filename); status("JSON downloaded. Browser security may ask where to save it."); } catch (err) { if (err && err.name === "AbortError") { status("Save cancelled."); return; } downloadProjectJson(filename); status("JSON downloaded using browser fallback."); } }
 exportJson.onclick = () => saveProjectFile(true);
 
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
   updateLoadInputs();
+  await installBundledPersistence();
   refreshRecords();
   document.body.dataset.theme = "green_teal";
   applyFontScale(Number(localStorage.getItem("strucforge_font_scale")) || 1, {remember: false, redraw: false, announce: false});
@@ -2656,7 +2754,7 @@ window.addEventListener("load", () => {
   updateLockToggle();
   prepareCanvasSizes();
   draw();
-  loadDefaultProject();
+  await loadDefaultProject();
 });
 
 window.addEventListener("resize", () => {

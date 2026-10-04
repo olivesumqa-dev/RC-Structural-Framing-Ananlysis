@@ -1,0 +1,4170 @@
+{
+  "app": "StrucForge 2D Frame Analysis",
+  "version": 9,
+  "savedAt": "2026-10-04T05:18:14.875Z",
+  "theme": "green_teal",
+  "view": {
+    "zoom": 0.84,
+    "pan": {
+      "x": 0,
+      "y": 0
+    },
+    "fontScale": 1.25,
+    "loadsVisible": true
+  },
+  "project": {
+    "title": "Dela Cruz Residence",
+    "owner": "Mr. Juan dela Cruz",
+    "location": "Pagadian City",
+    "designedBy": "Engr. Sue N. Su"
+  },
+  "model": {
+    "v": [
+      0,
+      1.5,
+      6.5,
+      11,
+      14.5
+    ],
+    "h": [
+      0,
+      1.5,
+      4.5,
+      7.5
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "x": 1.5,
+        "y": 0,
+        "hiddenPlanNode": false
+      },
+      {
+        "id": 2,
+        "x": 6.5,
+        "y": 0,
+        "hiddenPlanNode": false
+      },
+      {
+        "id": 3,
+        "x": 11,
+        "y": 0,
+        "hiddenPlanNode": false
+      },
+      {
+        "id": 4,
+        "x": 14.5,
+        "y": 0,
+        "hiddenPlanNode": false
+      },
+      {
+        "id": 5,
+        "x": 1.5,
+        "y": 1.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 0,
+        "planGridLabel": "B/3"
+      },
+      {
+        "id": 6,
+        "x": 6.5,
+        "y": 1.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 0,
+        "planGridLabel": "C/3"
+      },
+      {
+        "id": 7,
+        "x": 11,
+        "y": 1.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 0,
+        "planGridLabel": "D/3"
+      },
+      {
+        "id": 8,
+        "x": 14.5,
+        "y": 1.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 0,
+        "planGridLabel": "E/3"
+      },
+      {
+        "id": 9,
+        "x": 0,
+        "y": 4.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 1,
+        "planGridLabel": "A/3"
+      },
+      {
+        "id": 10,
+        "x": 1.5,
+        "y": 4.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 1,
+        "planGridLabel": "B/3"
+      },
+      {
+        "id": 11,
+        "x": 6.5,
+        "y": 4.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 1,
+        "planGridLabel": "C/3"
+      },
+      {
+        "id": 12,
+        "x": 11,
+        "y": 4.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 1,
+        "planGridLabel": "D/3"
+      },
+      {
+        "id": 13,
+        "x": 14.5,
+        "y": 4.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 1,
+        "planGridLabel": "E/3"
+      },
+      {
+        "id": 14,
+        "x": 0,
+        "y": 7.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 2,
+        "planGridLabel": "A/3"
+      },
+      {
+        "id": 15,
+        "x": 1.5,
+        "y": 7.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 2,
+        "planGridLabel": "B/3"
+      },
+      {
+        "id": 16,
+        "x": 6.5,
+        "y": 7.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 2,
+        "planGridLabel": "C/3"
+      },
+      {
+        "id": 17,
+        "x": 11,
+        "y": 7.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 2,
+        "planGridLabel": "D/3"
+      },
+      {
+        "id": 18,
+        "x": 14.5,
+        "y": 7.5,
+        "hiddenPlanNode": false,
+        "planLevelIndex": 2,
+        "planGridLabel": "E/3"
+      }
+    ],
+    "members": [
+      {
+        "id": 1,
+        "i": 5,
+        "j": 6,
+        "name": "TB1-3-BC",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "TB1-3-BC",
+        "sourcePlanLevelIndex": 0,
+        "designGroupId": "X|0|TB1-3-BC",
+        "designGroupName": "TB1-3-BC",
+        "designGroupSourceId": "TB1-3-BC",
+        "designGroupComponents": [
+          "TB1-3-BC"
+        ]
+      },
+      {
+        "id": 2,
+        "i": 6,
+        "j": 7,
+        "name": "TB1-3-CD",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 4.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "TB1-3-CD",
+        "sourcePlanLevelIndex": 0,
+        "designGroupId": "X|0|TB1-3-CD",
+        "designGroupName": "TB1-3-CD",
+        "designGroupSourceId": "TB1-3-CD",
+        "designGroupComponents": [
+          "TB1-3-CD"
+        ]
+      },
+      {
+        "id": 3,
+        "i": 9,
+        "j": 10,
+        "name": "B2-3-AB",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 1.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B2-3-AB",
+        "sourcePlanLevelIndex": 1,
+        "designGroupId": "X|1|B2-3-AB",
+        "designGroupName": "B2-3-AB",
+        "designGroupSourceId": "B2-3-AB",
+        "designGroupComponents": [
+          "B2-3-AB"
+        ]
+      },
+      {
+        "id": 4,
+        "i": 10,
+        "j": 11,
+        "name": "B2-3-BC",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B2-3-BC",
+        "sourcePlanLevelIndex": 1,
+        "designGroupId": "X|1|B2-3-BC",
+        "designGroupName": "B2-3-BC",
+        "designGroupSourceId": "B2-3-BC",
+        "designGroupComponents": [
+          "B2-3-BC"
+        ]
+      },
+      {
+        "id": 5,
+        "i": 11,
+        "j": 12,
+        "name": "B2-3-CD",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 4.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B2-3-CD",
+        "sourcePlanLevelIndex": 1,
+        "designGroupId": "X|1|B2-3-CD",
+        "designGroupName": "B2-3-CD",
+        "designGroupSourceId": "B2-3-CD",
+        "designGroupComponents": [
+          "B2-3-CD"
+        ]
+      },
+      {
+        "id": 6,
+        "i": 12,
+        "j": 13,
+        "name": "B2-3-DE",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 3.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B2-3-DE",
+        "sourcePlanLevelIndex": 1,
+        "designGroupId": "X|1|B2-3-DE",
+        "designGroupName": "B2-3-DE",
+        "designGroupSourceId": "B2-3-DE",
+        "designGroupComponents": [
+          "B2-3-DE"
+        ]
+      },
+      {
+        "id": 7,
+        "i": 14,
+        "j": 15,
+        "name": "B3-3-AB",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 1.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B3-3-AB",
+        "sourcePlanLevelIndex": 2,
+        "designGroupId": "X|2|B3-3-AB",
+        "designGroupName": "B3-3-AB",
+        "designGroupSourceId": "B3-3-AB",
+        "designGroupComponents": [
+          "B3-3-AB"
+        ]
+      },
+      {
+        "id": 8,
+        "i": 15,
+        "j": 16,
+        "name": "B3-3-BC",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B3-3-BC",
+        "sourcePlanLevelIndex": 2,
+        "designGroupId": "X|2|B3-3-BC",
+        "designGroupName": "B3-3-BC",
+        "designGroupSourceId": "B3-3-BC",
+        "designGroupComponents": [
+          "B3-3-BC"
+        ]
+      },
+      {
+        "id": 9,
+        "i": 16,
+        "j": 17,
+        "name": "B3-3-CD",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 4.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B3-3-CD",
+        "sourcePlanLevelIndex": 2,
+        "designGroupId": "X|2|B3-3-CD",
+        "designGroupName": "B3-3-CD",
+        "designGroupSourceId": "B3-3-CD",
+        "designGroupComponents": [
+          "B3-3-CD"
+        ]
+      },
+      {
+        "id": 10,
+        "i": 17,
+        "j": 18,
+        "name": "B3-3-DE",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 3.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanGeneratedId": "B3-3-DE",
+        "sourcePlanLevelIndex": 2,
+        "designGroupId": "X|2|B3-3-DE",
+        "designGroupName": "B3-3-DE",
+        "designGroupSourceId": "B3-3-DE",
+        "designGroupComponents": [
+          "B3-3-DE"
+        ]
+      },
+      {
+        "id": 11,
+        "i": 8,
+        "j": 7,
+        "name": "TB1-3-DE",
+        "type": "Beam",
+        "dim": "200x350 mm",
+        "width": 200,
+        "height": 350,
+        "length": 3.5,
+        "E": 24870,
+        "A": 70000,
+        "I": 714583333.3333334,
+        "sourcePlanMemberId": "PLAN-L1-1791018788039",
+        "sourcePlanLevelIndex": 0
+      },
+      {
+        "id": 12,
+        "i": 1,
+        "j": 5,
+        "name": "C1-b3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 1.5,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "B|3",
+        "sourcePlanStoryIndex": 0
+      },
+      {
+        "id": 13,
+        "i": 5,
+        "j": 10,
+        "name": "C2-b3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "B|3",
+        "sourcePlanStoryIndex": 1
+      },
+      {
+        "id": 14,
+        "i": 10,
+        "j": 15,
+        "name": "C3-b3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "B|3",
+        "sourcePlanStoryIndex": 2
+      },
+      {
+        "id": 15,
+        "i": 2,
+        "j": 6,
+        "name": "C1-c3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 1.5,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "C|3",
+        "sourcePlanStoryIndex": 0
+      },
+      {
+        "id": 16,
+        "i": 6,
+        "j": 11,
+        "name": "C2-c3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "C|3",
+        "sourcePlanStoryIndex": 1
+      },
+      {
+        "id": 17,
+        "i": 11,
+        "j": 16,
+        "name": "C3-c3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "C|3",
+        "sourcePlanStoryIndex": 2
+      },
+      {
+        "id": 18,
+        "i": 3,
+        "j": 7,
+        "name": "C1-d3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 1.5,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "D|3",
+        "sourcePlanStoryIndex": 0
+      },
+      {
+        "id": 19,
+        "i": 7,
+        "j": 12,
+        "name": "C2-d3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "D|3",
+        "sourcePlanStoryIndex": 1
+      },
+      {
+        "id": 20,
+        "i": 12,
+        "j": 17,
+        "name": "C3-d3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "D|3",
+        "sourcePlanStoryIndex": 2
+      },
+      {
+        "id": 21,
+        "i": 4,
+        "j": 8,
+        "name": "C1-e3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 1.5,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "E|3",
+        "sourcePlanStoryIndex": 0
+      },
+      {
+        "id": 22,
+        "i": 8,
+        "j": 13,
+        "name": "C2-e3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "E|3",
+        "sourcePlanStoryIndex": 1
+      },
+      {
+        "id": 23,
+        "i": 13,
+        "j": 18,
+        "name": "C3-e3",
+        "type": "Column",
+        "dim": "350x350 mm",
+        "width": 350,
+        "height": 350,
+        "length": 3,
+        "E": 24870,
+        "A": 122500,
+        "I": 1250520833.3333333,
+        "sourcePlanColumnKey": "E|3",
+        "sourcePlanStoryIndex": 2
+      }
+    ],
+    "supports": {
+      "1": "Fixed",
+      "2": "Fixed",
+      "3": "Fixed",
+      "4": "Fixed"
+    },
+    "loads": [
+      {
+        "kind": "member_udl",
+        "case": "SDL",
+        "member": 5,
+        "w": 8.82,
+        "wx": 0,
+        "source": "structural-wall-plan",
+        "planWallId": "WALL-L2-1791023450025-1",
+        "memberName": "B2-3-CD"
+      },
+      {
+        "kind": "member_point",
+        "case": "SDL",
+        "member": 6,
+        "p": 0.8820000000000126,
+        "x": 0.05000000000000071,
+        "source": "structural-wall-plan",
+        "planWallId": "WALL-L2-1791023450025-1",
+        "memberName": "B2-3-DE"
+      },
+      {
+        "kind": "member_udl",
+        "case": "SDL",
+        "member": 4,
+        "w": 8.82,
+        "wx": 0,
+        "source": "structural-wall-plan",
+        "planWallId": "WALL-L2-1791023684234-2",
+        "memberName": "B2-3-BC"
+      },
+      {
+        "kind": "member_point",
+        "case": "SDL",
+        "member": 9,
+        "p": 31.752,
+        "x": 1.8000000000000007,
+        "source": "structural-wall-plan",
+        "planWallId": "WALL-L3-1791023190828-1",
+        "memberName": "B3-3-CD"
+      },
+      {
+        "kind": "member_point_vector",
+        "case": "P",
+        "member": 4,
+        "fx": 0,
+        "fy": -20,
+        "x": 3.2269896914882317,
+        "source": "manual-point-plan",
+        "planPointLoadId": "PLAN-POINT-1791022602762-sxr77n",
+        "memberName": "B2-3-BC"
+      },
+      {
+        "kind": "member_point_vector",
+        "case": "P",
+        "member": 5,
+        "fx": 0,
+        "fy": -20,
+        "x": 2.472336913587979,
+        "source": "manual-point-plan",
+        "planPointLoadId": "PLAN-POINT-1791022605942-cq73ry",
+        "memberName": "B2-3-CD"
+      },
+      {
+        "kind": "member_point_vector",
+        "case": "P",
+        "member": 8,
+        "fx": 0,
+        "fy": -20,
+        "x": 1.026657289790192,
+        "source": "manual-point-plan",
+        "planPointLoadId": "PLAN-POINT-1791022636496-yloev3",
+        "memberName": "B3-3-BC"
+      },
+      {
+        "kind": "member_point_vector",
+        "case": "P",
+        "member": 9,
+        "fx": 0,
+        "fy": -20,
+        "x": 3.1194935023227046,
+        "source": "manual-point-plan",
+        "planPointLoadId": "PLAN-POINT-1791022640186-b9igsm",
+        "memberName": "B3-3-CD"
+      }
+    ],
+    "selectedNodes": [],
+    "selectedMemberIds": [],
+    "selectedNode": null,
+    "mode": "select",
+    "nextNode": 19,
+    "nextMember": 24,
+    "axis": "X",
+    "frameLine": "3",
+    "unresolvedStoryForces": [],
+    "unsupportedAnalysisComponents": []
+  },
+  "structuralProject": {
+    "version": 2,
+    "workspace": {
+      "planColumns": [
+        "B|5",
+        "C|5",
+        "D|5",
+        "D|4",
+        "D|3",
+        "D|2",
+        "C|2",
+        "B|2",
+        "B|3",
+        "B|4",
+        "C|4",
+        "E|5",
+        "E|4",
+        "E|3",
+        "E|2",
+        "C|3"
+      ],
+      "deletedColumnStories": [],
+      "planFootings": {
+        "B|5": {
+          "key": "B|5",
+          "name": "F1C1-b5",
+          "designWidth": 1,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "C|5": {
+          "key": "C|5",
+          "name": "F1C1-c5",
+          "designWidth": 1,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "D|5": {
+          "key": "D|5",
+          "name": "F1C1-d5",
+          "designWidth": 1,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "D|4": {
+          "key": "D|4",
+          "name": "F1C1-d4",
+          "designWidth": 1.4,
+          "designLength": 1.1,
+          "designThickness": 300
+        },
+        "D|3": {
+          "key": "D|3",
+          "name": "F1C1-d3",
+          "designWidth": 1.4,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "D|2": {
+          "key": "D|2",
+          "name": "F1C1-d2",
+          "designWidth": 1,
+          "designLength": 1.3,
+          "designThickness": 300
+        },
+        "C|2": {
+          "key": "C|2",
+          "name": "F1C1-c2",
+          "designWidth": 1.2,
+          "designLength": 1.3,
+          "designThickness": 300
+        },
+        "B|2": {
+          "key": "B|2",
+          "name": "F1C1-b2",
+          "designWidth": 1,
+          "designLength": 1.3,
+          "designThickness": 300
+        },
+        "B|3": {
+          "key": "B|3",
+          "name": "F1C1-b3",
+          "designWidth": 1.4,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "B|4": {
+          "key": "B|4",
+          "name": "F1C1-b4",
+          "designWidth": 1.4,
+          "designLength": 1.1,
+          "designThickness": 300
+        },
+        "C|4": {
+          "key": "C|4",
+          "name": "F1C1-c4",
+          "designWidth": 1.4,
+          "designLength": 1.3,
+          "designThickness": 300
+        },
+        "E|2": {
+          "key": "E|2",
+          "name": "F1C1-e2",
+          "designWidth": 1,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "E|3": {
+          "key": "E|3",
+          "name": "F1C1-e3",
+          "designWidth": 1,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "E|4": {
+          "key": "E|4",
+          "name": "F1C1-e4",
+          "designWidth": 1,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "E|5": {
+          "key": "E|5",
+          "name": "F1C1-e5",
+          "designWidth": 1,
+          "designLength": 1,
+          "designThickness": 300
+        },
+        "C|3": {
+          "key": "C|3",
+          "name": "F1C1-c3",
+          "designWidth": 1.3,
+          "designLength": 1.3,
+          "designThickness": 300
+        }
+      },
+      "deletedPlanMembers": [],
+      "deletedSlabs": [
+        "2|2|1"
+      ],
+      "earthFilledSlabs": [],
+      "deletedPlanNodes": [],
+      "planGirderNodes": [],
+      "planCustomNodes": [],
+      "planAuxiliaryGrids": [
+        {
+          "id": "AUX-GRID-1791023432640",
+          "levelIndex": 1,
+          "origin": {
+            "x": 6.5,
+            "y": 12
+          },
+          "spacingX": 0.2,
+          "spacingY": 0.2,
+          "dimensionX": 9,
+          "dimensionY": 5,
+          "divisionsX": 45,
+          "divisionsY": 25,
+          "countX": 46,
+          "countY": 26,
+          "color": "#4f5658"
+        }
+      ],
+      "planLevelWalls": {
+        "0": [],
+        "1": [
+          {
+            "id": "WALL-L2-1791023450025-1",
+            "name": "W2-1",
+            "sequence": 1,
+            "levelIndex": 1,
+            "startPoint": {
+              "nodeId": "AUX-GRID-1791023432640:0:20",
+              "label": "G1.21",
+              "x": 6.5,
+              "y": 8,
+              "auxiliaryGridId": "AUX-GRID-1791023432640",
+              "auxiliaryGridColumn": 0,
+              "auxiliaryGridRow": 20
+            },
+            "endPoint": {
+              "nodeId": "AUX-GRID-1791023432640:23:20",
+              "label": "G24.21",
+              "x": 11.100000000000001,
+              "y": 8,
+              "auxiliaryGridId": "AUX-GRID-1791023432640",
+              "auxiliaryGridColumn": 23,
+              "auxiliaryGridRow": 20
+            },
+            "length": 4.600000000000001,
+            "unitWeight": 19.6,
+            "height": 3,
+            "width": 0.15,
+            "openings": [],
+            "grossWallArea": 13.800000000000004,
+            "openingArea": 0,
+            "openingDeductionRatio": 0,
+            "netLineLoad": 8.82
+          },
+          {
+            "id": "WALL-L2-1791023684234-2",
+            "name": "W2-2",
+            "sequence": 2,
+            "levelIndex": 1,
+            "startPoint": {
+              "x": 1.5,
+              "y": 8,
+              "xLabel": "B",
+              "yLabel": "3",
+              "label": "B/3"
+            },
+            "endPoint": {
+              "nodeId": "AUX-GRID-1791023432640:0:20",
+              "label": "G1.21",
+              "x": 6.5,
+              "y": 8,
+              "auxiliaryGridId": "AUX-GRID-1791023432640",
+              "auxiliaryGridColumn": 0,
+              "auxiliaryGridRow": 20
+            },
+            "length": 5,
+            "unitWeight": 19.6,
+            "height": 3,
+            "width": 0.15,
+            "openings": [],
+            "grossWallArea": 15,
+            "openingArea": 0,
+            "openingDeductionRatio": 0,
+            "netLineLoad": 8.82
+          }
+        ],
+        "2": [
+          {
+            "id": "WALL-L3-1791023190828-1",
+            "name": "W3-1",
+            "sequence": 1,
+            "levelIndex": 2,
+            "startPoint": {
+              "nodeId": "FREE:6.5000:8.0000",
+              "label": "G1.1",
+              "x": 6.5,
+              "y": 8
+            },
+            "endPoint": {
+              "nodeId": "FREE:10.1000:8.0000",
+              "label": "G19.1",
+              "x": 10.1,
+              "y": 8
+            },
+            "length": 3.5999999999999996,
+            "unitWeight": 19.6,
+            "height": 3,
+            "width": 0.15,
+            "openings": [],
+            "grossWallArea": 10.799999999999999,
+            "openingArea": 0,
+            "openingDeductionRatio": 0,
+            "netLineLoad": 8.82
+          },
+          {
+            "id": "WALL-L3-1791023193574-2",
+            "name": "W3-2",
+            "sequence": 2,
+            "levelIndex": 2,
+            "startPoint": {
+              "nodeId": "FREE:10.1000:8.0000",
+              "label": "G19.1",
+              "x": 10.1,
+              "y": 8
+            },
+            "endPoint": {
+              "nodeId": "FREE:10.1000:5.4000",
+              "label": "G19.14",
+              "x": 10.1,
+              "y": 5.4
+            },
+            "length": 2.5999999999999996,
+            "unitWeight": 19.6,
+            "height": 3,
+            "width": 0.15,
+            "openings": [],
+            "grossWallArea": 7.799999999999999,
+            "openingArea": 0,
+            "openingDeductionRatio": 0,
+            "netLineLoad": 8.819999999999999
+          },
+          {
+            "id": "WALL-L3-1791023202172-3",
+            "name": "W3-3",
+            "sequence": 3,
+            "levelIndex": 2,
+            "startPoint": {
+              "nodeId": "FREE:10.1000:5.4000",
+              "label": "G19.14",
+              "x": 10.1,
+              "y": 5.4
+            },
+            "endPoint": {
+              "nodeId": "FREE:6.5000:5.4000",
+              "label": "G1.14",
+              "x": 6.5,
+              "y": 5.4
+            },
+            "length": 3.5999999999999996,
+            "unitWeight": 19.6,
+            "height": 3,
+            "width": 0.15,
+            "openings": [],
+            "grossWallArea": 10.799999999999999,
+            "openingArea": 0,
+            "openingDeductionRatio": 0,
+            "netLineLoad": 8.82
+          }
+        ]
+      },
+      "planWallBeamLoads": [],
+      "planPointLoads": [
+        {
+          "id": "PLAN-POINT-1791022602762-sxr77n",
+          "levelIndex": 1,
+          "axis": "X",
+          "frameLine": "3",
+          "planMemberId": "B2-3-BC",
+          "sourcePlanMemberId": null,
+          "componentIds": [
+            "B2-3-BC"
+          ],
+          "point": {
+            "x": 4.726989691488232,
+            "y": 8
+          },
+          "frameCoordinate": 4.726989691488232,
+          "fy": -20
+        },
+        {
+          "id": "PLAN-POINT-1791022605942-cq73ry",
+          "levelIndex": 1,
+          "axis": "X",
+          "frameLine": "3",
+          "planMemberId": "B2-3-CD",
+          "sourcePlanMemberId": null,
+          "componentIds": [
+            "B2-3-CD"
+          ],
+          "point": {
+            "x": 8.972336913587979,
+            "y": 8
+          },
+          "frameCoordinate": 8.972336913587979,
+          "fy": -20
+        },
+        {
+          "id": "PLAN-POINT-1791022617864-sh60hf",
+          "levelIndex": 1,
+          "axis": "Y",
+          "frameLine": "C",
+          "planMemberId": "B2-C-43",
+          "sourcePlanMemberId": null,
+          "componentIds": [
+            "B2-C-43"
+          ],
+          "point": {
+            "x": 6.5,
+            "y": 6.307210517841147
+          },
+          "frameCoordinate": 7.192789482158853,
+          "fy": -20
+        },
+        {
+          "id": "PLAN-POINT-1791022630996-ekjn1r",
+          "levelIndex": 2,
+          "axis": "Y",
+          "frameLine": "C",
+          "planMemberId": "B3-C-32",
+          "sourcePlanMemberId": null,
+          "componentIds": [
+            "B3-C-32"
+          ],
+          "point": {
+            "x": 6.5,
+            "y": 9.853224975300368
+          },
+          "frameCoordinate": 3.6467750246996324,
+          "fy": -20
+        },
+        {
+          "id": "PLAN-POINT-1791022635134-tyzs4p",
+          "levelIndex": 2,
+          "axis": "Y",
+          "frameLine": "C",
+          "planMemberId": "B3-C-43",
+          "sourcePlanMemberId": null,
+          "componentIds": [
+            "B3-C-43"
+          ],
+          "point": {
+            "x": 6.5,
+            "y": 6.126027297387025
+          },
+          "frameCoordinate": 7.373972702612975,
+          "fy": -20
+        },
+        {
+          "id": "PLAN-POINT-1791022636496-yloev3",
+          "levelIndex": 2,
+          "axis": "X",
+          "frameLine": "3",
+          "planMemberId": "B3-3-BC",
+          "sourcePlanMemberId": null,
+          "componentIds": [
+            "B3-3-BC"
+          ],
+          "point": {
+            "x": 2.526657289790192,
+            "y": 8
+          },
+          "frameCoordinate": 2.526657289790192,
+          "fy": -20
+        },
+        {
+          "id": "PLAN-POINT-1791022640186-b9igsm",
+          "levelIndex": 2,
+          "axis": "X",
+          "frameLine": "3",
+          "planMemberId": "B3-3-CD",
+          "sourcePlanMemberId": null,
+          "componentIds": [
+            "B3-3-CD"
+          ],
+          "point": {
+            "x": 9.619493502322705,
+            "y": 8
+          },
+          "frameCoordinate": 9.619493502322705,
+          "fy": -20
+        }
+      ],
+      "planActiveView": "TEMPLATES",
+      "planIsBlankNewDesign": false,
+      "planActiveLevelIndex": 2,
+      "planLevelMembers": {
+        "0": [
+          {
+            "id": "PLAN-L1-1791018483441",
+            "levelIndex": 0,
+            "x1": "B",
+            "y1": "4",
+            "x2": "B",
+            "y2": "5",
+            "name": "TB1-B-54",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "B/4-5",
+            "length": 4.5
+          },
+          {
+            "id": "PLAN-L1-1791018485223",
+            "levelIndex": 0,
+            "x1": "B",
+            "y1": "5",
+            "x2": "C",
+            "y2": "5",
+            "name": "TB1-5-BC",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "B-C/5",
+            "length": 5
+          },
+          {
+            "id": "PLAN-L1-1791018486845",
+            "levelIndex": 0,
+            "x1": "C",
+            "y1": "5",
+            "x2": "D",
+            "y2": "5",
+            "name": "TB1-5-CD",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "C-D/5",
+            "length": 4.5
+          },
+          {
+            "id": "PLAN-L1-1791018488485",
+            "levelIndex": 0,
+            "x1": "D",
+            "y1": "5",
+            "x2": "D",
+            "y2": "4",
+            "name": "TB1-D-54",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "D/5-4",
+            "length": 4.5
+          },
+          {
+            "id": "PLAN-L1-1791018500426",
+            "levelIndex": 0,
+            "x1": "C",
+            "y1": "5",
+            "x2": "C",
+            "y2": "4",
+            "name": "TB1-C-54",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "C/5-4",
+            "length": 4.5
+          },
+          {
+            "id": "PLAN-L1-1791018788039",
+            "levelIndex": 0,
+            "x1": "E",
+            "y1": "3",
+            "x2": "D",
+            "y2": "3",
+            "name": "TB1-3-DE",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "E-D/3",
+            "length": 3.5
+          },
+          {
+            "id": "PLAN-L1-1791018804889",
+            "levelIndex": 0,
+            "x1": "E",
+            "y1": "4",
+            "x2": "D",
+            "y2": "4",
+            "name": "TB1-4-DE",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "E-D/4",
+            "length": 3.5
+          },
+          {
+            "id": "PLAN-L1-1791018815840",
+            "levelIndex": 0,
+            "x1": "D",
+            "y1": "5",
+            "x2": "E",
+            "y2": "5",
+            "name": "TB1-5-DE",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "D-E/5",
+            "length": 3.5
+          },
+          {
+            "id": "PLAN-L1-1791018818472",
+            "levelIndex": 0,
+            "x1": "E",
+            "y1": "5",
+            "x2": "E",
+            "y2": "4",
+            "name": "TB1-E-54",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "E/5-4",
+            "length": 4.5
+          },
+          {
+            "id": "PLAN-L1-1791018827688",
+            "levelIndex": 0,
+            "x1": "E",
+            "y1": "4",
+            "x2": "E",
+            "y2": "3",
+            "name": "TB1-E-43",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "E/4-3",
+            "length": 3.5
+          },
+          {
+            "id": "PLAN-L1-1791018831147",
+            "levelIndex": 0,
+            "x1": "E",
+            "y1": "3",
+            "x2": "E",
+            "y2": "2",
+            "name": "TB1-E-32",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "E/3-2",
+            "length": 4
+          },
+          {
+            "id": "PLAN-L1-1791018833966",
+            "levelIndex": 0,
+            "x1": "E",
+            "y1": "2",
+            "x2": "D",
+            "y2": "2",
+            "name": "TB1-2-DE",
+            "type": "Tie Beam",
+            "level": "LEVEL-1",
+            "grid": "E-D/2",
+            "length": 3.5
+          }
+        ],
+        "1": [],
+        "2": [
+          {
+            "id": "PLAN-L3-1791023252780",
+            "levelIndex": 2,
+            "x1": null,
+            "y1": null,
+            "x2": null,
+            "y2": null,
+            "startPoint": {
+              "nodeId": "FREE:6.5000:5.4000",
+              "label": "G1.14",
+              "x": 6.5,
+              "y": 5.4
+            },
+            "endPoint": {
+              "nodeId": "FREE:10.9000:5.4000",
+              "label": "G23.14",
+              "x": 10.9,
+              "y": 5.4
+            },
+            "name": "B3-G1.14-G23.14",
+            "type": "Beam",
+            "level": "LEVEL-3",
+            "grid": "G1.14-G23.14",
+            "length": 4.4,
+            "axis": "X",
+            "frameCoordinate": 5.4,
+            "offGrid": true
+          },
+          {
+            "id": "PLAN-L3-1791023278213",
+            "levelIndex": 2,
+            "x1": null,
+            "y1": null,
+            "x2": null,
+            "y2": null,
+            "startPoint": {
+              "nodeId": "FREE:10.1000:8.0000",
+              "label": "G19.1",
+              "x": 10.1,
+              "y": 8
+            },
+            "endPoint": {
+              "nodeId": "FREE:10.1000:5.4000",
+              "label": "G19.14",
+              "x": 10.1,
+              "y": 5.4
+            },
+            "name": "B3-G19.1-G19.14",
+            "type": "Beam",
+            "level": "LEVEL-3",
+            "grid": "G19.1-G19.14",
+            "length": 2.5999999999999996,
+            "axis": "Y",
+            "frameCoordinate": 10.1,
+            "offGrid": true
+          }
+        ]
+      },
+      "planMemberNameOverrides": {},
+      "planAnnotations": [],
+      "mprHiddenRows": [],
+      "columnShapeLibrary": [
+        {
+          "id": "column-shape-8160cfb1-6db9-4ee1-bd3f-0ab849473fce",
+          "name": "Column Shape 01",
+          "gridSpacing": 50,
+          "nodes": [
+            {
+              "id": "n2",
+              "x": 200,
+              "y": -200
+            },
+            {
+              "id": "n3",
+              "x": 200,
+              "y": 200
+            },
+            {
+              "id": "node-0867155e-196d-4951-9600-95d8409b5923",
+              "x": -200,
+              "y": 250
+            },
+            {
+              "id": "node-fad42d2b-18b2-41a2-b675-d57944fe9e22",
+              "x": -200,
+              "y": -150
+            }
+          ],
+          "lines": [
+            {
+              "id": "l2",
+              "a": "n2",
+              "b": "n3"
+            },
+            {
+              "id": "line-23ccb732-d96e-4970-a803-2b2d703fb85c",
+              "a": "n2",
+              "b": "node-fad42d2b-18b2-41a2-b675-d57944fe9e22"
+            },
+            {
+              "id": "line-cc6cee7e-fc23-4f98-b8fa-d8e4c30eb4f7",
+              "a": "node-0867155e-196d-4951-9600-95d8409b5923",
+              "b": "node-fad42d2b-18b2-41a2-b675-d57944fe9e22"
+            },
+            {
+              "id": "line-4d868063-5352-431c-bb49-21f18d7d29b0",
+              "a": "n3",
+              "b": "node-0867155e-196d-4951-9600-95d8409b5923"
+            }
+          ],
+          "dimensions": [
+            {
+              "id": "d2",
+              "a": "n2",
+              "b": "n3"
+            },
+            {
+              "id": "dimension-18be3d67-aa81-4757-abe4-9353b28ae099",
+              "a": "node-fad42d2b-18b2-41a2-b675-d57944fe9e22",
+              "b": "n2"
+            },
+            {
+              "id": "dimension-b04cd764-2e65-403b-8d30-a5004c12af54",
+              "a": "node-0867155e-196d-4951-9600-95d8409b5923",
+              "b": "node-fad42d2b-18b2-41a2-b675-d57944fe9e22"
+            }
+          ],
+          "properties": {
+            "area": 160000,
+            "centroidX": 0,
+            "centroidY": 25,
+            "ix": 2166666666.6666665,
+            "iy": 2133333333.3333333
+          },
+          "updatedAt": "2026-09-05T15:43:20.006Z"
+        },
+        {
+          "id": "column-shape-5bb7e7eb-84dc-4e5c-aec1-8a5c9d92f801",
+          "name": "Square Column 01",
+          "gridSpacing": 50,
+          "nodes": [
+            {
+              "id": "n1",
+              "x": -200,
+              "y": -200
+            },
+            {
+              "id": "n2",
+              "x": 200,
+              "y": -200
+            },
+            {
+              "id": "n3",
+              "x": 200,
+              "y": 200
+            },
+            {
+              "id": "n4",
+              "x": -200,
+              "y": 200
+            }
+          ],
+          "lines": [
+            {
+              "id": "l1",
+              "a": "n1",
+              "b": "n2"
+            },
+            {
+              "id": "l2",
+              "a": "n2",
+              "b": "n3"
+            },
+            {
+              "id": "l3",
+              "a": "n3",
+              "b": "n4"
+            },
+            {
+              "id": "l4",
+              "a": "n4",
+              "b": "n1"
+            }
+          ],
+          "dimensions": [
+            {
+              "id": "d1",
+              "a": "n1",
+              "b": "n2"
+            },
+            {
+              "id": "d2",
+              "a": "n2",
+              "b": "n3"
+            }
+          ],
+          "properties": {
+            "area": 160000,
+            "centroidX": 0,
+            "centroidY": 0,
+            "ix": 2133333333.3333333,
+            "iy": 2133333333.3333333
+          },
+          "updatedAt": "2026-09-09T12:11:48.951Z"
+        },
+        {
+          "id": "column-shape-1e02bb8d-5a2d-463d-b94b-87dbabd5bb74",
+          "name": "Circular Column 01",
+          "kind": "CIRCULAR",
+          "width": 400,
+          "height": 400,
+          "diameter": 350,
+          "gridSpacing": 50,
+          "nodes": [
+            {
+              "id": "n1",
+              "x": 175,
+              "y": 0
+            },
+            {
+              "id": "n2",
+              "x": 169.03701960058694,
+              "y": 45.29333289294113
+            },
+            {
+              "id": "n3",
+              "x": 151.55444566227678,
+              "y": 87.49999999999999
+            },
+            {
+              "id": "n4",
+              "x": 123.74368670764582,
+              "y": 123.74368670764581
+            },
+            {
+              "id": "n5",
+              "x": 87.50000000000001,
+              "y": 151.55444566227675
+            },
+            {
+              "id": "n6",
+              "x": 45.29333289294113,
+              "y": 169.03701960058694
+            },
+            {
+              "id": "n7",
+              "x": 1.0715659492539341e-14,
+              "y": 175
+            },
+            {
+              "id": "n8",
+              "x": -45.29333289294111,
+              "y": 169.03701960058694
+            },
+            {
+              "id": "n9",
+              "x": -87.49999999999996,
+              "y": 151.55444566227678
+            },
+            {
+              "id": "n10",
+              "x": -123.74368670764581,
+              "y": 123.74368670764582
+            },
+            {
+              "id": "n11",
+              "x": -151.55444566227678,
+              "y": 87.49999999999999
+            },
+            {
+              "id": "n12",
+              "x": -169.03701960058694,
+              "y": 45.29333289294118
+            },
+            {
+              "id": "n13",
+              "x": -175,
+              "y": 2.1431318985078682e-14
+            },
+            {
+              "id": "n14",
+              "x": -169.03701960058694,
+              "y": -45.29333289294114
+            },
+            {
+              "id": "n15",
+              "x": -151.5544456622768,
+              "y": -87.49999999999996
+            },
+            {
+              "id": "n16",
+              "x": -123.74368670764588,
+              "y": -123.74368670764575
+            },
+            {
+              "id": "n17",
+              "x": -87.50000000000007,
+              "y": -151.55444566227672
+            },
+            {
+              "id": "n18",
+              "x": -45.29333289294111,
+              "y": -169.03701960058694
+            },
+            {
+              "id": "n19",
+              "x": -3.214697847761802e-14,
+              "y": -175
+            },
+            {
+              "id": "n20",
+              "x": 45.29333289294105,
+              "y": -169.03701960058697
+            },
+            {
+              "id": "n21",
+              "x": 87.50000000000001,
+              "y": -151.55444566227675
+            },
+            {
+              "id": "n22",
+              "x": 123.7436867076458,
+              "y": -123.74368670764585
+            },
+            {
+              "id": "n23",
+              "x": 151.55444566227672,
+              "y": -87.50000000000007
+            },
+            {
+              "id": "n24",
+              "x": 169.03701960058692,
+              "y": -45.29333289294127
+            }
+          ],
+          "lines": [
+            {
+              "id": "l1",
+              "a": "n1",
+              "b": "n2"
+            },
+            {
+              "id": "l2",
+              "a": "n2",
+              "b": "n3"
+            },
+            {
+              "id": "l3",
+              "a": "n3",
+              "b": "n4"
+            },
+            {
+              "id": "l4",
+              "a": "n4",
+              "b": "n5"
+            },
+            {
+              "id": "l5",
+              "a": "n5",
+              "b": "n6"
+            },
+            {
+              "id": "l6",
+              "a": "n6",
+              "b": "n7"
+            },
+            {
+              "id": "l7",
+              "a": "n7",
+              "b": "n8"
+            },
+            {
+              "id": "l8",
+              "a": "n8",
+              "b": "n9"
+            },
+            {
+              "id": "l9",
+              "a": "n9",
+              "b": "n10"
+            },
+            {
+              "id": "l10",
+              "a": "n10",
+              "b": "n11"
+            },
+            {
+              "id": "l11",
+              "a": "n11",
+              "b": "n12"
+            },
+            {
+              "id": "l12",
+              "a": "n12",
+              "b": "n13"
+            },
+            {
+              "id": "l13",
+              "a": "n13",
+              "b": "n14"
+            },
+            {
+              "id": "l14",
+              "a": "n14",
+              "b": "n15"
+            },
+            {
+              "id": "l15",
+              "a": "n15",
+              "b": "n16"
+            },
+            {
+              "id": "l16",
+              "a": "n16",
+              "b": "n17"
+            },
+            {
+              "id": "l17",
+              "a": "n17",
+              "b": "n18"
+            },
+            {
+              "id": "l18",
+              "a": "n18",
+              "b": "n19"
+            },
+            {
+              "id": "l19",
+              "a": "n19",
+              "b": "n20"
+            },
+            {
+              "id": "l20",
+              "a": "n20",
+              "b": "n21"
+            },
+            {
+              "id": "l21",
+              "a": "n21",
+              "b": "n22"
+            },
+            {
+              "id": "l22",
+              "a": "n22",
+              "b": "n23"
+            },
+            {
+              "id": "l23",
+              "a": "n23",
+              "b": "n24"
+            },
+            {
+              "id": "l24",
+              "a": "n24",
+              "b": "n1"
+            }
+          ],
+          "dimensions": [
+            {
+              "id": "d1",
+              "a": "n1",
+              "b": "n13"
+            }
+          ],
+          "properties": {
+            "area": 95115.99907517634,
+            "centroidX": 3.263813251436259e-15,
+            "centroidY": 9.077480605557094e-15,
+            "ix": 719960568.1962126,
+            "iy": 719960568.1962129
+          },
+          "updatedAt": "2026-09-09T12:35:29.849Z"
+        },
+        {
+          "id": "column-shape-c4c17a4a-72ee-4405-bfed-478cb6427f1e",
+          "name": "Rectangular Column 01",
+          "kind": "RECTANGULAR",
+          "width": 450,
+          "height": 350,
+          "diameter": null,
+          "gridSpacing": 50,
+          "nodes": [
+            {
+              "id": "n1",
+              "x": -225,
+              "y": -175
+            },
+            {
+              "id": "n2",
+              "x": 225,
+              "y": -175
+            },
+            {
+              "id": "n3",
+              "x": 225,
+              "y": 175
+            },
+            {
+              "id": "n4",
+              "x": -225,
+              "y": 175
+            }
+          ],
+          "lines": [
+            {
+              "id": "l1",
+              "a": "n1",
+              "b": "n2"
+            },
+            {
+              "id": "l2",
+              "a": "n2",
+              "b": "n3"
+            },
+            {
+              "id": "l3",
+              "a": "n3",
+              "b": "n4"
+            },
+            {
+              "id": "l4",
+              "a": "n4",
+              "b": "n1"
+            }
+          ],
+          "dimensions": [
+            {
+              "id": "d1",
+              "a": "n1",
+              "b": "n2"
+            },
+            {
+              "id": "d2",
+              "a": "n2",
+              "b": "n3"
+            }
+          ],
+          "properties": {
+            "area": 157500,
+            "centroidX": 0,
+            "centroidY": 0,
+            "ix": 1607812500,
+            "iy": 2657812500
+          },
+          "updatedAt": "2026-09-10T06:29:52.688Z"
+        },
+        {
+          "id": "column-shape-8fd808e1-8598-4ce4-9611-fb66157637cf",
+          "name": "Rec. Column 02",
+          "kind": "RECTANGULAR",
+          "width": 350,
+          "height": 450,
+          "diameter": null,
+          "insertionPoint": {
+            "x": 0,
+            "y": 0,
+            "type": "CENTROID"
+          },
+          "geometry": null,
+          "reinforcement": {
+            "cover": 40,
+            "barDiameter": 16,
+            "tieDiameter": 10,
+            "tie": "RECTANGULAR",
+            "bars": [
+              {
+                "x": -141.05887450304573,
+                "y": -191.05887450304573
+              },
+              {
+                "x": 141.05887450304573,
+                "y": -191.05887450304573
+              },
+              {
+                "x": 141.05887450304573,
+                "y": 191.05887450304573
+              },
+              {
+                "x": -141.05887450304573,
+                "y": 191.05887450304573
+              }
+            ]
+          },
+          "gridSpacing": 50,
+          "nodes": [
+            {
+              "id": "n1",
+              "x": -175,
+              "y": -225
+            },
+            {
+              "id": "n2",
+              "x": 175,
+              "y": -225
+            },
+            {
+              "id": "n3",
+              "x": 175,
+              "y": 225
+            },
+            {
+              "id": "n4",
+              "x": -175,
+              "y": 225
+            }
+          ],
+          "lines": [
+            {
+              "id": "l1",
+              "a": "n1",
+              "b": "n2"
+            },
+            {
+              "id": "l2",
+              "a": "n2",
+              "b": "n3"
+            },
+            {
+              "id": "l3",
+              "a": "n3",
+              "b": "n4"
+            },
+            {
+              "id": "l4",
+              "a": "n4",
+              "b": "n1"
+            }
+          ],
+          "dimensions": [
+            {
+              "id": "d1",
+              "a": "n1",
+              "b": "n2"
+            },
+            {
+              "id": "d2",
+              "a": "n2",
+              "b": "n3"
+            }
+          ],
+          "properties": {
+            "area": 157500,
+            "centroidX": 0,
+            "centroidY": 0,
+            "ix": 2657812500,
+            "iy": 1607812500
+          },
+          "updatedAt": "2026-09-10T12:47:31.383Z"
+        },
+        {
+          "id": "column-shape-927d3953-ae14-4cf0-82f7-a069acd55a69",
+          "name": "Column Shape 06",
+          "kind": "CUSTOM",
+          "width": 350,
+          "height": 350,
+          "diameter": null,
+          "insertionPoint": {
+            "x": 100,
+            "y": 100,
+            "type": "MIDLINE_CORNER_INTERSECTION",
+            "insideCorner": {
+              "x": 0,
+              "y": 0
+            },
+            "outsideCorner": {
+              "x": 200,
+              "y": 200
+            }
+          },
+          "geometry": {
+            "points": [
+              {
+                "x": -250,
+                "y": -100
+              },
+              {
+                "x": -250,
+                "y": 100
+              },
+              {
+                "x": 100,
+                "y": 100
+              },
+              {
+                "x": 100,
+                "y": -250
+              },
+              {
+                "x": -100,
+                "y": -250
+              },
+              {
+                "x": -100,
+                "y": -100
+              }
+            ]
+          },
+          "reinforcement": {
+            "cover": 40,
+            "barDiameter": 16,
+            "tieDiameter": 10,
+            "tie": "CUSTOM",
+            "bars": [
+              {
+                "x": -116.05887450304571,
+                "y": 33.94112549695428
+              },
+              {
+                "x": -116.05887450304573,
+                "y": 166.05887450304573
+              },
+              {
+                "x": 166.05887450304573,
+                "y": 166.05887450304573
+              },
+              {
+                "x": 166.05887450304573,
+                "y": -116.05887450304571
+              },
+              {
+                "x": 33.941125496954285,
+                "y": -116.05887450304573
+              },
+              {
+                "x": 26.66737118494091,
+                "y": 39.91054139052217
+              }
+            ]
+          },
+          "designWarning": "Other column boundary dimensions must be at least 250 mm.",
+          "gridSpacing": 50,
+          "nodes": [
+            {
+              "id": "node-1d6d8832-cc5e-4a45-9609-0746d98b7fec",
+              "x": -150,
+              "y": 0
+            },
+            {
+              "id": "node-71f5d8ef-146a-44b5-9b0f-93075b0138de",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "node-700c1744-b1a2-426b-9edc-e757cc29b9a8",
+              "x": 0,
+              "y": -150
+            },
+            {
+              "id": "node-6f7b87cc-c113-4af6-8c5e-a579fb3daa0a",
+              "x": 200,
+              "y": -150
+            },
+            {
+              "id": "node-68ebea95-56c5-435f-934d-72ce8be68acf",
+              "x": -150,
+              "y": 200
+            },
+            {
+              "id": "node-64e5de8c-6225-45e8-871a-4ebb24f59f4b",
+              "x": 200,
+              "y": 200
+            }
+          ],
+          "lines": [
+            {
+              "id": "line-2a67c50a-ded5-423b-815a-0bf87d648f9d",
+              "a": "node-6f7b87cc-c113-4af6-8c5e-a579fb3daa0a",
+              "b": "node-64e5de8c-6225-45e8-871a-4ebb24f59f4b"
+            },
+            {
+              "id": "line-dd363983-193a-43c6-81c5-995a176608a6",
+              "a": "node-64e5de8c-6225-45e8-871a-4ebb24f59f4b",
+              "b": "node-68ebea95-56c5-435f-934d-72ce8be68acf"
+            },
+            {
+              "id": "line-41dde40a-64c5-449b-b6ed-126447fa1c8d",
+              "a": "node-68ebea95-56c5-435f-934d-72ce8be68acf",
+              "b": "node-1d6d8832-cc5e-4a45-9609-0746d98b7fec"
+            },
+            {
+              "id": "line-5b5d3b10-acba-4ef1-b455-eabb32cf8757",
+              "a": "node-1d6d8832-cc5e-4a45-9609-0746d98b7fec",
+              "b": "node-71f5d8ef-146a-44b5-9b0f-93075b0138de"
+            },
+            {
+              "id": "line-e2d472bd-87c7-4795-a54a-75bef461adce",
+              "a": "node-71f5d8ef-146a-44b5-9b0f-93075b0138de",
+              "b": "node-700c1744-b1a2-426b-9edc-e757cc29b9a8"
+            },
+            {
+              "id": "line-2763b286-4dbb-4abc-924a-518559c7785f",
+              "a": "node-700c1744-b1a2-426b-9edc-e757cc29b9a8",
+              "b": "node-6f7b87cc-c113-4af6-8c5e-a579fb3daa0a"
+            }
+          ],
+          "dimensions": [
+            {
+              "id": "dimension-75873950-23ce-46ed-9d58-88213b0ff270",
+              "a": "node-68ebea95-56c5-435f-934d-72ce8be68acf",
+              "b": "node-64e5de8c-6225-45e8-871a-4ebb24f59f4b"
+            },
+            {
+              "id": "dimension-d2988f62-3ee0-4e12-9ccf-0789571a5dba",
+              "a": "node-64e5de8c-6225-45e8-871a-4ebb24f59f4b",
+              "b": "node-6f7b87cc-c113-4af6-8c5e-a579fb3daa0a"
+            },
+            {
+              "id": "dimension-011bc64d-96c9-4c2d-9f5d-a24ed7961655",
+              "a": "node-700c1744-b1a2-426b-9edc-e757cc29b9a8",
+              "b": "node-6f7b87cc-c113-4af6-8c5e-a579fb3daa0a"
+            },
+            {
+              "id": "dimension-ec60473e-51ff-49da-b841-77c3ab5dad53",
+              "a": "node-68ebea95-56c5-435f-934d-72ce8be68acf",
+              "b": "node-1d6d8832-cc5e-4a45-9609-0746d98b7fec"
+            },
+            {
+              "id": "dimension-b443fb99-d4db-44ed-8b10-f905488e5b83",
+              "a": "node-1d6d8832-cc5e-4a45-9609-0746d98b7fec",
+              "b": "node-71f5d8ef-146a-44b5-9b0f-93075b0138de",
+              "offset": -200
+            },
+            {
+              "id": "dimension-d63d30e9-c3b7-4b71-b28f-0dd552e9a9c8",
+              "a": "node-71f5d8ef-146a-44b5-9b0f-93075b0138de",
+              "b": "node-700c1744-b1a2-426b-9edc-e757cc29b9a8",
+              "offset": -200
+            }
+          ],
+          "properties": {
+            "area": 100000,
+            "centroidX": 47.5,
+            "centroidY": 47.5,
+            "ix": 932708333.3333333,
+            "iy": 932708333.3333333
+          },
+          "updatedAt": "2026-09-10T12:54:42.643Z"
+        }
+      ],
+      "columnDesignOverrides": {
+        "B|5|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|5|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|5|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|5|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|5|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|5|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|5|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|5|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|5|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|5|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|5|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|5|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|4|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|4|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|4|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|4|0": {
+          "width": 400,
+          "height": 400,
+          "barDiameter": 20,
+          "barCount": 10,
+          "tieDiameter": 10,
+          "manualSection": true,
+          "manualReinforcement": true
+        },
+        "C|4|1": {
+          "width": 400,
+          "height": 400,
+          "barDiameter": 20,
+          "barCount": 8,
+          "tieDiameter": 10,
+          "manualSection": true,
+          "manualReinforcement": true
+        },
+        "C|4|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|4|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|4|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|4|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|4|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|4|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|4|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|3|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|3|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|3|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|3|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|3|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|3|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|3|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|3|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|3|2": {
+          "width": 400,
+          "height": 400,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10,
+          "manualSection": true
+        },
+        "E|3|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|3|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|3|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|2|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|2|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "B|2|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|2|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|2|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "C|2|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|2|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|2|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "D|2|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|2|0": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|2|1": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        },
+        "E|2|2": {
+          "width": 350,
+          "height": 350,
+          "barDiameter": 20,
+          "barCount": 6,
+          "tieDiameter": 10
+        }
+      },
+      "slabDesignOverrides": {
+        "2|2|1": {
+          "type": "OPEN_SPACE"
+        }
+      },
+      "planView": {
+        "zoom": 0.84,
+        "pan": {
+          "x": -431.7350405553066,
+          "y": 21.000323812558776
+        }
+      },
+      "yView": {
+        "zoom": 0.84,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "isometricView": {
+        "zoom": 0.7971938775510203,
+        "rotation": 0,
+        "pan": {
+          "x": -553.30956102137,
+          "y": -32.8077568527475
+        },
+        "mode": "pan"
+      },
+      "xState": {
+        "model": {
+          "v": [
+            0,
+            1.5,
+            6.5,
+            11,
+            14.5
+          ],
+          "h": [
+            0,
+            1.5,
+            4.5,
+            7.5
+          ],
+          "nodes": [
+            {
+              "id": 1,
+              "x": 1.5,
+              "y": 0,
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 2,
+              "x": 6.5,
+              "y": 0,
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 3,
+              "x": 11,
+              "y": 0,
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 4,
+              "x": 14.5,
+              "y": 0,
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 5,
+              "x": 1.5,
+              "y": 1.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "B/3"
+            },
+            {
+              "id": 6,
+              "x": 6.5,
+              "y": 1.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "C/3"
+            },
+            {
+              "id": 7,
+              "x": 11,
+              "y": 1.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "D/3"
+            },
+            {
+              "id": 8,
+              "x": 14.5,
+              "y": 1.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "E/3"
+            },
+            {
+              "id": 9,
+              "x": 0,
+              "y": 4.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "A/3"
+            },
+            {
+              "id": 10,
+              "x": 1.5,
+              "y": 4.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "B/3"
+            },
+            {
+              "id": 11,
+              "x": 6.5,
+              "y": 4.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "C/3"
+            },
+            {
+              "id": 12,
+              "x": 11,
+              "y": 4.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "D/3"
+            },
+            {
+              "id": 13,
+              "x": 14.5,
+              "y": 4.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "E/3"
+            },
+            {
+              "id": 14,
+              "x": 0,
+              "y": 7.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "A/3"
+            },
+            {
+              "id": 15,
+              "x": 1.5,
+              "y": 7.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "B/3"
+            },
+            {
+              "id": 16,
+              "x": 6.5,
+              "y": 7.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "C/3"
+            },
+            {
+              "id": 17,
+              "x": 11,
+              "y": 7.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "D/3"
+            },
+            {
+              "id": 18,
+              "x": 14.5,
+              "y": 7.5,
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "E/3"
+            }
+          ],
+          "members": [
+            {
+              "id": 1,
+              "i": 5,
+              "j": 6,
+              "name": "TB1-3-BC",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "TB1-3-BC",
+              "sourcePlanLevelIndex": 0,
+              "designGroupId": "X|0|TB1-3-BC",
+              "designGroupName": "TB1-3-BC",
+              "designGroupSourceId": "TB1-3-BC",
+              "designGroupComponents": [
+                "TB1-3-BC"
+              ]
+            },
+            {
+              "id": 2,
+              "i": 6,
+              "j": 7,
+              "name": "TB1-3-CD",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "TB1-3-CD",
+              "sourcePlanLevelIndex": 0,
+              "designGroupId": "X|0|TB1-3-CD",
+              "designGroupName": "TB1-3-CD",
+              "designGroupSourceId": "TB1-3-CD",
+              "designGroupComponents": [
+                "TB1-3-CD"
+              ]
+            },
+            {
+              "id": 3,
+              "i": 9,
+              "j": 10,
+              "name": "B2-3-AB",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-3-AB",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "X|1|B2-3-AB",
+              "designGroupName": "B2-3-AB",
+              "designGroupSourceId": "B2-3-AB",
+              "designGroupComponents": [
+                "B2-3-AB"
+              ]
+            },
+            {
+              "id": 4,
+              "i": 10,
+              "j": 11,
+              "name": "B2-3-BC",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-3-BC",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "X|1|B2-3-BC",
+              "designGroupName": "B2-3-BC",
+              "designGroupSourceId": "B2-3-BC",
+              "designGroupComponents": [
+                "B2-3-BC"
+              ]
+            },
+            {
+              "id": 5,
+              "i": 11,
+              "j": 12,
+              "name": "B2-3-CD",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-3-CD",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "X|1|B2-3-CD",
+              "designGroupName": "B2-3-CD",
+              "designGroupSourceId": "B2-3-CD",
+              "designGroupComponents": [
+                "B2-3-CD"
+              ]
+            },
+            {
+              "id": 6,
+              "i": 12,
+              "j": 13,
+              "name": "B2-3-DE",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 3.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-3-DE",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "X|1|B2-3-DE",
+              "designGroupName": "B2-3-DE",
+              "designGroupSourceId": "B2-3-DE",
+              "designGroupComponents": [
+                "B2-3-DE"
+              ]
+            },
+            {
+              "id": 7,
+              "i": 14,
+              "j": 15,
+              "name": "B3-3-AB",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-3-AB",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "X|2|B3-3-AB",
+              "designGroupName": "B3-3-AB",
+              "designGroupSourceId": "B3-3-AB",
+              "designGroupComponents": [
+                "B3-3-AB"
+              ]
+            },
+            {
+              "id": 8,
+              "i": 15,
+              "j": 16,
+              "name": "B3-3-BC",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-3-BC",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "X|2|B3-3-BC",
+              "designGroupName": "B3-3-BC",
+              "designGroupSourceId": "B3-3-BC",
+              "designGroupComponents": [
+                "B3-3-BC"
+              ]
+            },
+            {
+              "id": 9,
+              "i": 16,
+              "j": 17,
+              "name": "B3-3-CD",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-3-CD",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "X|2|B3-3-CD",
+              "designGroupName": "B3-3-CD",
+              "designGroupSourceId": "B3-3-CD",
+              "designGroupComponents": [
+                "B3-3-CD"
+              ]
+            },
+            {
+              "id": 10,
+              "i": 17,
+              "j": 18,
+              "name": "B3-3-DE",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 3.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-3-DE",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "X|2|B3-3-DE",
+              "designGroupName": "B3-3-DE",
+              "designGroupSourceId": "B3-3-DE",
+              "designGroupComponents": [
+                "B3-3-DE"
+              ]
+            },
+            {
+              "id": 11,
+              "i": 8,
+              "j": 7,
+              "name": "TB1-3-DE",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 3.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanMemberId": "PLAN-L1-1791018788039",
+              "sourcePlanLevelIndex": 0
+            },
+            {
+              "id": 12,
+              "i": 1,
+              "j": 5,
+              "name": "C1-b3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "B|3",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 13,
+              "i": 5,
+              "j": 10,
+              "name": "C2-b3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "B|3",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 14,
+              "i": 10,
+              "j": 15,
+              "name": "C3-b3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "B|3",
+              "sourcePlanStoryIndex": 2
+            },
+            {
+              "id": 15,
+              "i": 2,
+              "j": 6,
+              "name": "C1-c3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|3",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 16,
+              "i": 6,
+              "j": 11,
+              "name": "C2-c3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|3",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 17,
+              "i": 11,
+              "j": 16,
+              "name": "C3-c3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|3",
+              "sourcePlanStoryIndex": 2
+            },
+            {
+              "id": 18,
+              "i": 3,
+              "j": 7,
+              "name": "C1-d3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "D|3",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 19,
+              "i": 7,
+              "j": 12,
+              "name": "C2-d3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "D|3",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 20,
+              "i": 12,
+              "j": 17,
+              "name": "C3-d3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "D|3",
+              "sourcePlanStoryIndex": 2
+            },
+            {
+              "id": 21,
+              "i": 4,
+              "j": 8,
+              "name": "C1-e3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "E|3",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 22,
+              "i": 8,
+              "j": 13,
+              "name": "C2-e3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "E|3",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 23,
+              "i": 13,
+              "j": 18,
+              "name": "C3-e3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "E|3",
+              "sourcePlanStoryIndex": 2
+            }
+          ],
+          "supports": {
+            "1": "Fixed",
+            "2": "Fixed",
+            "3": "Fixed",
+            "4": "Fixed"
+          },
+          "loads": [
+            {
+              "kind": "member_udl",
+              "case": "SDL",
+              "member": 5,
+              "w": 8.82,
+              "wx": 0,
+              "source": "structural-wall-plan",
+              "planWallId": "WALL-L2-1791023450025-1",
+              "memberName": "B2-3-CD"
+            },
+            {
+              "kind": "member_point",
+              "case": "SDL",
+              "member": 6,
+              "p": 0.8820000000000126,
+              "x": 0.05000000000000071,
+              "source": "structural-wall-plan",
+              "planWallId": "WALL-L2-1791023450025-1",
+              "memberName": "B2-3-DE"
+            },
+            {
+              "kind": "member_udl",
+              "case": "SDL",
+              "member": 4,
+              "w": 8.82,
+              "wx": 0,
+              "source": "structural-wall-plan",
+              "planWallId": "WALL-L2-1791023684234-2",
+              "memberName": "B2-3-BC"
+            },
+            {
+              "kind": "member_point",
+              "case": "SDL",
+              "member": 9,
+              "p": 31.752,
+              "x": 1.8000000000000007,
+              "source": "structural-wall-plan",
+              "planWallId": "WALL-L3-1791023190828-1",
+              "memberName": "B3-3-CD"
+            },
+            {
+              "kind": "member_point_vector",
+              "case": "P",
+              "member": 4,
+              "fx": 0,
+              "fy": -20,
+              "x": 3.2269896914882317,
+              "source": "manual-point-plan",
+              "planPointLoadId": "PLAN-POINT-1791022602762-sxr77n",
+              "memberName": "B2-3-BC"
+            },
+            {
+              "kind": "member_point_vector",
+              "case": "P",
+              "member": 5,
+              "fx": 0,
+              "fy": -20,
+              "x": 2.472336913587979,
+              "source": "manual-point-plan",
+              "planPointLoadId": "PLAN-POINT-1791022605942-cq73ry",
+              "memberName": "B2-3-CD"
+            },
+            {
+              "kind": "member_point_vector",
+              "case": "P",
+              "member": 8,
+              "fx": 0,
+              "fy": -20,
+              "x": 1.026657289790192,
+              "source": "manual-point-plan",
+              "planPointLoadId": "PLAN-POINT-1791022636496-yloev3",
+              "memberName": "B3-3-BC"
+            },
+            {
+              "kind": "member_point_vector",
+              "case": "P",
+              "member": 9,
+              "fx": 0,
+              "fy": -20,
+              "x": 3.1194935023227046,
+              "source": "manual-point-plan",
+              "planPointLoadId": "PLAN-POINT-1791022640186-b9igsm",
+              "memberName": "B3-3-CD"
+            }
+          ],
+          "selectedNodes": [],
+          "selectedMemberIds": [],
+          "selectedNode": null,
+          "mode": "select",
+          "nextNode": 19,
+          "nextMember": 24,
+          "axis": "X",
+          "frameLine": "3",
+          "unresolvedStoryForces": [],
+          "unsupportedAnalysisComponents": []
+        },
+        "zoom": 0.84,
+        "pan": {
+          "x": 0,
+          "y": 0
+        },
+        "pointLoads": []
+      },
+      "yState": {
+        "model": {
+          "axis": "Y",
+          "v": [
+            0,
+            1.5,
+            5.5,
+            9,
+            13.5
+          ],
+          "h": [
+            0,
+            1.5,
+            4.5,
+            7.5
+          ],
+          "nodes": [
+            {
+              "id": 1,
+              "x": 1.5,
+              "y": 0,
+              "gridLabel": "2",
+              "levelLabel": "Foundation",
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 2,
+              "x": 5.5,
+              "y": 0,
+              "gridLabel": "3",
+              "levelLabel": "Foundation",
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 3,
+              "x": 9,
+              "y": 0,
+              "gridLabel": "4",
+              "levelLabel": "Foundation",
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 4,
+              "x": 13.5,
+              "y": 0,
+              "gridLabel": "5",
+              "levelLabel": "Foundation",
+              "hiddenPlanNode": false
+            },
+            {
+              "id": 5,
+              "x": 1.5,
+              "y": 1.5,
+              "gridLabel": "2",
+              "levelLabel": "Level-1",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "C/2"
+            },
+            {
+              "id": 6,
+              "x": 5.5,
+              "y": 1.5,
+              "gridLabel": "3",
+              "levelLabel": "Level-1",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "C/3"
+            },
+            {
+              "id": 7,
+              "x": 9,
+              "y": 1.5,
+              "gridLabel": "4",
+              "levelLabel": "Level-1",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "C/4"
+            },
+            {
+              "id": 8,
+              "x": 13.5,
+              "y": 1.5,
+              "gridLabel": "5",
+              "levelLabel": "Level-1",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 0,
+              "planGridLabel": "C/5"
+            },
+            {
+              "id": 9,
+              "x": 0,
+              "y": 4.5,
+              "gridLabel": "1",
+              "levelLabel": "Level-2",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "C/1"
+            },
+            {
+              "id": 10,
+              "x": 1.5,
+              "y": 4.5,
+              "gridLabel": "2",
+              "levelLabel": "Level-2",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "C/2"
+            },
+            {
+              "id": 11,
+              "x": 5.5,
+              "y": 4.5,
+              "gridLabel": "3",
+              "levelLabel": "Level-2",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "C/3"
+            },
+            {
+              "id": 12,
+              "x": 9,
+              "y": 4.5,
+              "gridLabel": "4",
+              "levelLabel": "Level-2",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "C/4"
+            },
+            {
+              "id": 13,
+              "x": 13.5,
+              "y": 4.5,
+              "gridLabel": "5",
+              "levelLabel": "Level-2",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 1,
+              "planGridLabel": "C/5"
+            },
+            {
+              "id": 14,
+              "x": 0,
+              "y": 7.5,
+              "gridLabel": "1",
+              "levelLabel": "Level-3",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "C/1"
+            },
+            {
+              "id": 15,
+              "x": 1.5,
+              "y": 7.5,
+              "gridLabel": "2",
+              "levelLabel": "Level-3",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "C/2"
+            },
+            {
+              "id": 16,
+              "x": 5.5,
+              "y": 7.5,
+              "gridLabel": "3",
+              "levelLabel": "Level-3",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "C/3"
+            },
+            {
+              "id": 17,
+              "x": 9,
+              "y": 7.5,
+              "gridLabel": "4",
+              "levelLabel": "Level-3",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "C/4"
+            },
+            {
+              "id": 18,
+              "x": 13.5,
+              "y": 7.5,
+              "gridLabel": "5",
+              "levelLabel": "Level-3",
+              "hiddenPlanNode": false,
+              "planLevelIndex": 2,
+              "planGridLabel": "C/5"
+            }
+          ],
+          "members": [
+            {
+              "id": 1,
+              "i": 4,
+              "j": 8,
+              "name": "C1-c5",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|5",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 2,
+              "i": 8,
+              "j": 13,
+              "name": "C2-c5",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|5",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 3,
+              "i": 13,
+              "j": 18,
+              "name": "C3-c5",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|5",
+              "sourcePlanStoryIndex": 2
+            },
+            {
+              "id": 4,
+              "i": 3,
+              "j": 7,
+              "name": "C1-c4",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|4",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 5,
+              "i": 7,
+              "j": 12,
+              "name": "C2-c4",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|4",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 6,
+              "i": 12,
+              "j": 17,
+              "name": "C3-c4",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|4",
+              "sourcePlanStoryIndex": 2
+            },
+            {
+              "id": 7,
+              "i": 2,
+              "j": 6,
+              "name": "C1-c3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|3",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 8,
+              "i": 6,
+              "j": 11,
+              "name": "C2-c3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|3",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 9,
+              "i": 11,
+              "j": 16,
+              "name": "C3-c3",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|3",
+              "sourcePlanStoryIndex": 2
+            },
+            {
+              "id": 10,
+              "i": 1,
+              "j": 5,
+              "name": "C1-c2",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|2",
+              "sourcePlanStoryIndex": 0
+            },
+            {
+              "id": 11,
+              "i": 5,
+              "j": 10,
+              "name": "C2-c2",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|2",
+              "sourcePlanStoryIndex": 1
+            },
+            {
+              "id": 12,
+              "i": 10,
+              "j": 15,
+              "name": "C3-c2",
+              "type": "Column",
+              "dim": "350x350 mm",
+              "width": 350,
+              "height": 350,
+              "length": 3,
+              "E": 24870,
+              "A": 122500,
+              "I": 1250520833.3333333,
+              "sourcePlanColumnKey": "C|2",
+              "sourcePlanStoryIndex": 2
+            },
+            {
+              "id": 13,
+              "i": 6,
+              "j": 7,
+              "name": "TB1-C-43",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 3.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "TB1-C-43",
+              "sourcePlanLevelIndex": 0,
+              "designGroupId": "Y|0|TB1-C-43",
+              "designGroupName": "TB1-C-43",
+              "designGroupSourceId": "TB1-C-43",
+              "designGroupComponents": [
+                "TB1-C-43"
+              ]
+            },
+            {
+              "id": 14,
+              "i": 5,
+              "j": 6,
+              "name": "TB1-C-32",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "TB1-C-32",
+              "sourcePlanLevelIndex": 0,
+              "designGroupId": "Y|0|TB1-C-32",
+              "designGroupName": "TB1-C-32",
+              "designGroupSourceId": "TB1-C-32",
+              "designGroupComponents": [
+                "TB1-C-32"
+              ]
+            },
+            {
+              "id": 15,
+              "i": 12,
+              "j": 13,
+              "name": "B2-C-54",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-C-54",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "Y|1|B2-C-54",
+              "designGroupName": "B2-C-54",
+              "designGroupSourceId": "B2-C-54",
+              "designGroupComponents": [
+                "B2-C-54"
+              ]
+            },
+            {
+              "id": 16,
+              "i": 11,
+              "j": 12,
+              "name": "B2-C-43",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 3.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-C-43",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "Y|1|B2-C-43",
+              "designGroupName": "B2-C-43",
+              "designGroupSourceId": "B2-C-43",
+              "designGroupComponents": [
+                "B2-C-43"
+              ]
+            },
+            {
+              "id": 17,
+              "i": 10,
+              "j": 11,
+              "name": "B2-C-32",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-C-32",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "Y|1|B2-C-32",
+              "designGroupName": "B2-C-32",
+              "designGroupSourceId": "B2-C-32",
+              "designGroupComponents": [
+                "B2-C-32"
+              ]
+            },
+            {
+              "id": 18,
+              "i": 9,
+              "j": 10,
+              "name": "B2-C-21",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B2-C-21",
+              "sourcePlanLevelIndex": 1,
+              "designGroupId": "Y|1|B2-C-21",
+              "designGroupName": "B2-C-21",
+              "designGroupSourceId": "B2-C-21",
+              "designGroupComponents": [
+                "B2-C-21"
+              ]
+            },
+            {
+              "id": 19,
+              "i": 17,
+              "j": 18,
+              "name": "B3-C-54",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-C-54",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "Y|2|B3-C-54",
+              "designGroupName": "B3-C-54",
+              "designGroupSourceId": "B3-C-54",
+              "designGroupComponents": [
+                "B3-C-54"
+              ]
+            },
+            {
+              "id": 20,
+              "i": 16,
+              "j": 17,
+              "name": "B3-C-43",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 3.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-C-43",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "Y|2|B3-C-43",
+              "designGroupName": "B3-C-43",
+              "designGroupSourceId": "B3-C-43",
+              "designGroupComponents": [
+                "B3-C-43"
+              ]
+            },
+            {
+              "id": 21,
+              "i": 15,
+              "j": 16,
+              "name": "B3-C-32",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-C-32",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "Y|2|B3-C-32",
+              "designGroupName": "B3-C-32",
+              "designGroupSourceId": "B3-C-32",
+              "designGroupComponents": [
+                "B3-C-32"
+              ]
+            },
+            {
+              "id": 22,
+              "i": 14,
+              "j": 15,
+              "name": "B3-C-21",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 1.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanGeneratedId": "B3-C-21",
+              "sourcePlanLevelIndex": 2,
+              "designGroupId": "Y|2|B3-C-21",
+              "designGroupName": "B3-C-21",
+              "designGroupSourceId": "B3-C-21",
+              "designGroupComponents": [
+                "B3-C-21"
+              ]
+            },
+            {
+              "id": 23,
+              "i": 8,
+              "j": 7,
+              "name": "TB1-C-54",
+              "type": "Beam",
+              "dim": "200x350 mm",
+              "width": 200,
+              "height": 350,
+              "length": 4.5,
+              "E": 24870,
+              "A": 70000,
+              "I": 714583333.3333334,
+              "sourcePlanMemberId": "PLAN-L1-1791018500426",
+              "sourcePlanLevelIndex": 0
+            }
+          ],
+          "supports": {
+            "1": "Fixed",
+            "2": "Fixed",
+            "3": "Fixed",
+            "4": "Fixed"
+          },
+          "loads": [
+            {
+              "kind": "member_point_vector",
+              "case": "P",
+              "member": 16,
+              "fx": 0,
+              "fy": -20,
+              "x": 1.6927894821588527,
+              "source": "manual-point-plan",
+              "planPointLoadId": "PLAN-POINT-1791022617864-sh60hf",
+              "memberName": "B2-C-43"
+            },
+            {
+              "kind": "member_point_vector",
+              "case": "P",
+              "member": 21,
+              "fx": 0,
+              "fy": -20,
+              "x": 2.1467750246996324,
+              "source": "manual-point-plan",
+              "planPointLoadId": "PLAN-POINT-1791022630996-ekjn1r",
+              "memberName": "B3-C-32"
+            },
+            {
+              "kind": "member_point_vector",
+              "case": "P",
+              "member": 20,
+              "fx": 0,
+              "fy": -20,
+              "x": 1.873972702612975,
+              "source": "manual-point-plan",
+              "planPointLoadId": "PLAN-POINT-1791022635134-tyzs4p",
+              "memberName": "B3-C-43"
+            }
+          ],
+          "nextNode": 19,
+          "nextMember": 24
+        },
+        "pointLoads": []
+      },
+      "activeFrameLines": {
+        "X": "3",
+        "Y": "C"
+      },
+      "controls": {
+        "vPositions": {
+          "value": "0,1.5,6.5,11,14.5"
+        },
+        "hPositions": {
+          "value": "0,1.5,4.5,7.5"
+        },
+        "planXLabels": {
+          "value": "A,B,C,D,E"
+        },
+        "planXSpans": {
+          "value": "1.5,5,4.5,3.5"
+        },
+        "planYLabels": {
+          "value": "1,2,3,4,5"
+        },
+        "planYSpans": {
+          "value": "1.5,4,3.5,4.5"
+        },
+        "planLevelCount": {
+          "value": "4"
+        },
+        "planLevels": {
+          "value": "Level-1,Level-2,Level-3"
+        },
+        "planLevelHeights": {
+          "value": "1.5,3,3"
+        },
+        "planXFrameLine": {
+          "value": "3"
+        },
+        "planYFrameLine": {
+          "value": "C"
+        },
+        "activeFrameEditor": {
+          "value": "PLAN"
+        },
+        "annotationColor": {
+          "value": "#c1121f"
+        },
+        "annotationWidth": {
+          "value": "2"
+        },
+        "annotationLineType": {
+          "value": "STRAIGHT"
+        },
+        "annotationTextSize": {
+          "value": "14"
+        },
+        "supportType": {
+          "value": "Fixed"
+        },
+        "beamWidth": {
+          "value": "200"
+        },
+        "beamHeight": {
+          "value": "350"
+        },
+        "columnWidth": {
+          "value": "350"
+        },
+        "columnHeight": {
+          "value": "350"
+        },
+        "beamDim": {
+          "value": "200x350 mm"
+        },
+        "colDim": {
+          "value": "350x350 mm"
+        },
+        "concreteStrength": {
+          "value": "28"
+        },
+        "beamLongitudinalBarDiameter": {
+          "value": "16"
+        },
+        "beamStirrupDiameter": {
+          "value": "10"
+        },
+        "rebarYieldStrength": {
+          "value": "415"
+        },
+        "beamClearCover": {
+          "value": "40"
+        },
+        "columnLongitudinalBarDiameter": {
+          "value": "16"
+        },
+        "columnTieDiameter": {
+          "value": "10"
+        },
+        "columnClearCover": {
+          "value": "40"
+        },
+        "footingBarDiameter": {
+          "value": "12"
+        },
+        "footingClearCover": {
+          "value": "75"
+        },
+        "footingThickness": {
+          "value": "300"
+        },
+        "soilAllowableBearing": {
+          "value": "250"
+        },
+        "slabBarDiameter": {
+          "value": "10"
+        },
+        "slabClearCover": {
+          "value": "20"
+        },
+        "autoDesignEnabled": {
+          "checked": false
+        },
+        "autoDesignDisabled": {
+          "checked": true
+        },
+        "beamStiffnessModifier": {
+          "value": "0.35"
+        },
+        "columnStiffnessModifier": {
+          "value": "0.70"
+        },
+        "optimizationConcreteCost": {
+          "value": "1.00"
+        },
+        "optimizationRebarCost": {
+          "value": "0.010"
+        },
+        "optimizationFormworkCost": {
+          "value": "0.10"
+        },
+        "allowableStoryDrift": {
+          "value": "0.020"
+        },
+        "matE": {
+          "value": "24870"
+        },
+        "secA": {
+          "value": "300000"
+        },
+        "secI": {
+          "value": "8e9"
+        },
+        "loadCodeBasis": {
+          "value": "NSCP2015"
+        },
+        "occupancyType": {
+          "value": "residential"
+        },
+        "occupancyLiveLoad": {
+          "value": "1.9"
+        },
+        "roofLiveLoad": {
+          "value": "1.0"
+        },
+        "slabThickness": {
+          "value": "150"
+        },
+        "concreteDensity": {
+          "value": "24"
+        },
+        "gravityLoadPath": {
+          "value": "TWO"
+        },
+        "floorTile": {
+          "checked": true
+        },
+        "floorCeiling": {
+          "checked": true
+        },
+        "floorPartitions": {
+          "checked": true
+        },
+        "roofWaterproofing": {
+          "checked": true
+        },
+        "roofCeiling": {
+          "checked": true
+        },
+        "roofSolar": {
+          "checked": true
+        },
+        "roofEquipment": {
+          "checked": true
+        },
+        "windVelocity": {
+          "value": "250"
+        },
+        "windVelocityUnit": {
+          "value": "kph"
+        },
+        "windExposure": {
+          "value": "C"
+        },
+        "windDirection": {
+          "value": "POS"
+        },
+        "windKd": {
+          "value": "0.85"
+        },
+        "windKzt": {
+          "value": "1.0"
+        },
+        "windNetCp": {
+          "value": "1.30"
+        },
+        "eqZ": {
+          "value": "0.40"
+        },
+        "eqI": {
+          "value": "1.0"
+        },
+        "eqCa": {
+          "value": "0.44"
+        },
+        "eqCv": {
+          "value": "0.64"
+        },
+        "eqNv": {
+          "value": "1.0"
+        },
+        "eqRx": {
+          "value": "8.5"
+        },
+        "eqRy": {
+          "value": "8.5"
+        },
+        "eqCt": {
+          "value": "0.0731"
+        },
+        "eqLiveFraction": {
+          "value": "0.25"
+        },
+        "eqAdditionalWeight": {
+          "value": "0"
+        },
+        "eqDirection": {
+          "value": "POS"
+        },
+        "engineeringPointFy": {
+          "value": "-20"
+        },
+        "wallDensity": {
+          "value": "19.6"
+        },
+        "wallThickness": {
+          "value": "0.15"
+        },
+        "wallHeight": {
+          "value": "3.0"
+        },
+        "wallOpening": {
+          "value": "0"
+        },
+        "loadCase": {
+          "value": "P"
+        },
+        "loadType": {
+          "value": "member_point"
+        },
+        "fx": {
+          "value": "0"
+        },
+        "fy": {
+          "value": "-10"
+        },
+        "mz": {
+          "value": "0"
+        },
+        "wudl": {
+          "value": "10"
+        },
+        "wudlX": {
+          "value": "0"
+        },
+        "pload": {
+          "value": "20"
+        },
+        "ploadX": {
+          "value": "1.5"
+        }
+      },
+      "frameCaches": {
+        "X": [],
+        "Y": []
+      }
+    }
+  }
+}

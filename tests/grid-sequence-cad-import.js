@@ -31,6 +31,8 @@ assert.match(html, /function trimCadProjectionOutlier\(/, "dimension and symbol 
 assert.match(html, /function renderCadDrawingList\(/, "multiple titled drawings must have a review list");
 assert.match(html, /function splitRasterDrawingSheet\(/, "combined image sheets must be split into drawing panels");
 assert.match(html, /function standardTwoByThreeSheetBounds\(/, "2x3 drawing sheets need a deterministic divider fallback");
+assert.match(html, /function standardTwoByThreeDividerEvidence\(/, "2x3 drawing sheets need a guarded faint-divider detector");
+assert.match(html, /standardTwoByThreeDividerEvidence\(xScores, yScores, width, height\)/, "faint 2x3 sheet separators must activate normalized panel bounds");
 assert.match(html, /height \* 0\.55[\s\S]{0,140}width \* 0\.55/, "sheet dividers must tolerate shorter or anti-aliased separator lines");
 assert.match(html, /rowIndex === 0[\s\S]{0,120}"FOUNDATION"[\s\S]{0,80}"LEVEL-1"/, "the standard 2x3 sheet must deterministically map its top plan row");
 assert.match(html, /rowIndex === 1[\s\S]{0,120}"LEVEL-2"[\s\S]{0,80}"LEVEL-3"/, "the standard 2x3 sheet must deterministically map its middle plan row");
@@ -56,6 +58,10 @@ assert.match(html, /the raster was replaced by editable native app drawings/, "s
 assert.match(html, /byId\("cadApplyDetectedBtn"\)\.disabled = false;[\s\S]{0,180}cadImportState\.audit\.errors\.length/, "reviewed conversion must stay enabled when automatic validation reports correctable findings");
 assert.match(html, /function analyzeRasterFrameDimensions\(/, "frame OCR must import printed level heights into the sidebar");
 assert.match(html, /function frameStoreyHeightsFromGeometry\(/, "frame geometry must recover level heights when rotated dimension OCR is unavailable");
+assert.match(html, /function coordinateRasterPlanGrids\(/, "repeated plan panels must coordinate raster grid counts before accuracy validation");
+assert.match(html, /catch \(error\) \{\}[\s\S]{0,180}cadNumericTextCandidates/, "unavailable OCR must not prevent frame geometry height recovery");
+assert.match(html, /projectionPeaks\(yProjection,[\s\S]{0,100}0\.28\)/, "frame elevation detection must include shorter foundation-level lines");
+assert.match(html, /horizontalScales[\s\S]{0,260}> 1\.25/, "inconsistent frame scale detections must not populate level heights");
 assert.match(html, /function inferImportedFrameGridLines\(/, "plan OCR must identify the selected X/Y frame grid lines");
 assert.match(html, /contains a different local dimension; the coordinated \$\{primary\.role\} grid span is used instead/, "local detail dimensions must not block or overwrite the coordinated Level-1 grid");
 assert.match(html, /primarySource\?\.detected\?\.columnPoints\?\.length/, "an empty column detection must fall back to all validated grid intersections");
@@ -77,5 +83,7 @@ assert.doesNotMatch(html, /id="memberNameHoverInput"/, "member-name hover must n
 assert.match(html, /#memberNameDialog #memberNameDialogApply \{[^}]*background: #08766c;[^}]*color: #fff;/, "the Update Name action must have high-contrast text and background colors");
 assert.match(html, /#memberNameDialog input \{[^}]*background: #fff;[^}]*color: #070b0c;/, "the member-name field must remain legible against the dialog background");
 assert.match(html, /planState\.memberStart = endpoint;[\s\S]{0,220}Continue clicking aligned nodes/, "member creation must continue from the last clicked endpoint");
+assert(html.includes('id="overlapObjectDialog"') && html.includes("Select object/s to delete"), "overlapping delete hits must open a multi-object chooser");
+assert.match(html, /window\.strucForgeOpenOverlapChooser/, "plan and frame tools must share the overlap chooser");
 
 console.log("grid sequence and CAD import regression tests: passed");
