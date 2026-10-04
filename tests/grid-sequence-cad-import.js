@@ -13,6 +13,12 @@ assert.match(html, /id="planYLabels" value="1,2,3,4,5"/, "default numeric grids 
 assert.match(css, /background:#F1AB82!important/, "sidebar subgroup strips must use #F1AB82");
 
 assert.match(html, /<span>Upload Drawings<\/span>/, "Upload Drawings package must be named for all supported drawing formats");
+assert.match(html, /<span>Upload Drawings<\/span><span class="msbm-index"[^>]*>1<\/span>/, "Upload Drawings must be MSBM item 1");
+assert.match(html, /<span>Structural Plan<\/span><span class="msbm-index"[^>]*>2<\/span>/, "Structural Plan must be MSBM item 2");
+assert.match(html, /<span>Model Creation<\/span><span class="msbm-index"[^>]*>3<\/span>/, "Model Creation must be MSBM item 3");
+assert.match(html, /<span>Save \/ Open Project<\/span><span class="msbm-index"[^>]*>4<\/span>/, "Save/Open Project must be MSBM item 4");
+assert.match(html, /<span>Member Properties<\/span><span class="msbm-index"[^>]*>5<\/span>/, "Member Properties must be MSBM item 5");
+assert.match(html, /<span>Load Model &amp; Analysis<\/span><span class="msbm-index"[^>]*>6<\/span>/, "Load Model & Analysis must be MSBM item 6");
 assert.ok(html.indexOf('id="uploadCadPackage"') < html.indexOf('id="structuralPlanPackage"'), "Upload Drawings must precede Structural Plan");
 assert.match(html, /accept="\.dxf,image\/png,image\/jpeg,\.png,\.jpg,\.jpeg" multiple/, "CAD uploader must accept multiple DXF, PNG, and JPEG drawings");
 assert.doesNotMatch(html, /StrucForgeDwgConverter/, "the user-facing importer must not require a DWG converter");
@@ -41,6 +47,8 @@ assert.match(html, /X-AXIS FRAME/, "X-axis frame titles must be routed");
 assert.match(html, /Y-AXIS FRAME/, "Y-axis frame titles must be routed");
 assert.match(html, /function renderCadSourceReview\(/, "detected sheet panels must be reviewable");
 assert.match(html, /function analyzeRasterPlan\(/, "raster plan detection must be installed");
+assert.match(html, /function inferRasterPanelGridCoordinates\(/, "raster plan detection must have a structural grid fallback");
+assert.match(html, /fallbackGrid\) rebuildRasterDetectionAtGrid/, "fallback grid coordinates must rebuild members and columns instead of leaving scattered detections");
 assert.match(html, /function calibrateRasterDimensionsFromDrawing\(/, "printed image dimensions must calibrate detected spans when OCR is available");
 assert.match(html, /tesseract\.js@5\/dist\/tesseract\.min\.js/, "image imports must have a lazy OCR fallback when native browser OCR is unavailable");
 assert.match(html, /await releaseCadOcrWorker\(\)/, "the import-only OCR worker must be released after analysis");

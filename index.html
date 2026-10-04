@@ -2115,7 +2115,7 @@
 
       <section class="sidebar-package" id="uploadCadPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (Png image files only).">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Upload Drawings</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Upload Drawings</span><span class="msbm-index" aria-hidden="true">1</span>
         </button>
         <div class="sidebar-package-content" id="uploadCadPackageContent">
           <p class="hint"><strong>Import AutoCAD DXF files or image files in JPEG or PNG format.</strong> Import &amp; Analyze converts the detected sheet into editable native grids, members, slabs, footings, frame views, sidebar data, and a 3D view. The raster image is retained only as a review thumbnail.</p>
@@ -2145,7 +2145,7 @@
 
       <section class="sidebar-package" id="structuralPlanPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="structuralPlanPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Structural Plan</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Structural Plan</span><span class="msbm-index" aria-hidden="true">2</span>
         </button>
         <div class="sidebar-package-content" id="structuralPlanPackageContent">
         <label>X-grid labels</label>
@@ -2179,7 +2179,7 @@
 
       <section class="sidebar-package" id="modelCreationPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="modelCreationPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Model Creation</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Model Creation</span><span class="msbm-index" aria-hidden="true">3</span>
         </button>
         <div class="sidebar-package-content" id="modelCreationPackageContent">
         <p class="hint">
@@ -2250,7 +2250,7 @@
 
       <section class="sidebar-package" id="saveLoadPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="saveLoadPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Save / Open Project</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Save / Open Project</span><span class="msbm-index" aria-hidden="true">4</span>
         </button>
         <div class="sidebar-package-content" id="saveLoadPackageContent">
         <label>Project name</label>
@@ -2275,7 +2275,7 @@
 
       <section class="sidebar-package" id="memberPropertiesPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="memberPropertiesPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Member Properties</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Member Properties</span><span class="msbm-index" aria-hidden="true">5</span>
         </button>
         <div class="sidebar-package-content" id="memberPropertiesPackageContent">
         <label>Beam width b, mm</label>
@@ -2348,7 +2348,7 @@
 
       <section class="sidebar-package" id="loadAnalysisPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="loadAnalysisPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Load Model &amp; Analysis</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Load Model &amp; Analysis</span><span class="msbm-index" aria-hidden="true">6</span>
         </button>
         <div class="sidebar-package-content" id="loadAnalysisPackageContent">
         <div class="engineering-control">
@@ -16113,6 +16113,58 @@
         return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
       }
 
+      function inferRasterPanelGridCoordinates(image, expectedX = 4, expectedY = 3) {
+        if (!image || !image.naturalWidth || !image.naturalHeight) return null;
+        const maxSide = 1200;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const surface = document.createElement("canvas");
+        surface.width = width;
+        surface.height = height;
+        const context = surface.getContext("2d", {willReadFrequently: true});
+        context.drawImage(image, 0, 0, width, height);
+        const pixels = context.getImageData(0, 0, width, height).data;
+        const sample = (x, y) => {
+          const px = Math.max(0, Math.min(width - 1, Math.round(x)));
+          const py = Math.max(0, Math.min(height - 1, Math.round(y)));
+          const offset = (py * width + px) * 4;
+          return (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3;
+        };
+        const xProjection = new Array(width).fill(0);
+        const yProjection = new Array(height).fill(0);
+        const yStart = Math.round(height * 0.10);
+        const yEnd = Math.round(height * 0.82);
+        const xStart = Math.round(width * 0.12);
+        const xEnd = Math.round(width * 0.92);
+        for (let y = yStart; y <= yEnd; y += 1) {
+          for (let x = xStart; x <= xEnd; x += 1) {
+            if (sample(x, y) < 145) {
+              xProjection[x] += 1;
+              yProjection[y] += 1;
+            }
+          }
+        }
+        const spreadPeaks = (values, count, minimumGap, lower, upper) => {
+          const candidates = projectionPeaks(values, minimumGap, 0.34)
+            .filter(position => position >= lower && position <= upper)
+            .sort((a, b) => values[b] - values[a]);
+          const selected = [];
+          candidates.forEach(position => {
+            if (selected.length >= count) return;
+            if (selected.every(existing => Math.abs(existing - position) >= minimumGap)) selected.push(position);
+          });
+          return selected.sort((a, b) => a - b);
+        };
+        const x = spreadPeaks(xProjection, expectedX, Math.max(8, width * 0.045), width * 0.10, width * 0.95);
+        const y = spreadPeaks(yProjection, expectedY, Math.max(8, height * 0.075), height * 0.08, height * 0.86);
+        if (x.length !== expectedX || y.length !== expectedY) return null;
+        return {
+          x: x.map(value => value / scale),
+          y: y.map(value => value / scale)
+        };
+      }
+
       function analyzeRasterPlan(image) {
         const maxSide = 1200;
         const scaleDown = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
@@ -16230,7 +16282,10 @@
             verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)});
           });
         });
-        return {
+        const fallbackGrid = (xCoordinates.length === 4 && yCoordinates.length === 3)
+          ? null
+          : inferRasterPanelGridCoordinates(image, 4, 3);
+        const detectedResult = {
           xCoordinates,
           yCoordinates,
           xSpans: spansFromCoordinates(xCoordinates, metresPerPixel),
@@ -16245,6 +16300,8 @@
           hiddenLineRule: true,
           assumeColumnsAtIntersections: false
         };
+        if (fallbackGrid) rebuildRasterDetectionAtGrid(image, detectedResult, fallbackGrid.x, fallbackGrid.y);
+        return detectedResult;
       }
 
       function gridCoordinatesFromOcrLabels(image, blocks) {
