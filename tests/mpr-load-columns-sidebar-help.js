@@ -25,7 +25,7 @@ assert(!css.includes(".mpr-load-heading,.mpr-load-cell{background:"), "Load colu
 assert(css.includes(".mpr-load-cell.is-not-applied{opacity:1;color:inherit}"), "Empty load cells must retain their original column color");
 assert(html.includes('return `<td class="mpr-load-cell is-not-applied" title="${escapeHtml(title)}">&mdash;</td>`;'), "Unavailable load cells must show a dash");
 [
-  "Upload drawings (Png image files only).",
+  "Upload drawings (AutoCAD DXF, JPEG, or PNG files).",
   "Create your Structural Plans Here.",
   "Finish you Structl Plans by creating Columns, Beams & Footings",
   "Save / Open Project/s Here",

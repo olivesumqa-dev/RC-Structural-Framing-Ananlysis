@@ -12,6 +12,17 @@ assert(html.includes('if (!applyBeams || member.userSectionOverride) return;') &
 assert(html.includes('member.designStatus = "DEFAULT-SIZED - RECALCULATE";'), "Members updated from the sidebar must be marked for recalculation");
 assert(css.includes("font:700 9px/1.3 Arial,sans-serif"), "Member Dimensions hover guidance must use a compact 9 px font");
 assert(html.includes("function installMprTableScrolling()"), "MPR scroll-region installer is missing");
+assert(html.includes("const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([10, 12, 16, 20, 25, 30]);"), "Beam and column MPR bar selectors must use only the requested longitudinal diameters");
+assert(html.includes("const MPR_SLAB_FOOTING_BAR_DIAMETERS = Object.freeze([10, 12, 16]);"), "Slab and footing MPR bar selectors must use only the requested diameters");
+assert(html.includes("const MPR_TIE_STIRRUP_BAR_DIAMETERS = Object.freeze([10, 12]);"), "Tie and stirrup MPR selectors must use only 10 mm and 12 mm diameters");
+assert(html.includes("const STANDARD_LONGITUDINAL_BARS = MPR_COLUMN_BEAM_BAR_DIAMETERS;") && html.includes("const STANDARD_STIRRUP_BARS = MPR_TIE_STIRRUP_BAR_DIAMETERS;"), "Beam optimization must stay within the MPR diameter choices");
+assert(html.includes("for (const barDiameter of MPR_COLUMN_BEAM_BAR_DIAMETERS)") && html.includes("for (const tieDiameter of MPR_TIE_STIRRUP_BAR_DIAMETERS)"), "Column optimization must stay within the MPR diameter choices");
+assert(html.includes("allowedDiameters = MPR_SLAB_FOOTING_BAR_DIAMETERS"), "Slab and footing reinforcement searches must stay within the MPR diameter choices");
+assert((html.match(/mprDiameterOptions\(MPR_COLUMN_BEAM_BAR_DIAMETERS,/g) || []).length === 2, "Both beam and column longitudinal-bar cells must use the discrete diameter selector");
+assert((html.match(/mprDiameterOptions\(MPR_SLAB_FOOTING_BAR_DIAMETERS,/g) || []).length === 3, "Slab plus both footing directions must use the discrete diameter selector");
+assert((html.match(/mprDiameterOptions\(MPR_TIE_STIRRUP_BAR_DIAMETERS,/g) || []).length === 2, "Beam stirrups and column ties must use the discrete diameter selector");
+assert(html.includes('disabled data-legacy-diameter="true"'), "Legacy calculated diameters must remain visible but unavailable for new MPR selection");
+assert(!/type="number"[^>]+data-field="(?:longitudinalBarDiameter|stirrupDiameter|barDiameter|tieDiameter|barDiameterX|barDiameterY)"/.test(html), "MPR diameter cells must not fall back to unrestricted one-millimetre number inputs");
 assert(html.includes("function installMprColumnResizing()") && html.includes("const minimumWidth = 56") && html.includes("const maximumWidth = 260"), "MPR columns must be user-resizable within safe readable limits");
 assert(css.includes(".mpr-column-resizer") && css.includes("cursor:col-resize"), "MPR resizable headings need an obvious drag handle");
 assert(html.includes("function installDraggableDialogs()") && html.includes("const onBackdrop =") && html.includes("installDraggableDialogs();"), "All popup dialogs must support dragging from any non-control portion while excluding the backdrop");

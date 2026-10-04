@@ -2114,7 +2114,7 @@
       </div>
 
       <section class="sidebar-package" id="uploadCadPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (Png image files only).">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (AutoCAD DXF, JPEG, or PNG files).">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Upload Drawings</span><span class="msbm-index" aria-hidden="true">1</span>
         </button>
         <div class="sidebar-package-content" id="uploadCadPackageContent">
@@ -2138,6 +2138,7 @@
             <button id="cadAnalyzeBtn" type="button">Import &amp; Analyze</button>
             <button id="cadApplyDetectedBtn" type="button" disabled>Convert Reviewed Drawings</button>
           </div>
+          <button id="cadRemoveUploadsBtn" type="button" disabled>Remove Uploads</button>
           <img id="cadUploadPreview" class="cad-upload-preview" alt="Imported CAD or plan preview" hidden />
           <div id="cadImportStatus" class="load-summary" role="status">Choose individual titled drawings or one combined drawing sheet. Import &amp; Analyze will separate, validate, and convert it directly into the app's native drawing format.</div>
         </div>
@@ -2614,6 +2615,7 @@
           <div id="overlapObjectList" class="overlap-object-list" role="group" aria-labelledby="overlapObjectTitle"></div>
           <div class="girder-direction-actions">
             <button id="overlapObjectApply" type="button">Delete Selected</button>
+            <button id="overlapObjectDelete" type="button">Delete Selected</button>
             <button id="overlapObjectCancel" class="girder-direction-cancel" type="button">Cancel</button>
           </div>
         </form>
@@ -2683,7 +2685,7 @@
         </div>
       </dialog>
 
-      <div id="uploadDrawingsHoverWarning" class="upload-drawings-hover-warning" hidden role="tooltip">Upload drawings (Png image files only).</div>
+      <div id="uploadDrawingsHoverWarning" class="upload-drawings-hover-warning" hidden role="tooltip">Upload drawings (AutoCAD DXF, JPEG, or PNG files).</div>
 
       <div id="memberNameHoverEditor" class="member-name-hover-editor" hidden role="tooltip">
         <span id="memberNameHoverHint">Click a point on this Beam</span>
@@ -14487,6 +14489,7 @@
       };
       const drawingViewLocks = {PLAN: false, X: false, Y: false, ISO: false};
       const drawingSelectionState = {PLAN: false, X: false, Y: false, ISO: false};
+      const selectedPlanColumnKeys = new Set();
       const yFrameState = {
         model: null,
         mode: "pan",
@@ -14901,7 +14904,8 @@
         const mode = options.mode === "delete" ? "delete" : "select";
         const candidates = Array.isArray(options.candidates) ? options.candidates.filter(candidate => candidate && candidate.label) : [];
         const applySelection = typeof options.onApply === "function" ? options.onApply : () => {};
-        if (candidates.length <= 1) {
+        const deleteSelection = typeof options.onDelete === "function" ? options.onDelete : null;
+        if (candidates.length <= 1 && !(mode === "select" && deleteSelection)) {
           if (candidates.length) applySelection(candidates);
           return false;
         }
@@ -14910,11 +14914,13 @@
         const message = byId("overlapObjectMessage");
         const list = byId("overlapObjectList");
         const applyButton = byId("overlapObjectApply");
+        const deleteButton = byId("overlapObjectDelete");
         const cancelButton = byId("overlapObjectCancel");
-        if (!dialog || !title || !message || !list || !applyButton || !cancelButton) return false;
+        if (!dialog || !title || !message || !list || !applyButton || !deleteButton || !cancelButton) return false;
         title.textContent = mode === "delete" ? "SELECT OBJECT/S TO DELETE" : "SELECT OBJECT/S";
-        message.textContent = mode === "delete" ? "Select object/s to delete" : "Select one or more overlapping objects";
+        message.textContent = mode === "delete" ? "Select object/s to delete" : "Select one or more overlapping objects, then choose the next action.";
         applyButton.textContent = mode === "delete" ? "Delete Selected" : "Select Chosen";
+        deleteButton.hidden = mode === "delete" || !deleteSelection;
         list.replaceChildren();
         candidates.forEach((candidate, index) => {
           const label = document.createElement("label");
@@ -14929,7 +14935,9 @@
           list.appendChild(label);
         });
         const updateApplyState = () => {
-          applyButton.disabled = !list.querySelector("input:checked");
+          const noneSelected = !list.querySelector("input:checked");
+          applyButton.disabled = noneSelected;
+          deleteButton.disabled = noneSelected;
         };
         list.onchange = updateApplyState;
         applyButton.onclick = () => {
@@ -14939,6 +14947,14 @@
           if (!selected.length) return;
           dialog.close("apply");
           applySelection(selected);
+        };
+        deleteButton.onclick = () => {
+          const selected = Array.from(list.querySelectorAll("input:checked"))
+            .map(input => candidates[Number(input.dataset.candidateIndex)])
+            .filter(Boolean);
+          if (!selected.length || !deleteSelection) return;
+          dialog.close("delete");
+          deleteSelection(selected);
         };
         cancelButton.onclick = () => dialog.close("cancel");
         updateApplyState();
@@ -15393,6 +15409,41 @@
           target.classList.toggle("is-error", !!isError);
         }
         if (typeof status === "function") status(message);
+      }
+
+      function clearCadAnalyzedSourceState() {
+        Object.assign(cadImportState, {
+          fileName: "",
+          kind: "",
+          dataUrl: "",
+          image: null,
+          dxfLines: [],
+          detected: null,
+          sources: [],
+          audit: null
+        });
+        const preview = byId("cadUploadPreview");
+        if (preview) {
+          preview.removeAttribute("src");
+          preview.hidden = true;
+          preview.alt = "Imported CAD or plan preview";
+        }
+        if (byId("cadApplyDetectedBtn")) byId("cadApplyDetectedBtn").disabled = true;
+      }
+
+      function resetCadUploadState() {
+        deactivateCadWorkspace(true);
+        cadImportState.active = false;
+        clearCadAnalyzedSourceState();
+        const input = byId("cadUploadFile");
+        if (input) input.value = "";
+        renderCadDrawingList([]);
+        if (byId("cadRemoveUploadsBtn")) byId("cadRemoveUploadsBtn").disabled = true;
+      }
+
+      function removeCadUploads() {
+        resetCadUploadState();
+        cadStatus("All uploaded source drawings were removed. The current editable structural model was left unchanged.");
       }
 
       function readFileAs(file, mode) {
@@ -16106,6 +16157,26 @@
         return coordinates.slice(0, -1).map((value, index) => Math.max(0.1, (coordinates[index + 1] - value) * scale));
       }
 
+      function coordinateGapRatio(coordinates) {
+        const gaps = coordinates.slice(0, -1)
+          .map((value, index) => coordinates[index + 1] - value)
+          .filter(value => Number.isFinite(value) && value > 0);
+        if (gaps.length < 2) return 1;
+        return Math.max(...gaps) / Math.max(1, Math.min(...gaps));
+      }
+
+      function normalizeNearEqualRasterSpans(spans) {
+        const values = (spans || []).map(Number).filter(value => Number.isFinite(value) && value > 0);
+        if (values.length < 2) return spans;
+        const minimum = Math.min(...values);
+        const maximum = Math.max(...values);
+        if (maximum / Math.max(0.001, minimum) > 1.035) return spans;
+        const typical = medianNumber(values);
+        const roundedQuarter = Math.round(typical * 4) / 4;
+        if (Math.abs(typical - roundedQuarter) > 0.08) return spans;
+        return spans.map(() => roundedQuarter);
+      }
+
       function medianNumber(values) {
         const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
         if (!sorted.length) return 0;
@@ -16229,7 +16300,9 @@
             } else inRun = false;
           }
           const coverage = hits / (length + 1);
-          return {coverage, runs, hidden: coverage >= 0.14 && coverage < 0.72 && runs >= 3, present: coverage >= 0.72};
+          const hidden = coverage >= 0.14 && runs >= 3
+            && (coverage < 0.55 || (runs >= 4 && coverage < 0.90));
+          return {coverage, runs, hidden, present: coverage >= 0.55 && !hidden};
         };
         const rawXGaps = rawXCoordinates.slice(0, -1).map((value, index) => rawXCoordinates[index + 1] - value);
         const rawYGaps = rawYCoordinates.slice(0, -1).map((value, index) => rawYCoordinates[index + 1] - value);
@@ -16282,9 +16355,21 @@
             verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)});
           });
         });
-        const fallbackGrid = (xCoordinates.length === 4 && yCoordinates.length === 3)
-          ? null
-          : inferRasterPanelGridCoordinates(image, 4, 3);
+        const inferredGrid = inferRasterPanelGridCoordinates(image, 4, 3);
+        const chooseAxisFallback = (current, inferred, expectedCount) => {
+          if (!inferred?.length || inferred.length !== expectedCount) return null;
+          const currentRatio = coordinateGapRatio(current);
+          const inferredRatio = coordinateGapRatio(inferred);
+          // Projection scans can lock onto dimension strings or leaders on only
+          // one axis. Never replace a sound axis just because the other axis has
+          // an extra peak, and reject an inferred axis whose bay pattern is far
+          // less regular than the source candidates. Cross-panel coordination
+          // will resolve remaining extras from footing/column evidence.
+          if (current.length !== expectedCount) return inferredRatio <= 1.25 ? inferred : null;
+          return currentRatio > 1.25 && inferredRatio + 0.12 < currentRatio ? inferred : null;
+        };
+        const fallbackX = chooseAxisFallback(xCoordinates, inferredGrid?.x, 4);
+        const fallbackY = chooseAxisFallback(yCoordinates, inferredGrid?.y, 3);
         const detectedResult = {
           xCoordinates,
           yCoordinates,
@@ -16300,7 +16385,14 @@
           hiddenLineRule: true,
           assumeColumnsAtIntersections: false
         };
-        if (fallbackGrid) rebuildRasterDetectionAtGrid(image, detectedResult, fallbackGrid.x, fallbackGrid.y);
+        if (fallbackX || fallbackY) {
+          rebuildRasterDetectionAtGrid(
+            image,
+            detectedResult,
+            fallbackX || xCoordinates.map(value => value / scaleDown),
+            fallbackY || yCoordinates.map(value => value / scaleDown)
+          );
+        }
         return detectedResult;
       }
 
@@ -16419,21 +16511,33 @@
             } else inRun = false;
           }
           const coverage = hits / (length + 1);
-          return {coverage, runs, hidden: coverage >= 0.14 && coverage < 0.72 && runs >= 3, present: coverage >= 0.72};
+          const hidden = coverage >= 0.14 && runs >= 3
+            && (coverage < 0.55 || (runs >= 4 && coverage < 0.90));
+          return {coverage, runs, hidden, present: coverage >= 0.55 && !hidden};
         };
         const horizontalMembers = [];
         yCoordinates.forEach((y, yIndex) => xCoordinates.slice(0, -1).forEach((x, xIndex) => horizontalMembers.push({xIndex, yIndex, ...strokeProfile(x + 5, y, xCoordinates[xIndex + 1] - 5, y)})));
         const verticalMembers = [];
         xCoordinates.forEach((x, xIndex) => yCoordinates.slice(0, -1).forEach((y, yIndex) => verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)})));
+        const columnPointKeys = new Set(columnPoints.map(point => `${point.xIndex}|${point.yIndex}`));
+        xCoordinates.forEach((_, xIndex) => yCoordinates.forEach((__, yIndex) => {
+          const horizontalConnection = horizontalMembers.some(member => member.yIndex === yIndex && (member.xIndex === xIndex || member.xIndex + 1 === xIndex) && member.present);
+          const verticalConnection = verticalMembers.some(member => member.xIndex === xIndex && (member.yIndex === yIndex || member.yIndex + 1 === yIndex) && member.present);
+          if (horizontalConnection && verticalConnection) columnPointKeys.add(`${xIndex}|${yIndex}`);
+        }));
+        const coordinatedColumnPoints = Array.from(columnPointKeys, key => {
+          const [xIndex, yIndex] = key.split("|").map(Number);
+          return {xIndex, yIndex};
+        });
         const metresPerPixel = 4 / Math.max(1, medianNumber(xCoordinates.slice(0, -1).map((value, index) => xCoordinates[index + 1] - value)));
         Object.assign(detected, {
           xCoordinates,
           yCoordinates,
-          xSpans: spansFromCoordinates(xCoordinates, metresPerPixel),
-          ySpans: spansFromCoordinates(yCoordinates, metresPerPixel),
+          xSpans: normalizeNearEqualRasterSpans(spansFromCoordinates(xCoordinates, metresPerPixel)),
+          ySpans: normalizeNearEqualRasterSpans(spansFromCoordinates(yCoordinates, metresPerPixel)),
           sourceWidth: width,
           sourceHeight: height,
-          columnPoints,
+          columnPoints: coordinatedColumnPoints,
           footingPoints,
           horizontalMembers,
           verticalMembers,
@@ -16442,70 +16546,112 @@
         return detected;
       }
 
+      function rasterGridCoordinateIndices(detected, axis, targetCount, normalizedReference = []) {
+        const coordinates = axis === "x" ? detected.xCoordinates : detected.yCoordinates;
+        const indexField = axis === "x" ? "xIndex" : "yIndex";
+        const validIndices = points => Array.from(new Set((points || [])
+          .map(point => Number(point?.[indexField]))
+          .filter(index => Number.isInteger(index) && index >= 0 && index < coordinates.length)))
+          .sort((a, b) => a - b);
+        const footingIndices = validIndices(detected.footingPoints);
+        if (footingIndices.length === targetCount) return footingIndices;
+        const columnIndices = validIndices(detected.columnPoints);
+        if (columnIndices.length === targetCount) return columnIndices;
+        if (coordinates.length === targetCount) {
+          const indices = coordinates.map((_, index) => index);
+          if (normalizedReference.length === targetCount) {
+            const sourceExtent = axis === "x" ? detected.sourceWidth : detected.sourceHeight;
+            const localNormalized = coordinates.map(coordinate => coordinate / Math.max(1, Number(sourceExtent)));
+            const maximumDrift = Math.max(...localNormalized.map((value, index) => Math.abs(value - normalizedReference[index])));
+            if (maximumDrift > 0.045) return [];
+          }
+          return indices;
+        }
+        if (coordinates.length < targetCount) return [];
+
+        // Dimension lines and title separators can be mistaken for grids. Prefer
+        // coordinates supported by footing/column symbols, then use the reference
+        // plan's relative positions to resolve any remaining ambiguity.
+        const evidence = coordinates.map((_, index) =>
+          (footingIndices.includes(index) ? 20 : 0) +
+          (columnIndices.includes(index) ? 8 : 0));
+        const selected = [];
+        const references = normalizedReference.length === targetCount
+          ? normalizedReference
+          : Array.from({length: targetCount}, (_, index) => targetCount === 1 ? 0.5 : index / (targetCount - 1));
+        references.forEach(reference => {
+          let best = -1;
+          let bestCost = Infinity;
+          coordinates.forEach((coordinate, index) => {
+            if (selected.includes(index)) return;
+            const sourceExtent = axis === "x" ? detected.sourceWidth : detected.sourceHeight;
+            const normalized = coordinate / Math.max(1, Number(sourceExtent));
+            const orderPenalty = selected.length && index <= selected[selected.length - 1] ? 10 : 0;
+            const cost = Math.abs(normalized - reference) + orderPenalty - evidence[index] * 0.01;
+            if (cost < bestCost) {
+              best = index;
+              bestCost = cost;
+            }
+          });
+          if (best >= 0) selected.push(best);
+        });
+        return selected.length === targetCount ? selected.sort((a, b) => a - b) : [];
+      }
+
       function coordinateRasterPlanGrids(sources) {
         const plans = sources.filter(source => /^(?:FOUNDATION|LEVEL-\d+)$/.test(source.role || "") && source.kind === "image" && source.detected && source.image);
         const levels = plans.filter(source => /^LEVEL-\d+$/.test(source.role || ""));
-        if (levels.length < 2) return null;
-        const evidence = levels.map(source => {
-          const detected = source.detected;
-          const columnX = Array.from(new Set((detected.columnPoints || []).map(point => point.xIndex))).sort((a, b) => a - b);
-          const columnY = Array.from(new Set((detected.columnPoints || []).map(point => point.yIndex))).sort((a, b) => a - b);
-          return {
-            source,
-            xCount: columnX.length >= 2 ? columnX.length : detected.xCoordinates.length,
-            yCount: columnY.length >= 2 ? columnY.length : detected.yCoordinates.length,
-            columnX,
-            columnY
-          };
-        }).filter(item => item.xCount >= 2 && item.yCount >= 2);
-        if (evidence.length < 2) return null;
+        if (!plans.length || !levels.length) return null;
+        const evidence = levels.map(source => ({
+          source,
+          xCount: source.detected.xCoordinates.length,
+          yCount: source.detected.yCoordinates.length
+        })).filter(item => item.xCount >= 2 && item.yCount >= 2);
+        if (!evidence.length) return null;
+
         const groups = new Map();
         evidence.forEach(item => {
           const key = `${item.xCount}x${item.yCount}`;
           if (!groups.has(key)) groups.set(key, []);
           groups.get(key).push(item);
         });
-        const consensus = Array.from(groups.values()).sort((a, b) => b.length - a.length || (a[0].xCount * a[0].yCount) - (b[0].xCount * b[0].yCount))[0];
-        if (!consensus || consensus.length < 2) return null;
-        const xCount = consensus[0].xCount;
-        const yCount = consensus[0].yCount;
-        const reference = consensus.find(item => item.source.detected.xCoordinates.length === xCount && item.source.detected.yCoordinates.length === yCount) || consensus[0];
+        const consensus = Array.from(groups.values()).sort((a, b) => b.length - a.length || (a[0].xCount * a[0].yCount) - (b[0].xCount * b[0].yCount))[0] || [];
+        const structuralEvidenceScore = item =>
+          (item.source.detected.columnPoints?.length || 0) * 2 +
+          (item.source.detected.horizontalMembers || []).filter(member => member.present).length +
+          (item.source.detected.verticalMembers || []).filter(member => member.present).length;
+        const referencePool = consensus.length ? consensus.slice() : evidence.slice();
+        referencePool.sort((a, b) => structuralEvidenceScore(b) - structuralEvidenceScore(a) || (a.source.role === "LEVEL-1" ? -1 : 1));
+        // Use the clearest repeated upper-level plan as the authority. Foundation
+        // symbols and dimension strings often create extra projection peaks, and
+        // a weak LEVEL-1 scan can contain the right count but the wrong line.
+        const reference = referencePool[0] || evidence.find(item => item.source.role === "LEVEL-1");
+        if (!reference) return null;
+        const xCount = reference.xCount;
+        const yCount = reference.yCount;
         const referenceDetected = reference.source.detected;
-        const xIndices = referenceDetected.xCoordinates.length === xCount
-          ? referenceDetected.xCoordinates.map((_, index) => index)
-          : reference.columnX.slice(0, xCount);
-        const yIndices = referenceDetected.yCoordinates.length === yCount
-          ? referenceDetected.yCoordinates.map((_, index) => index)
-          : reference.columnY.slice(0, yCount);
+        const xIndices = rasterGridCoordinateIndices(referenceDetected, "x", xCount);
+        const yIndices = rasterGridCoordinateIndices(referenceDetected, "y", yCount);
         if (xIndices.length !== xCount || yIndices.length !== yCount) return null;
         const normalizedX = xIndices.map(index => referenceDetected.xCoordinates[index] / Math.max(1, referenceDetected.sourceWidth));
         const normalizedY = yIndices.map(index => referenceDetected.yCoordinates[index] / Math.max(1, referenceDetected.sourceHeight));
         if (normalizedX.some(value => !Number.isFinite(value)) || normalizedY.some(value => !Number.isFinite(value))) return null;
+
         plans.forEach(source => {
           const detected = source.detected;
-          const localColumnX = Array.from(new Set((detected.columnPoints || []).map(point => point.xIndex))).sort((a, b) => a - b);
-          const localColumnY = Array.from(new Set((detected.columnPoints || []).map(point => point.yIndex))).sort((a, b) => a - b);
-          const localXIndices = detected.xCoordinates.length === xCount
-            ? detected.xCoordinates.map((_, index) => index)
-            : (localColumnX.length === xCount ? localColumnX : []);
-          const localYIndices = detected.yCoordinates.length === yCount
-            ? detected.yCoordinates.map((_, index) => index)
-            : (localColumnY.length === yCount ? localColumnY : []);
+          const localXIndices = rasterGridCoordinateIndices(detected, "x", xCount, normalizedX);
+          const localYIndices = rasterGridCoordinateIndices(detected, "y", yCount, normalizedY);
           const naturalX = localXIndices.length === xCount
             ? localXIndices.map(index => detected.xCoordinates[index] / Math.max(1, detected.sourceWidth) * source.image.naturalWidth)
             : normalizedX.map(value => value * source.image.naturalWidth);
           const naturalY = localYIndices.length === yCount
             ? localYIndices.map(index => detected.yCoordinates[index] / Math.max(1, detected.sourceHeight) * source.image.naturalHeight)
             : normalizedY.map(value => value * source.image.naturalHeight);
-          rebuildRasterDetectionAtGrid(
-            source.image,
-            detected,
-            naturalX,
-            naturalY
-          );
+          rebuildRasterDetectionAtGrid(source.image, detected, naturalX, naturalY);
           source.detected.coordinatedGridCalibration = `${xCount}x${yCount}`;
+          source.detected.coordinatedGridReference = reference.source.role;
         });
-        return {xCount, yCount, supportingPanels: consensus.length};
+        return {xCount, yCount, supportingPanels: consensus.length, referenceRole: reference.source.role};
       }
 
       function parseAsciiDxf(text) {
@@ -16561,8 +16707,8 @@
       async function analyzeCadUpload() {
         const files = Array.from(byId("cadUploadFile")?.files || []);
         if (!files.length) return cadStatus("Choose an AutoCAD DXF file or JPEG/PNG plan image first.", true);
-        byId("cadApplyDetectedBtn").disabled = true;
-        cadImportState.audit = null;
+        clearCadAnalyzedSourceState();
+        byId("cadRemoveUploadsBtn").disabled = false;
         cadStatus(`Reading ${files.length} source file${files.length === 1 ? "" : "s"} and separating titled drawings...`);
         try {
           const sources = [];
@@ -16570,7 +16716,7 @@
             const file = files[index];
             const extension = file.name.split(".").pop().toLowerCase();
             let role = selectedCadDrawingRole(index) || inferCadDrawingRole(file.name);
-            if (["png", "jpg", "jpeg"].includes(extension) || file.type.startsWith("image/")) {
+            if (["png", "jpg", "jpeg"].includes(extension)) {
               const dataUrl = await readFileAs(file, "dataUrl");
               const image = await loadCadImage(dataUrl);
               const panels = await splitRasterDrawingSheet(image);
@@ -16712,7 +16858,7 @@
             const yLabel = yLabelsTopDown[segment.yIndex];
             if (!x1 || !x2 || !yLabel) return;
             if (segment.present) addDetectedMember("X", yLabel, segment.xIndex);
-            else planState.deletedPlanMembers.add(planMemberDeletionKey(levelIndex, `${prefix}-${yLabel}-${x1}${x2}`));
+            else if (segment.hidden) planState.deletedPlanMembers.add(planMemberDeletionKey(levelIndex, `${prefix}-${yLabel}-${x1}${x2}`));
           });
           (source.detected.verticalMembers || []).forEach(segment => {
             const xLabel = xLabels[segment.xIndex];
@@ -16720,13 +16866,13 @@
             const bottomLabel = yLabelsTopDown[segment.yIndex + 1];
             if (!xLabel || !topLabel || !bottomLabel) return;
             if (segment.present) addDetectedMember("Y", xLabel, segment.yIndex);
-            else {
+            else if (segment.hidden) {
               const ordered = [topLabel, bottomLabel].sort((a, b) => planData.yLabels.indexOf(a) - planData.yLabels.indexOf(b));
               planState.deletedPlanMembers.add(planMemberDeletionKey(levelIndex, `${prefix}-${xLabel}-${ordered.join("")}`));
             }
           });
           const expectedColumnCount = xLabels.length * yLabelsTopDown.length;
-          const reliableColumnSymbols = (source.detected.columnPoints?.length || 0) >= Math.max(2, Math.ceil(expectedColumnCount * 0.5));
+          const reliableColumnSymbols = (source.detected.columnPoints?.length || 0) >= Math.max(2, Math.ceil(expectedColumnCount * 0.85));
           if (reliableColumnSymbols) {
             const activeColumns = new Set(source.detected.columnPoints.map(point => columnKey(xLabels[point.xIndex], yLabelsTopDown[point.yIndex])));
             planState.columns.forEach(key => {
@@ -16741,6 +16887,85 @@
             else if (cell.type === "EARTH_FILLED") planState.earthFilledSlabs.add(key);
           });
         });
+      }
+
+      function resetWorkspaceForImportedDrawing() {
+        // Imported drawings replace the structural workspace. Clear every
+        // user-created object first so walls, loads, annotations, auxiliary
+        // grids, and cached frame edits cannot appear as false detections.
+        planState.members = [];
+        planState.columns.clear();
+        planState.deletedColumnStories.clear();
+        planState.footings = {};
+        planState.deletedPlanMembers.clear();
+        planState.deletedSlabs.clear();
+        planState.earthFilledSlabs.clear();
+        planState.deletedPlanNodes.clear();
+        planState.girderNodes.clear();
+        planState.customNodes = [];
+        planState.auxiliaryGrids = [];
+        planState.pendingAuxiliaryGrid = null;
+        planState.levelWalls = {};
+        planState.wallStart = null;
+        planState.pendingWallProperties = null;
+        planState.wallBeamLoads = [];
+        planState.pointLoads = [];
+        planState.levelMembers = {};
+        planState.memberNameOverrides = {};
+        planState.memberStart = null;
+        planState.pendingGirderNode = null;
+        planState.pendingColumnNodeDeletion = null;
+        planState.annotations = [];
+        planState.annotationStart = null;
+        planState.pendingTextPoint = null;
+        planState.pendingAnnotationEdit = null;
+        planState.matchAnnotationSource = null;
+        planState.selectedAnnotationIds = [];
+        planState.mode = "pan";
+        planState.activeView = "PLAN";
+
+        selectedPlanColumnKeys.clear();
+        selectedPlanColumnSection = null;
+        Object.keys(drawingSelectionState).forEach(view => drawingSelectionState[view] = false);
+        wallBeamSelectionState.active = false;
+        wallBeamSelectionState.axis = null;
+        wallBeamSelectionState.planMemberIds.clear();
+        setPlanPointLoadPlacementActive(false);
+        mprVisibilityState.hiddenRows.clear();
+        mprVisibilityState.revealHidden = false;
+        wallSupportRecommendationCache.clear();
+
+        frameModelCache.X.clear();
+        frameModelCache.Y.clear();
+        activeFrameLines.X = null;
+        activeFrameLines.Y = null;
+        engineeringState.xPointLoads = [];
+        engineeringState.lastAudit = null;
+        engineeringState.lastClickedXMemberId = null;
+        engineeringState.designEnvelopes = null;
+        engineeringState.frameCatalog = {X: {}, Y: {}};
+        engineeringState.allFrameEnvelopes = {X: {}, Y: {}};
+        engineeringState.allFrameResults = {X: {}, Y: {}};
+        engineeringState.optimizationSummary = null;
+        engineeringState.columnDesignOverrides = {};
+        engineeringState.slabDesignOverrides = {};
+        engineeringState.girderTransfers = [];
+        yFrameState.model = null;
+        yFrameState.selectedNodes = [];
+        yFrameState.selectedMemberIds = [];
+        yFrameState.selectedNode = null;
+        yFrameState.history = [];
+        yFrameState.pointLoads = [];
+        yFrameState.lastResult = null;
+        try {
+          Object.assign(model, {nodes: [], members: [], supports: {}, loads: [], selectedNodes: [], selectedMemberIds: [], selectedNode: null, nextNode: 1, nextMember: 1});
+          lastAnalysisResult = null;
+        } catch (error) {}
+
+        workspaceDeleteMode = false;
+        document.body.classList.remove("delete-mode");
+        byId("toolbarDeleteBtn")?.classList.remove("is-active");
+        byId("toolbarDeleteBtn")?.setAttribute("aria-pressed", "false");
       }
 
       function buildDetectedCadModel(options = {}) {
@@ -16771,6 +16996,7 @@
           return false;
         }
         pushWorkspaceHistory();
+        resetWorkspaceForImportedDrawing();
         const xLabels = sequentialGridLabels("X", detected.xCoordinates.length);
         const yLabels = sequentialGridLabels("Y", detected.yCoordinates.length);
         byId("planXLabels").value = xLabels.join(",");
@@ -16784,8 +17010,18 @@
         }
         planState.columns = new Set();
         const primarySource = cadImportState.sources.find(source => source.role === "LEVEL-1") || cadImportState.sources.find(source => source.role === "FOUNDATION");
-        if (primarySource?.detected?.columnPoints?.length) {
-          primarySource.detected.columnPoints.forEach(point => {
+        const foundationSource = cadImportState.sources.find(source => source.role === "FOUNDATION");
+        const expectedGridPoints = xLabels.length * yLabels.length;
+        const combinedColumnPoints = new Map();
+        cadImportState.sources
+          .filter(source => /^LEVEL-\d+$/.test(source.role || ""))
+          .forEach(source => (source.detected?.columnPoints || []).forEach(point => combinedColumnPoints.set(`${point.xIndex}|${point.yIndex}`, point)));
+        (foundationSource?.detected?.footingPoints || []).forEach(point => combinedColumnPoints.set(`${point.xIndex}|${point.yIndex}`, point));
+        const columnPoints = combinedColumnPoints.size >= Math.ceil(expectedGridPoints * 0.75)
+          ? xLabels.flatMap((_, xIndex) => yLabels.map((__, yIndex) => ({xIndex, yIndex})))
+          : (primarySource?.detected?.columnPoints || []);
+        if (columnPoints.length) {
+          columnPoints.forEach(point => {
             const xLabel = xLabels[point.xIndex];
             const yLabel = yLabels[point.yIndex];
             if (xLabel && yLabel) planState.columns.add(columnKey(xLabel, yLabel));
@@ -16794,7 +17030,6 @@
           xLabels.forEach(xLabel => yLabels.forEach(yLabel => planState.columns.add(columnKey(xLabel, yLabel))));
         }
         planState.footings = {};
-        const foundationSource = cadImportState.sources.find(source => source.role === "FOUNDATION");
         const footingPoints = foundationSource?.detected?.footingPoints?.length
           ? foundationSource.detected.footingPoints
           : (foundationSource?.detected?.columnPoints || []);
@@ -16805,6 +17040,13 @@
             if (!xLabel || !yLabel) return;
             const key = columnKey(xLabel, yLabel);
             planState.footings[key] = {key, name: `F1${defaultPlanColumnName(key, 0)}`};
+          });
+          // Every detected building column must terminate on a foundation object.
+          // Raster footing outlines are thin and may be missed at otherwise clear
+          // column grids, so retain explicit footing detections and complete only
+          // the missing column-supported locations.
+          planState.columns.forEach(key => {
+            if (!planState.footings[key]) planState.footings[key] = {key, name: `F1${defaultPlanColumnName(key, 0)}`};
           });
         } else {
           planState.columns.forEach(key => planState.footings[key] = {key, name: `F1${defaultPlanColumnName(key, 0)}`});
@@ -16838,10 +17080,14 @@
       function installCadImport() {
         byId("cadAnalyzeBtn")?.addEventListener("click", analyzeCadUpload);
         byId("cadApplyDetectedBtn")?.addEventListener("click", buildDetectedCadModel);
+        byId("cadRemoveUploadsBtn")?.addEventListener("click", removeCadUploads);
         byId("cadUploadFile")?.addEventListener("change", event => {
           const files = Array.from(event.target.files || []);
+          clearCadAnalyzedSourceState();
           renderCadDrawingList(files);
+          if (byId("cadRemoveUploadsBtn")) byId("cadRemoveUploadsBtn").disabled = files.length === 0;
           if (files.length) cadStatus(`${files.length} source file${files.length === 1 ? "" : "s"} selected. Combined image sheets will be separated into titled panels automatically and scaled from their own drawn proportions. Choose Import & Analyze.`);
+          else cadStatus("Choose individual titled AutoCAD DXF, JPEG, or PNG drawings, or one combined image sheet.");
         });
       }
 
@@ -17086,7 +17332,7 @@
           assignSelectedProps: "Precaution: review the selection before applying because the command changes member properties. What it is: assigns the current editable properties to the selected members."
         };
         const packageHelpBySectionId = {
-          uploadCadPackage: "Upload drawings (Png image files only).",
+          uploadCadPackage: "Upload drawings (AutoCAD DXF, JPEG, or PNG files).",
           structuralPlanPackage: "Create your Structural Plans Here.",
           modelCreationPackage: "Finish you Structl Plans by creating Columns, Beams & Footings",
           saveLoadPackage: "Save / Open Project/s Here",
@@ -17347,6 +17593,18 @@
         return Array.from({length}, (_, index) => axis === "X" ? xGridLabelAt(index) : String(index + 1));
       }
 
+      function resetStructuralPlanGridInputs() {
+        [
+          ["X", "A,B"],
+          ["Y", "1,2"]
+        ].forEach(([axis, labels]) => {
+          const labelsInput = byId(`plan${axis}Labels`);
+          const spansInput = byId(`plan${axis}Spans`);
+          if (labelsInput) labelsInput.value = labels;
+          if (spansInput) spansInput.value = "0";
+        });
+      }
+
       function remapGridAxisState(axis, retainedLabels, normalizedLabels) {
         const labelMap = new Map(retainedLabels.map((label, index) => [String(label), String(normalizedLabels[index])]));
         const remapPair = (xLabel, yLabel) => {
@@ -17427,10 +17685,19 @@
         const spanEditor = byId(`plan${normalizedAxis}SpanEditor`);
         if (!labelsInput || !spansInput || !gridEditor || !spanEditor) return;
         const fallbacks = normalizedAxis === "X" ? ["A", "B", "C", "D", "E"] : ["1", "2", "3", "4", "5"];
+        const minimumLabels = normalizedAxis === "X" ? ["A", "B"] : ["1", "2"];
         const labels = csv(labelsInput.value || fallbacks.join(","));
         if (labels.length < 2) labelsInput.value = fallbacks.join(",");
         const activeLabels = labels.length >= 2 ? labels : fallbacks;
-        const spanValues = fittedPlanSpans(activeLabels, numbers(spansInput.value || "").filter(value => value > 0), normalizedAxis === "X" ? [1.5, 5, 4.5, 1.5] : [1.5, 4, 3.5, 1.5]);
+        const enteredSpanValues = numbers(spansInput.value || "");
+        const clearedGridDraft = planState.isBlankNewDesign
+          && activeLabels.length === minimumLabels.length
+          && activeLabels.every((label, index) => label === minimumLabels[index])
+          && enteredSpanValues.length === 1
+          && enteredSpanValues[0] === 0;
+        const spanValues = clearedGridDraft
+          ? [0]
+          : fittedPlanSpans(activeLabels, enteredSpanValues.filter(value => value > 0), normalizedAxis === "X" ? [1.5, 5, 4.5, 1.5] : [1.5, 4, 3.5, 1.5]);
         spansInput.value = spanValues.join(",");
         gridEditor.replaceChildren();
         spanEditor.replaceChildren();
@@ -17448,7 +17715,7 @@
           cell.className = "plan-grid-cell";
           const check = document.createElement("input");
           check.type = "checkbox";
-          check.checked = true;
+          check.checked = !clearedGridDraft;
           check.setAttribute("aria-label", `Include ${normalizedAxis}-grid ${label}`);
           const text = document.createElement("span");
           text.textContent = label;
@@ -17456,6 +17723,13 @@
           control.title = `Include ${normalizedAxis}-grid ${label}`;
           control.append(check, text);
           check.addEventListener("change", () => {
+            if (clearedGridDraft) {
+              const activateMinimumPair = check.checked;
+              gridEditor.querySelectorAll(".plan-grid-cell input").forEach(input => {
+                input.checked = activateMinimumPair;
+              });
+              return;
+            }
             const selected = Array.from(gridEditor.querySelectorAll(".plan-grid-cell input:checked"))
               .map(input => input.parentElement.textContent.trim());
             if (selected.length < 2) {
@@ -17505,14 +17779,15 @@
           label.textContent = `${activeLabels[index]}-${activeLabels[index + 1]}`;
           const input = document.createElement("input");
           input.type = "number";
-          input.min = "0.1";
+          input.min = clearedGridDraft ? "0" : "0.1";
           input.step = "0.01";
           input.value = Number(span).toFixed(2);
           input.setAttribute("aria-label", `${activeLabels[index]} to ${activeLabels[index + 1]} span in metres`);
           input.addEventListener("change", () => {
             const nextValue = Number(input.value);
             const nextSpans = numbers(spansInput.value || "");
-            nextSpans[index] = Number.isFinite(nextValue) && nextValue > 0 ? nextValue : span;
+            const validValue = Number.isFinite(nextValue) && (clearedGridDraft ? nextValue >= 0 : nextValue > 0);
+            nextSpans[index] = validValue ? nextValue : span;
             spansInput.value = nextSpans.join(",");
             input.value = Number(nextSpans[index]).toFixed(2);
             setCalculationDirty(true);
@@ -18015,6 +18290,7 @@
       function setDrawingSelectionActive(view, active) {
         if (!Object.prototype.hasOwnProperty.call(drawingSelectionState, view)) return;
         drawingSelectionState[view] = Boolean(active);
+        if (view === "PLAN" && !active) selectedPlanColumnKeys.clear();
         updateDrawingInteractionUi();
       }
 
@@ -19036,9 +19312,10 @@
           const sectionHeight = Math.max(columnMinimumDimension(), Number(sectionShape?.height) || Number(columnOverride.height) || sectionWidth);
           const glyphHeight = 20;
           const glyphWidth = Math.max(8, Math.min(34, glyphHeight * sectionWidth / sectionHeight));
+          const isSelectedColumn = drawingSelectionState.PLAN && selectedPlanColumnKeys.has(key);
           ctx.save();
-          ctx.strokeStyle = columnColor;
-          ctx.lineWidth = isFoundationPlan ? 2 : 4;
+          ctx.strokeStyle = isSelectedColumn ? "#ff7a00" : columnColor;
+          ctx.lineWidth = (isFoundationPlan ? 2 : 4) + (isSelectedColumn ? 3 : 0);
           ctx.setLineDash(isFoundationPlan && !planState.footings[key] ? [5, 4] : []);
           if (isCustomColumn) {
             const xs = customSectionPoints.map(point => Number(point.x) || 0);
@@ -19322,7 +19599,7 @@
           const points = corners.map(corner => point(corner.x, corner.y, corner.z));
           ctx.save();
           ctx.fillStyle = color;
-          ctx.globalAlpha = 0.13;
+          ctx.globalAlpha = 0.23;
           ctx.beginPath();
           points.forEach((item, index) => index ? ctx.lineTo(item.x, item.y) : ctx.moveTo(item.x, item.y));
           ctx.closePath();
@@ -22258,7 +22535,6 @@
       }
 
       function planColumnAt(canvasPoint, data = makePlanData()) {
-        if (planState.activeLevelIndex < 0) return null;
         const canvas = byId("structuralPlanCanvas");
         if (!canvas) return null;
         const totalX = data.xPos[data.xPos.length - 1] || 1;
@@ -22271,7 +22547,7 @@
         const tolerance = 13 / planView.zoom;
         let nearest = null;
         planState.columns.forEach(key => {
-          if (!isPlanColumnStoryActive(key, planState.activeLevelIndex)) return;
+          if (planState.activeLevelIndex >= 0 && !isPlanColumnStoryActive(key, planState.activeLevelIndex)) return;
           const [xLabel, yLabel] = String(key).split("|");
           const point = planGridPoint(xLabel, yLabel, data);
           if (!point) return;
@@ -22279,6 +22555,30 @@
           if (distance <= tolerance && (!nearest || distance < nearest.distance)) nearest = {key, xLabel, yLabel, distance};
         });
         return nearest;
+      }
+
+      function planOverlapCandidates(canvasPoint, data = makePlanData()) {
+        const candidates = planMemberHits(canvasPoint, data).map(hit => ({
+          kind: "member",
+          label: `${hit.member.type || "Member"} ${hit.member.name || hit.member.id}`,
+          value: hit.member
+        }));
+        const column = planColumnAt(canvasPoint, data);
+        if (column) {
+          candidates.push({
+            kind: "column",
+            label: `Column ${planColumnName(column.key, Math.max(0, planState.activeLevelIndex))} at grid ${column.xLabel}/${column.yLabel}`,
+            value: column
+          });
+        }
+        return candidates;
+      }
+
+      function deletePlanOverlapCandidates(selected, data = makePlanData()) {
+        (selected || []).forEach(candidate => {
+          if (candidate?.kind === "column") deletePlanColumn(candidate.value, makePlanData());
+          else if (candidate?.kind === "member") deletePlanMemberObject(candidate.value, makePlanData());
+        });
       }
 
       function deletePlanColumn(column, data = makePlanData(), storyIndexOverride = null) {
@@ -22428,21 +22728,26 @@
           return;
         }
         if (drawingSelectionState.PLAN) {
-          const hits = planMemberHits(canvasPoint, data);
+          const candidates = planOverlapCandidates(canvasPoint, data);
           const applyPlanSelection = selected => {
             wallBeamSelectionState.planMemberIds.clear();
-            selected.forEach(candidate => wallBeamSelectionState.planMemberIds.add(planWallBeamSelectionKey(candidate.value || candidate.member)));
+            selectedPlanColumnKeys.clear();
+            selected.forEach(candidate => {
+              if (candidate.kind === "column") selectedPlanColumnKeys.add(candidate.value.key);
+              else if (candidate.kind === "member") wallBeamSelectionState.planMemberIds.add(planWallBeamSelectionKey(candidate.value));
+            });
             drawPlan(data);
             if (typeof status === "function") status(selected.length
-              ? `Selected ${selected.length} plan member${selected.length === 1 ? "" : "s"}.`
-              : "No plan member selected.");
+              ? `Selected ${selected.length} plan object${selected.length === 1 ? "" : "s"}. Choose Delete Selected in the object selector to remove the checked object(s).`
+              : "No plan object selected.");
           };
-          if (hits.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
+          if (candidates.length && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
             mode: "select",
-            candidates: hits.map(hit => ({label: `${hit.member.type || "Member"} ${hit.member.name || hit.member.id}`, value: hit.member})),
-            onApply: applyPlanSelection
+            candidates,
+            onApply: applyPlanSelection,
+            onDelete: selected => deletePlanOverlapCandidates(selected, makePlanData())
           })) return;
-          applyPlanSelection(hits.length ? [{value: hits[0].member}] : []);
+          applyPlanSelection(candidates);
           return;
         }
         if (planState.mode === "pan") {
@@ -22520,11 +22825,11 @@
         }
         if (planState.mode === "delete") {
           if (deleteAnnotationAt("PLAN", canvasPoint, canvas.getContext("2d"), projectPoint)) return;
-          const overlappingMembers = planMemberHits(canvasPoint, data);
-          if (overlappingMembers.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
+          const overlappingObjects = planOverlapCandidates(canvasPoint, data);
+          if (overlappingObjects.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
             mode: "delete",
-            candidates: overlappingMembers.map(hit => ({label: `${hit.member.type || "Member"} ${hit.member.name || hit.member.id}`, value: hit.member})),
-            onApply: selected => selected.forEach(candidate => deletePlanMemberObject(candidate.value, makePlanData()))
+            candidates: overlappingObjects,
+            onApply: selected => deletePlanOverlapCandidates(selected, makePlanData())
           })) return;
           const auxiliaryGrid = auxiliaryGridAtPoint(canvasPoint, data);
           if (auxiliaryGrid) {
@@ -27394,11 +27699,26 @@
         };
       }
 
-      const STANDARD_LONGITUDINAL_BARS = [16, 20, 25, 28, 32];
-      const STANDARD_STIRRUP_BARS = [10, 12, 16];
+      const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([10, 12, 16, 20, 25, 30]);
+      const MPR_SLAB_FOOTING_BAR_DIAMETERS = Object.freeze([10, 12, 16]);
+      const MPR_TIE_STIRRUP_BAR_DIAMETERS = Object.freeze([10, 12]);
+      const STANDARD_LONGITUDINAL_BARS = MPR_COLUMN_BEAM_BAR_DIAMETERS;
+      const STANDARD_STIRRUP_BARS = MPR_TIE_STIRRUP_BAR_DIAMETERS;
       const BEAM_MINIMUM_TENSION_STRAIN = 0.004;
       const BEAM_TENSION_CONTROLLED_STRAIN = 0.005;
       const REBAR_ELASTIC_MODULUS = 200000;
+
+      function mprDiameterOptions(allowedDiameters, currentValue) {
+        const permitted = allowedDiameters.map(Number).filter(Number.isFinite);
+        const current = Number(currentValue);
+        const values = permitted.includes(current) || !Number.isFinite(current)
+          ? permitted
+          : [...permitted, current].sort((a, b) => a - b);
+        return values.map(diameter => {
+          const legacy = !permitted.includes(diameter);
+          return `<option value="${diameter}"${diameter === current ? " selected" : ""}${legacy ? ' disabled data-legacy-diameter="true"' : ""}>${diameter}</option>`;
+        }).join("");
+      }
 
       function concreteBeta1(fc) {
         return Math.max(0.65, Math.min(0.85, 0.85 - Math.max(0, fc - 28) * 0.05 / 7));
@@ -28300,10 +28620,10 @@
                 : `<span>first stirrup &le;${reinforcement.firstStirrupOffset} mm from each support face</span><span>D${reinforcement.stirrupDiameter} @${reinforcement.fieldSpacing} mm throughout</span>`)
             : "";
           const reinforcementCells = reinforcement
-            ? `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><input class="design-input" type="number" min="10" step="1" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="longitudinalBarDiameter" value="${reinforcement.barDiameter}" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} longitudinal bar diameter"></td>` +
+            ? `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><select class="design-input" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="longitudinalBarDiameter" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} longitudinal bar diameter">${mprDiameterOptions(MPR_COLUMN_BEAM_BAR_DIAMETERS, reinforcement.barDiameter)}</select></td>` +
               `<td class="rebar-location-cell" title="${escapeHtml(reinforcement.title)}"><span class="rebar-location-grid"><span>TOP</span><strong>${reinforcement.supportTop}</strong><span>BOT</span><strong>${reinforcement.supportBottom}</strong></span></td>` +
               `<td class="rebar-location-cell" title="${escapeHtml(reinforcement.title)}"><span class="rebar-location-grid"><span>TOP</span><strong>${reinforcement.midspanTop}</strong><span>BOT</span><strong>${reinforcement.midspanBottom}</strong></span></td>` +
-              `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><input class="design-input" type="number" min="6" step="1" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="stirrupDiameter" value="${reinforcement.stirrupDiameter}" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} stirrup diameter"></td>` +
+              `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><select class="design-input" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="stirrupDiameter" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} stirrup diameter">${mprDiameterOptions(MPR_TIE_STIRRUP_BAR_DIAMETERS, reinforcement.stirrupDiameter)}</select></td>` +
               `<td class="stirrup-spacing-cell" title="${escapeHtml(reinforcement.title)}">` +
                 `${stirrupSchedule}</td>` +
               `<td class="design-status ${reinforcement.pass ? "pass" : "fail"}" title="${escapeHtml(reinforcement.title)}">${reinforcement.pass ? "PASS" : escapeHtml(reinforcement.reason)}<br>F ${valueCell(reinforcement.flexureRatio)} / V ${valueCell(reinforcement.shearRatio)} / D ${valueCell(reinforcement.deflectionRatio)}</td>`
@@ -28557,7 +28877,7 @@
         const width = Math.max(200, Number(override.width) || numericInput("columnWidth", 400));
         const height = Math.max(200, Number(override.height) || numericInput("columnHeight", 400));
         const length = Math.max(0.1, levelElevations(makePlanData())[storyIndex + 1] - levelElevations(makePlanData())[storyIndex]);
-        const barDiameter = Math.max(12, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 12));
+        const barDiameter = Math.max(10, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10));
         const tieDiameter = Math.max(6, Number(override.tieDiameter) || detailingValue("columnTieDiameter", 10, 6));
         const cover = detailingValue("columnClearCover", 40, 25);
         const fc = detailingValue("concreteStrength", 28, 1);
@@ -28939,7 +29259,7 @@
         const autoDesign = byId("autoDesignEnabled")?.checked !== false;
         const width = Math.max(columnMinimumDimension(), Number(override.width) || numericInput("columnWidth", 400));
         const height = Math.max(columnMinimumDimension(), Number(override.height) || numericInput("columnHeight", 400));
-        const barDiameter = Math.max(12, Number(override.barDiameter) || (autoDesign ? 16 : detailingValue("columnLongitudinalBarDiameter", 16, 12)));
+        const barDiameter = Math.max(10, Number(override.barDiameter) || (autoDesign ? 16 : detailingValue("columnLongitudinalBarDiameter", 16, 10)));
         const tieDiameter = Math.max(6, Number(override.tieDiameter) || (autoDesign ? 10 : detailingValue("columnTieDiameter", 10, 6)));
         const grossArea = width * height;
         const barArea = Math.PI * barDiameter * barDiameter / 4;
@@ -28970,13 +29290,13 @@
 
       function bestColumnCandidateForSection(key, storyIndex, width, height) {
         let best = null;
-        for (const barDiameter of [16, 20, 25, 28, 32]) {
+        for (const barDiameter of MPR_COLUMN_BEAM_BAR_DIAMETERS) {
           const barArea = Math.PI * barDiameter * barDiameter / 4;
           let count = Math.max(4, Math.ceil(COLUMN_MIN_STEEL_RATIO * width * height / barArea));
           if (count % 2) count += 1;
           for (; count <= 24 && count * barArea <= COLUMN_MAX_STEEL_RATIO * width * height + 1e-6; count += 2) {
             let passingForCount = null;
-            for (const tieDiameter of [10, 12, 16]) {
+            for (const tieDiameter of MPR_TIE_STIRRUP_BAR_DIAMETERS) {
               const candidate = evaluateColumnCandidate(key, storyIndex, width, height, barDiameter, count, tieDiameter);
               if (candidate.pass && (!passingForCount || candidate.cost < passingForCount.cost - 1e-9)) passingForCount = candidate;
             }
@@ -29043,7 +29363,7 @@
                 storyIndex,
                 Math.max(columnMinimumDimension(), Number(existing.width) || numericInput("columnWidth", 400)),
                 Math.max(columnMinimumDimension(), Number(existing.height) || numericInput("columnHeight", 400)),
-                Math.max(12, Number(existing.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 12)),
+                Math.max(10, Number(existing.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10)),
                 existingCount % 2 === 0 ? existingCount : existingCount + 1,
                 Math.max(6, Number(existing.tieDiameter) || detailingValue("columnTieDiameter", 10, 6))
               );
@@ -29173,9 +29493,9 @@
               `${mprLoadCell(loadSources.wind, "Total wind load on the governing connected frame; Pu, Mux and Muy contain the calculated column effects.")}` +
               `${mprLoadCell(loadSources.earthquake, "Total earthquake load on the governing connected frame; Pu, Mux and Muy contain the calculated column effects.")}` +
               `<td>${valueCell(design.pu)}</td><td>${valueCell(design.momentX)}</td><td>${valueCell(design.momentY)}</td>` +
-              `<td><input class="design-input" type="number" min="12" step="1" data-column-design="${escapeHtml(design.overrideKey)}" data-field="barDiameter" value="${design.barDiameter}"></td>` +
+              `<td><select class="design-input" data-column-design="${escapeHtml(design.overrideKey)}" data-field="barDiameter" aria-label="${escapeHtml(design.name)} longitudinal bar diameter">${mprDiameterOptions(MPR_COLUMN_BEAM_BAR_DIAMETERS, design.barDiameter)}</select></td>` +
               `<td><input class="design-input" type="number" min="4" step="2" data-column-design="${escapeHtml(design.overrideKey)}" data-field="barCount" value="${design.barCount}"></td><td>${valueCell(design.steelArea)}</td><td>${valueCell(design.steelRatio)}</td>` +
-              `<td><input class="design-input" type="number" min="6" step="1" data-column-design="${escapeHtml(design.overrideKey)}" data-field="tieDiameter" value="${design.tieDiameter}"></td>` +
+              `<td><select class="design-input" data-column-design="${escapeHtml(design.overrideKey)}" data-field="tieDiameter" aria-label="${escapeHtml(design.name)} tie bar diameter">${mprDiameterOptions(MPR_TIE_STIRRUP_BAR_DIAMETERS, design.tieDiameter)}</select></td>` +
               `<td>${design.tieSchedule}</td><td>${valueCell(design.ratio)}</td><td class="design-status ${design.statusClass}" title="${escapeHtml(columnStatusTitle(design))}">${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`);
             itemIndex += 1;
           });
@@ -29200,7 +29520,7 @@
         return spacing >= 75 ? spacing : 0;
       }
 
-      function economicalReinforcementSelection(requiredAreaPerM, maximumSpacing, allowedDiameters = [10, 12, 16, 20, 25, 28, 32]) {
+      function economicalReinforcementSelection(requiredAreaPerM, maximumSpacing, allowedDiameters = MPR_SLAB_FOOTING_BAR_DIAMETERS) {
         let best = null;
         allowedDiameters.forEach(diameter => {
           const spacing = reinforcementSpacing(diameter, requiredAreaPerM, maximumSpacing);
@@ -29311,10 +29631,10 @@
         const steelY = requiredRectangularSteel(1000, shear.effectiveDepthY, momentY, fc, fy, minimumArea);
         const maximumSpacing = Math.min(3 * thickness, 450);
         const selectionX = autoDesign
-          ? economicalReinforcementSelection(steelX, maximumSpacing, [12, 16, 20, 25, 28, 32])
+          ? economicalReinforcementSelection(steelX, maximumSpacing, MPR_SLAB_FOOTING_BAR_DIAMETERS)
           : economicalReinforcementSelection(steelX, maximumSpacing, [barDiameterX]);
         const selectionY = autoDesign
-          ? economicalReinforcementSelection(steelY, maximumSpacing, [12, 16, 20, 25, 28, 32])
+          ? economicalReinforcementSelection(steelY, maximumSpacing, MPR_SLAB_FOOTING_BAR_DIAMETERS)
           : economicalReinforcementSelection(steelY, maximumSpacing, [barDiameterY]);
         if (selectionX) barDiameterX = selectionX.diameter;
         if (selectionY) barDiameterY = selectionY.diameter;
@@ -29484,8 +29804,8 @@
           const steelX = requiredRectangularSteel(1000, preliminaryShear.effectiveDepthX, momentX, fc, fy, minimumArea);
           const steelY = requiredRectangularSteel(1000, preliminaryShear.effectiveDepthY, momentY, fc, fy, minimumArea);
           const maximumSpacing = Math.min(3 * thickness, 450);
-          const selectionX = economicalReinforcementSelection(steelX, maximumSpacing, manualDesign ? [baseBarDiameterX] : [baseBarDiameterX, 16, 20, 25, 28, 32]);
-          const selectionY = economicalReinforcementSelection(steelY, maximumSpacing, manualDesign ? [baseBarDiameterY] : [baseBarDiameterY, 16, 20, 25, 28, 32]);
+          const selectionX = economicalReinforcementSelection(steelX, maximumSpacing, manualDesign ? [baseBarDiameterX] : MPR_SLAB_FOOTING_BAR_DIAMETERS);
+          const selectionY = economicalReinforcementSelection(steelY, maximumSpacing, manualDesign ? [baseBarDiameterY] : MPR_SLAB_FOOTING_BAR_DIAMETERS);
           const finalShear = selectionX && selectionY
             ? shearCheckFor(b, l, thickness, selectionX.diameter, selectionY.diameter)
             : preliminaryShear;
@@ -29600,8 +29920,8 @@
             `${mprLoadCell(loadSources.earthquake, "Total earthquake load on the governing connected frame; footing pressure and moments include the calculated support effects.")}` +
             `<td>${valueCell(design.serviceLoad)}</td><td>${valueCell(design.pu)}</td><td>${valueCell(design.servicePressure)}</td><td>${valueCell(design.ultimatePressure)}</td>` +
             `<td>${valueCell(design.momentX)}</td><td>${valueCell(design.momentY)}</td>` +
-            `<td><input class="design-input" type="number" min="10" step="1" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterX" value="${design.barDiameterX}"></td><td>${design.spacingX}</td>` +
-            `<td><input class="design-input" type="number" min="10" step="1" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterY" value="${design.barDiameterY}"></td><td>${design.spacingY}</td>` +
+            `<td><select class="design-input" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterX" aria-label="${escapeHtml(design.name)} X bar diameter">${mprDiameterOptions(MPR_SLAB_FOOTING_BAR_DIAMETERS, design.barDiameterX)}</select></td><td>${design.spacingX}</td>` +
+            `<td><select class="design-input" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterY" aria-label="${escapeHtml(design.name)} Y bar diameter">${mprDiameterOptions(MPR_SLAB_FOOTING_BAR_DIAMETERS, design.barDiameterY)}</select></td><td>${design.spacingY}</td>` +
             `<td>${valueCell(design.oneWayRatio)}</td><td>${valueCell(design.punchingRatio)}</td><td class="design-status ${design.statusClass}" title="Bearing: ${escapeHtml(design.governingServiceCombination || "-")}; eccentricity: ${escapeHtml(design.governingEccentricityCombination || "-")} (${valueCell(design.eccentricityUtilization)} utilization); D+L P/Mx/My: ${valueCell(longTermCase.vertical)} / ${valueCell(longTermCase.momentX)} / ${valueCell(longTermCase.momentY)}; contact: ${escapeHtml(design.contactMode || "FULL")}">${design.status}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`;
         });
       }
@@ -29802,7 +30122,7 @@
         const hasPanelDiameterOverride = Number.isFinite(migratedDiameter) && migratedDiameter > 0;
         const candidateDiameters = hasPanelDiameterOverride || !autoDesign
           ? [preferredDiameter]
-          : Array.from(new Set([defaultBarDiameter, 10, 12, 16, 20]
+          : Array.from(new Set([defaultBarDiameter, ...MPR_SLAB_FOOTING_BAR_DIAMETERS]
             .map(Number)
             .filter(value => value >= Math.max(8, defaultBarDiameter)))).sort((a, b) => a - b);
         const reinforcementForDiameter = diameter => {
@@ -30002,7 +30322,7 @@
             : {
               thickness: `<input class="design-input" type="number" min="100"${design.slabType === "SLAB_ON_FILL" ? ' max="100" title="Slab on fill is economically limited to 100 mm because it is continuously supported by earth fill."' : ""} step="5" data-slab-design="${escapeHtml(design.key)}" data-field="thickness" value="${design.thickness}">`,
               wu: `<span title="${escapeHtml(design.wallLoadNote || "")}">${valueCell(design.wu)}</span>`, momentX: valueCell(design.momentX), momentY: valueCell(design.momentY),
-              bar: `<input class="design-input" type="number" min="8" step="1" data-slab-design="${escapeHtml(design.key)}" data-field="barDiameter" value="${design.barDiameter}">`,
+              bar: `<select class="design-input" data-slab-design="${escapeHtml(design.key)}" data-field="barDiameter" aria-label="${escapeHtml(design.slabId)} bar diameter">${mprDiameterOptions(MPR_SLAB_FOOTING_BAR_DIAMETERS, design.barDiameter)}</select>`,
               topSpacingX: design.topSpacingX, topExtentX: escapeHtml(design.topExtentX),
               topSpacingY: design.topSpacingY, topExtentY: escapeHtml(design.topExtentY),
               bottomSpacingX: design.bottomSpacingX, bottomSpacingY: design.bottomSpacingY,
@@ -31202,7 +31522,7 @@
                   storyIndex,
                   Math.max(columnMinimumDimension(), Number(override.width) || numericInput("columnWidth", 400)),
                   Math.max(columnMinimumDimension(), Number(override.height) || numericInput("columnHeight", 400)),
-                  Math.max(12, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 12)),
+                  Math.max(10, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10)),
                   count % 2 === 0 ? count : count + 1,
                   Math.max(6, Number(override.tieDiameter) || detailingValue("columnTieDiameter", 10, 6))
                 ).pass) return false;
@@ -32143,6 +32463,8 @@
           planState.pendingAnnotationEdit = null;
           planState.matchAnnotationSource = null;
           planState.isBlankNewDesign = true;
+          resetStructuralPlanGridInputs();
+          renderStructuralPlanEditors();
           setPlanCreationMode("pan");
           renderStructuralSequence({resetViews: true, activeView: "PLAN"});
           if (typeof status === "function") status("New design ready. Define grid labels and spans, then Generate Structural Plan.");
