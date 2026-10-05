@@ -12,7 +12,10 @@ assert(html.includes("Number(footing.length) || Number(footing.designLength)"), 
 assert(html.includes("Number(footing.thickness) || Number(footing.designThickness)"), "3D ISO footing thickness is not based on design dimensions");
 assert(html.includes("const drawIsoFooting = footing =>"), "3D ISO footing solid renderer is missing");
 assert(html.includes("const z0 = -footing.thickness"), "3D ISO footing is not drawn below foundation level");
-assert(html.includes("isoFootings.forEach(drawIsoFooting)"), "3D ISO footing solids are not rendered");
+assert(html.includes(".forEach(drawIsoFooting)"), "3D ISO footing solids are not rendered");
+assert(html.includes('id="isoFramesOnlyBtn"'), "3D ISO needs an X/Y-frames-only toggle");
+assert(html.includes("isometricView.frameOnly = !isometricView.frameOnly"), "The X/Y-frames-only control must toggle back to the regular view");
+assert(html.includes('canvas.dataset.isoFrameOnly = frameOnly ? "true" : "false"'), "The active 3D ISO frame-only state must be exposed for verification");
 assert(html.includes("const xGridSideY = totalY"), "Alphabetic 3D grids must stay on the fixed plan-view top side");
 assert(html.includes("const yGridSideX = 0"), "Numeric 3D grids must stay on the fixed plan-view left side");
 assert(html.includes("{x, y: xGridSideY, z: totalZ}"), "Alphabetic grid bubbles are not fixed to their outer side");

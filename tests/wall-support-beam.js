@@ -72,6 +72,7 @@ assert.strictEqual(
 
 const clippingApi = Function(`
   const makePlanData = () => ({});
+  ${sourceFunction("slabCellModelBounds")}
   ${sourceFunction("wallLengthInsideSlabRegion")}
   return {wallLengthInsideSlabRegion};
 `)();

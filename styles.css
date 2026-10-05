@@ -68,6 +68,11 @@ button,input,select{font:inherit}
 .mpr-table-scroll{position:relative;width:100%;max-height:420px;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;border-bottom:1px solid #777;background:#fff}
 .mpr-table-scroll>table{margin:0!important}
 .mpr-table-scroll thead tr:last-child>th{position:sticky;top:0;z-index:6;box-shadow:0 1px 0 #777}
+.mpr-table-height-resizer{position:sticky;left:0;z-index:30;display:block;width:100%;height:6px;box-sizing:border-box;cursor:ns-resize;touch-action:none;background:transparent}
+.mpr-table-height-resizer.is-top{top:0;margin-bottom:-6px;border-top:2px solid transparent}
+.mpr-table-height-resizer.is-bottom{bottom:0;margin-top:-6px;border-bottom:2px solid transparent}
+.mpr-table-height-resizer:hover,.mpr-table-height-resizer:focus{background:rgba(243,173,75,.24);border-color:#F3AD4B}
+body.mpr-table-height-resizing{cursor:ns-resize!important;user-select:none!important}
 .results-subsection.is-collapsed>.mpr-table-scroll{display:none!important}
 .member-props-table.is-collapsed .mpr-table-scroll{display:none!important}
 .results-subsection.is-collapsed,.member-props-table.is-collapsed{overflow:hidden!important;scrollbar-width:none!important}
@@ -84,6 +89,9 @@ button,input,select{font:inherit}
 .cad-drawing-file-row{display:grid;grid-template-columns:minmax(0,.9fr) minmax(145px,1.1fr);align-items:center;gap:6px;padding:6px;border:1px solid var(--line);border-radius:4px;background:var(--surface-soft);color:var(--ink)}
 .cad-drawing-file-row>span{overflow:hidden;font-size:10px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
 .cad-drawing-file-row select{min-height:30px;margin:0;padding:5px 6px;font-size:10px}
+.cad-replacement-row{align-items:stretch!important;margin:4px 0 8px}
+.cad-replacement-row select{min-width:0;flex:1 1 46%;margin:0}
+.cad-replacement-row button{flex:1 1 54%;margin:0}
 .cad-detected-panel-row{grid-template-columns:76px minmax(0,1fr)}
 .cad-panel-thumbnail{display:block;width:76px;height:56px;border:1px solid var(--line);border-radius:2px;background:#fff;object-fit:contain}
 .cad-panel-details{min-width:0}

@@ -41,6 +41,13 @@ assert(!css.includes(".mpr-table-scroll thead tr:last-child>th{position:sticky;t
 assert(!html.includes('id="nodeResultsTable"') && !html.includes("X &amp; Y-AXIS FRAMES NODE FORCES RESULTS"), "The X/Y frame node-forces MPR table must be removed");
 assert(html.includes("data.mprSortIndex") || html.includes("dataset.mprSortIndex"), "Generic MPR sort controls are missing");
 assert(html.includes("applyAllAdditionalMprSorts();"), "Active MPR sort order must be reapplied after recalculation");
+assert(html.includes('"Click to rearrange. Right-click to show X & Y AXIS members first."'), "Every member ID must explain its normal and axis-first sorting actions");
+assert(html.includes("function compareColumnsBySelectedFrames(rowA, rowB)"), "Column results need selected X/Y frame priority sorting");
+assert(html.includes("function compareAdditionalMprMembersByAxis(tableId, rowA, rowB)"), "Slab and footing results need selected X/Y frame priority sorting");
+assert(html.includes('table.addEventListener("contextmenu"') && html.includes('state.mode = "axisFirst"'), "Right-clicking any member ID must activate X-axis then Y-axis ordering");
+assert(html.includes('beamMprSortState.mode = "axisFirst"'), "Beam ID right-click must activate X-axis then Y-axis ordering");
+assert(html.includes("function installMprTableHeightResizing()") && html.includes('["top", "bottom"].forEach(edge =>'), "Every MPR table needs top and bottom vertical resize handles");
+assert(css.includes(".mpr-table-height-resizer") && css.includes("cursor:ns-resize"), "MPR height handles need a visible vertical-resize interaction");
 assert(html.includes('id="mprSolutionDialog"'), "MPR academic calculation dialog is missing");
 assert(html.includes("function mprAcademicSolution(input)"), "Member-specific academic solution builder is missing");
 assert(html.includes('panel.addEventListener("dblclick"'), "MPR member names must open the academic solution on double-click");

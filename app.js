@@ -1775,7 +1775,7 @@ function getRecordNames() {
   }
 }
 
-const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261004a";
+const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261005a";
 const bundledPersistenceVersionsKey = "strucforge_bundled_persistence_versions_v1";
 let bundledStartupProject = null;
 
@@ -1797,7 +1797,8 @@ async function installBundledPersistence() {
       for (const project of manifest.projects) {
         const name = String(project?.name || "").trim();
         const source = String(project?.source || "").trim();
-        if (!name || !source || localStorage.getItem("strucforge_record_" + name)) continue;
+        const existing = localStorage.getItem("strucforge_record_" + name);
+        if (!name || !source || (existing && project?.replaceExisting !== true)) continue;
         const projectResponse = await fetch(source, {cache: "no-store"});
         if (!projectResponse.ok) continue;
         const payload = await projectResponse.json();
@@ -2755,6 +2756,9 @@ window.addEventListener("load", async () => {
   prepareCanvasSizes();
   draw();
   await loadDefaultProject();
+  if (typeof window.strucForgeOpenStartupView === "function") {
+    window.strucForgeOpenStartupView("ISO");
+  }
 });
 
 window.addEventListener("resize", () => {

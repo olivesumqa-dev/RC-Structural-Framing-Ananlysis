@@ -50,6 +50,10 @@ assert.match(html, /FOUNDATION LEVEL and LEVEL-1/, "the importer must require th
 assert.match(html, /X-AXIS FRAME/, "X-axis frame titles must be routed");
 assert.match(html, /Y-AXIS FRAME/, "Y-axis frame titles must be routed");
 assert.match(html, /function renderCadSourceReview\(/, "detected sheet panels must be reviewable");
+assert.match(html, /id="cadReplaceDetectedBtn"[^>]*>Replace Detected Drawing</, "reviewed drawing sets need a targeted panel replacement action");
+assert.match(html, /async function replaceDetectedCadDrawing\(file\)/, "a detected drawing title must be replaceable without discarding the other reviewed panels");
+assert.match(html, /cadImportState\.sources\.map\(source => source\.role === targetRole \? replacement : source\)/, "targeted replacement must preserve every non-target drawing");
+assert.match(html, /Replacement crop selected by user|User replacement for this drawing title/, "the review list must identify user-replaced drawings");
 assert.match(html, /function analyzeRasterPlan\(/, "raster plan detection must be installed");
 assert.match(html, /function inferRasterPanelGridCoordinates\(/, "raster plan detection must have a structural grid fallback");
 assert.match(html, /const chooseAxisFallback = \(current, inferred, expectedCount\) =>/, "raster fallback decisions must be made independently for X and Y axes");
@@ -60,7 +64,7 @@ assert.match(html, /tesseract\.js@5\/dist\/tesseract\.min\.js/, "image imports m
 assert.match(html, /await releaseCadOcrWorker\(\)/, "the import-only OCR worker must be released after analysis");
 assert.match(html, /function auditCadDrawingAccuracy\(/, "a conversion accuracy audit must run before model creation");
 assert.match(html, /Conversion accuracy check failed/, "inconsistent imported views must be blocked before conversion");
-assert.match(html, /const hidden = coverage >= 0\.14 && runs >= 3[\s\S]{0,100}coverage < 0\.55 \|\| \(runs >= 4 && coverage < 0\.90\)/, "dashed raster lines must be classified by repeated dash runs even when their ink coverage exceeds one half");
+assert.match(html, /const repeatedShortDashes = runs >= 5 && coverage < 0\.90 && averageRunLength <= length \* 0\.18;[\s\S]{0,160}const hidden = coverage >= 0\.14 && runs >= 3/, "dashed raster lines must be classified by repeated short runs even when their ink coverage exceeds one half");
 assert.match(html, /else if \(segment\.hidden\) planState\.deletedPlanMembers/, "uncertain raster strokes must not delete beams; only confirmed hidden lines may do so");
 assert.match(html, /function applyImportedDrawingTopology\(/, "hidden members must be excluded from the generated structural topology");
 assert.match(html, /function classifyRasterPlanCells\(/, "uploaded slab and earth-filled panel labels must be classified");
@@ -100,7 +104,7 @@ for (const id of ["uploadCadPackage", "structuralPlanPackage", "modelCreationPac
   assert.match(html, new RegExp(`"${id}"`), `${id} must be included in the default expanded package set`);
 }
 assert.match(html, /<section class="sidebar-package" id="uploadCadPackage">/, "Upload Drawings must be expanded in the initial HTML before scripts finish loading");
-assert.match(html, /renderStructuralSequence\(\{resetViews: true, activeView: "PLAN"\}\)/, "the opening drawing must default to Structural Plan");
+assert.match(html, /window\.strucForgeOpenStartupView = view =>[\s\S]{0,500}applyUnifiedDrawingView\(normalized\)/, "the bundled startup project must explicitly open its requested drawing view");
 assert.doesNotMatch(html, /Click to edit \$\{kind\} name/, "ordinary member-name hover must not display the sensitive click-to-edit popup");
 assert.match(html, /member-name-editable-hover/, "an exact member-name hover must indicate editability through the mouse cursor");
 assert.doesNotMatch(html, /id="memberNameHoverInput"/, "member-name hover must no longer show the oversized inline editor");

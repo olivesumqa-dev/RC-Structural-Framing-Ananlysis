@@ -1,0 +1,15 @@
+const fs = require("fs");
+
+const htmlPath = "index.html";
+const projectPath = "JSON/2-STO. BLDG.json";
+const projectJson = fs.readFileSync(projectPath, "utf8").trim();
+let html = fs.readFileSync(htmlPath, "utf8");
+
+for (const id of ["defaultProjectData", "templateTwoStoreyData"]) {
+  const pattern = new RegExp(`(<script id="${id}" type="application/json">)[\\s\\S]*?(</script>)`);
+  if (!pattern.test(html)) throw new Error(`Missing ${id} block in ${htmlPath}`);
+  html = html.replace(pattern, `$1\n${projectJson}\n  $2`);
+}
+
+fs.writeFileSync(htmlPath, html);
+console.log("Embedded default and 2-STO. BLDG template data updated.");
