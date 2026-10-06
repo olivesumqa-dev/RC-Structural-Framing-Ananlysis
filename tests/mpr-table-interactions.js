@@ -25,6 +25,7 @@ assert(html.includes('disabled data-legacy-diameter="true"'), "Legacy calculated
 assert(!/type="number"[^>]+data-field="(?:longitudinalBarDiameter|stirrupDiameter|barDiameter|tieDiameter|barDiameterX|barDiameterY)"/.test(html), "MPR diameter cells must not fall back to unrestricted one-millimetre number inputs");
 assert(html.includes("function installMprColumnResizing()") && html.includes("const minimumWidth = 56") && html.includes("const maximumWidth = 260"), "MPR columns must be user-resizable within safe readable limits");
 assert(css.includes(".mpr-column-resizer") && css.includes("cursor:col-resize"), "MPR resizable headings need an obvious drag handle");
+assert(css.includes('.mpr-column-resizer::after{content:"\\2194"') && html.includes('Drag left or right to resize this column'), "MPR column resizing must use a left-right arrow indicator");
 assert(css.includes('.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:108px!important'), "Editable numeric MPR cells need enough width for their full value and spinner");
 assert(css.includes('input[type="number"]{field-sizing:fixed;width:15ch!important;min-width:15ch!important;max-width:18ch!important;box-sizing:border-box;padding:3px 36px 3px 7px!important'), "MPR number inputs need ample reserved right-side space before the vertical spinner");
 assert(css.includes('input[type="number"]::-webkit-inner-spin-button{margin-left:12px;opacity:1}'), "MPR number spinners need a clearly visible gap from the editable value");

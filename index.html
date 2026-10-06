@@ -66385,7 +66385,8 @@
             handle.className = "mpr-column-resizer";
             handle.setAttribute("role", "separator");
             handle.setAttribute("aria-orientation", "vertical");
-            handle.title = "Drag to resize this column";
+            handle.setAttribute("aria-label", "Drag left or right to resize this column");
+            handle.title = "Drag left or right to resize this column";
             heading.appendChild(handle);
             handle.addEventListener("pointerdown", event => {
               if (event.button !== 0) return;
