@@ -28,7 +28,10 @@ function sourceConstant(name) {
 const api = Function(
   `${sourceConstant("BEAM_MINIMUM_TENSION_STRAIN")}
    ${sourceConstant("BEAM_TENSION_CONTROLLED_STRAIN")}
+   ${sourceConstant("BEAM_LONG_SPAN_THRESHOLD_M")}
+   ${sourceConstant("BEAM_LONG_SPAN_STEEL_AREA_FACTOR")}
    ${sourceConstant("REBAR_ELASTIC_MODULUS")}
+   ${sourceFunction("beamLongSpanSteelFactor")}
    ${sourceFunction("concreteBeta1")}
    ${sourceFunction("beamStrengthReductionFactor")}
    ${sourceFunction("beamBarLayout")}
@@ -37,8 +40,11 @@ const api = Function(
    ${sourceFunction("selectBeamFlexuralLayout")}
    ${sourceFunction("beamScheduleUtilization")}
    ${sourceFunction("governingBeamGroupSchedule")}
-   return {beamBarLayout, beamBarCentroidDepth, selectBeamFlexuralLayout, governingBeamGroupSchedule};`
+   return {beamLongSpanSteelFactor, beamBarLayout, beamBarCentroidDepth, selectBeamFlexuralLayout, governingBeamGroupSchedule};`
 )();
+
+assert.strictEqual(api.beamLongSpanSteelFactor(3.999), 1, "The 12% reserve must not apply below 4.00 m");
+assert.strictEqual(api.beamLongSpanSteelFactor(4.00), 1.12, "The 12% reserve must start at 4.00 m");
 
 const sevenD21 = api.beamBarLayout(300, 40, 10, 21, 7);
 const sixD22 = api.beamBarLayout(300, 40, 10, 22, 6);
@@ -56,6 +62,19 @@ assert(design21.pass, "7-D21 should pass the corrected strain-dependent flexural
 assert(design22.pass, "6-D22 should pass the corrected strain-dependent flexural check");
 assert(design21.tensileStrain >= 0.004 && design22.tensileStrain >= 0.004, "Both designs must satisfy the beam minimum tensile strain");
 assert(design21.phi < 0.90 && design22.phi === 0.90, "The transition-region design must use a reduced phi while the tension-controlled design uses phi=0.90");
+
+const constrainedReserve = api.selectBeamFlexuralLayout(...common, 21, 303.76, 28, 415, api.beamLongSpanSteelFactor(4.00));
+assert(!constrainedReserve.pass && constrainedReserve.steelReservePass === false, "A section that cannot hold the 12% reserve without violating ductility must fail for resizing");
+
+const longSpanCommon = [300, 550, 40, 10];
+const longSpanBaseline = api.selectBeamFlexuralLayout(...longSpanCommon, 21, 303.76, 28, 415);
+const longSpanReserved = api.selectBeamFlexuralLayout(...longSpanCommon, 21, 303.76, 28, 415, api.beamLongSpanSteelFactor(4.00));
+assert(longSpanReserved.pass, "The long-span reserve layout must retain all flexural acceptance checks");
+assert(longSpanReserved.count > longSpanBaseline.count, "The long-span reserve must increase the whole main-bar count for the regression section");
+assert(longSpanReserved.areaSteel + 1e-6 >= longSpanBaseline.areaSteel * 1.12, "The provided long-span main steel area must be at least 112% of baseline");
+assert(longSpanReserved.fits, "The reserved bars must fit within the checked two-layer layout");
+assert(longSpanReserved.tensileStrain >= 0.004, "The reserved layout must retain the minimum tensile strain");
+assert.strictEqual(longSpanReserved.steelReservePass, true, "The reserve result must explicitly report that the project rule passed");
 
 const governing = api.governingBeamGroupSchedule([
   {memberName: "passing segment", pass: true, flexureRatio: 0.99, shearRatio: 0.40, deflectionRatio: 0.20},
