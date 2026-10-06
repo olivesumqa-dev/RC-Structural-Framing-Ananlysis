@@ -2795,7 +2795,7 @@
           <div class="member-props-title">
             <button id="memberPropsToggle" class="member-props-toggle" type="button" title="Hide Member Properties / Results" aria-label="Hide Member Properties / Results">Hide</button>
             <span class="mpr-title-text">Member Properties / Results (MPR)</span>
-            <span id="mprMemberSummary" class="mpr-member-summary">No. of Beams=0, Columns=0, Slabs=0, Footings=0</span>
+            <span id="mprMemberSummary" class="mpr-member-summary">0 Storey Bldg. | No. of Beams=0, Columns=0, Slabs=0, Footings=0</span>
             <span class="member-props-actions" aria-label="Member Properties and Results output tools">
               <button id="mprPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT" aria-label="Print Member Properties / Results" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button>
               <button id="mprPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF" aria-label="Print Member Properties / Results to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
@@ -68560,7 +68560,8 @@
       function updateMprMemberSummary(counts = {}) {
         const summary = byId("mprMemberSummary");
         if (!summary) return;
-        summary.textContent = `No. of Beams=${Number(counts.beams) || 0}, Columns=${Number(counts.columns) || 0}, Slabs=${Number(counts.slabs) || 0}, Footings=${Number(counts.footings) || 0}`;
+        const storeys = makePlanData().levels.length;
+        summary.textContent = `${storeys} Storey Bldg. | No. of Beams=${Number(counts.beams) || 0}, Columns=${Number(counts.columns) || 0}, Slabs=${Number(counts.slabs) || 0}, Footings=${Number(counts.footings) || 0}`;
       }
 
       function setYMemberTableValue(memberId, field, value) {

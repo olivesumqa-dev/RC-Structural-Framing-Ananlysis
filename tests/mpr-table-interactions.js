@@ -31,7 +31,7 @@ assert(css.includes('input[type="number"]{field-sizing:fixed;width:15ch!importan
 assert(css.includes('input[type="number"]::-webkit-inner-spin-button{margin-left:12px;opacity:1}'), "MPR number spinners need a clearly visible gap from the editable value");
 assert(html.includes("function installDraggableDialogs()") && html.includes("const onBackdrop =") && html.includes("installDraggableDialogs();"), "All popup dialogs must support dragging from any non-control portion while excluding the backdrop");
 assert(html.includes('<span class="mpr-title-text">Member Properties / Results (MPR)</span>'), "The main results heading must use the requested full MPR title");
-assert(html.includes('id="mprMemberSummary"') && html.includes("function updateMprMemberSummary(counts = {})") && html.includes("No. of Beams=${Number(counts.beams) || 0}"), "The MPR title strip must show live beam, column, slab and footing totals");
+assert(html.includes('id="mprMemberSummary"') && html.includes("function updateMprMemberSummary(counts = {})") && html.includes('${storeys} Storey Bldg. | No. of Beams=${Number(counts.beams) || 0}'), "The MPR title strip must show the live storey and member totals");
 assert(css.includes('.mpr-title-text{font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:16px;font-weight:300;line-height:1;color:#fff'), "The MPR title must use white Aptos Light text on the green strip");
 assert(css.includes('letter-spacing:.08em;background:#16845b;color:#fff'), "The main MPR strip must use the calculated-state green with white text");
 assert(css.includes('.results-subsection.is-collapsed,.member-props-table.is-collapsed{overflow:hidden!important;scrollbar-width:none!important}'), "Collapsed MPR tables must not show a vertical scrollbar");
