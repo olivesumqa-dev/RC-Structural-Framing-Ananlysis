@@ -25,6 +25,9 @@ assert(html.includes('disabled data-legacy-diameter="true"'), "Legacy calculated
 assert(!/type="number"[^>]+data-field="(?:longitudinalBarDiameter|stirrupDiameter|barDiameter|tieDiameter|barDiameterX|barDiameterY)"/.test(html), "MPR diameter cells must not fall back to unrestricted one-millimetre number inputs");
 assert(html.includes("function installMprColumnResizing()") && html.includes("const minimumWidth = 56") && html.includes("const maximumWidth = 260"), "MPR columns must be user-resizable within safe readable limits");
 assert(css.includes(".mpr-column-resizer") && css.includes("cursor:col-resize"), "MPR resizable headings need an obvious drag handle");
+assert(css.includes('.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:82px!important'), "Editable numeric MPR cells need enough width for their value and spinner");
+assert(css.includes('input[type="number"]{field-sizing:fixed;width:11ch!important;min-width:11ch!important;max-width:13ch!important;box-sizing:border-box;padding:3px 23px 3px 6px!important'), "MPR number inputs need reserved right-side space before the vertical spinner");
+assert(css.includes('input[type="number"]::-webkit-inner-spin-button{margin-left:7px}'), "MPR number spinners need a visible gap from the editable value");
 assert(html.includes("function installDraggableDialogs()") && html.includes("const onBackdrop =") && html.includes("installDraggableDialogs();"), "All popup dialogs must support dragging from any non-control portion while excluding the backdrop");
 assert(html.includes('<span class="mpr-title-text">Member Properties / Results (MPR)</span>'), "The main results heading must use the requested full MPR title");
 assert(css.includes('.mpr-title-text{font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:16px;font-weight:300;line-height:1;color:#fff'), "The MPR title must use white Aptos Light text on the green strip");
