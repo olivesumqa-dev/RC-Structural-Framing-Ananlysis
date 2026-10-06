@@ -2103,7 +2103,8 @@
     </header>
 
     <div class="workspace">
-    <aside class="panel">
+    <button id="mobileSidebarToggle" class="mobile-sidebar-toggle" type="button" aria-controls="structuralSidebar" aria-expanded="false">Controls</button>
+    <aside class="panel" id="structuralSidebar">
       <h1>Structural Design Tools</h1>
       <button id="newDesign" class="new-design-btn" type="button" aria-describedby="newDesignHoverNote"><span>CREATE NEW DESIGN</span><span id="newDesignHoverNote" class="new-design-hover-note" role="tooltip">This will delete all existing drawing</span></button>
       <div hidden aria-hidden="true">
@@ -56838,11 +56839,32 @@
         return false;
       }
 
+      function isMobilePerformanceMode() {
+        const android = /Android/i.test(navigator.userAgent || "");
+        const touchViewport = window.matchMedia?.("(pointer: coarse)")?.matches && window.innerWidth <= 1280;
+        return android || touchViewport;
+      }
+
+      function installMobilePerformanceMode() {
+        const enabled = isMobilePerformanceMode();
+        document.body.classList.toggle("mobile-performance-mode", enabled);
+        if (!enabled) return;
+        document.querySelectorAll("canvas").forEach(canvas => {
+          canvas.setAttribute("data-mobile-performance", "true");
+        });
+      }
+
+      function mobileDrawingContext(canvas) {
+        return canvas?.getContext("2d", isMobilePerformanceMode()
+          ? {alpha: false, desynchronized: true}
+          : undefined);
+      }
+
       function drawCadFrameSource(role, canvas) {
         const source = cadImportState.sources.find(item => item.role === role);
         if (!source || !canvas) return false;
         resizeAuxCanvasToDisplaySize(canvas);
-        const ctx = canvas.getContext("2d");
+        const ctx = mobileDrawingContext(canvas);
         if (!ctx) return false;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -56897,7 +56919,7 @@
         const canvas = byId("structuralPlanCanvas");
         if (!canvas) return;
         resizeAuxCanvasToDisplaySize(canvas);
-        const ctx = canvas.getContext("2d");
+        const ctx = mobileDrawingContext(canvas);
         if (!ctx) return;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -57399,7 +57421,7 @@
         const canvas = byId("isometricCanvas");
         if (!canvas) return;
         resizeAuxCanvasToDisplaySize(canvas);
-        const ctx = canvas.getContext("2d");
+        const ctx = mobileDrawingContext(canvas);
         if (!ctx) return;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -61634,7 +61656,7 @@
         const canvas = byId("yAxisCanvas");
         if (!canvas) return;
         resizeAuxCanvasToDisplaySize(canvas);
-        const ctx = canvas.getContext("2d");
+        const ctx = mobileDrawingContext(canvas);
         if (!ctx) return;
         const rawMode = yFrameState.mode || "select";
         const modeText = rawMode === "pan" ? "Select" : `${rawMode.charAt(0).toUpperCase()}${rawMode.slice(1)}`;
@@ -62384,10 +62406,17 @@
 
         const redrawNow = () => config.draw(makePlanData());
         let redrawFrame = 0;
+        let lastInteractiveDraw = 0;
         const queueRedraw = () => {
           if (redrawFrame) return;
-          redrawFrame = window.requestAnimationFrame(() => {
+          const schedule = callback => {
+            if (!isMobilePerformanceMode()) return window.requestAnimationFrame(callback);
+            const delay = Math.max(0, 32 - (performance.now() - lastInteractiveDraw));
+            return window.setTimeout(() => window.requestAnimationFrame(callback), delay);
+          };
+          redrawFrame = schedule(() => {
             redrawFrame = 0;
+            lastInteractiveDraw = performance.now();
             redrawNow();
           });
         };
@@ -62468,11 +62497,18 @@
         if (!canvas || canvas.dataset.controlsReady) return;
         canvas.dataset.controlsReady = "true";
         let redrawFrame = 0;
+        let lastInteractiveDraw = 0;
         const redraw = () => drawIsometricStructure(makePlanData());
         const queueRedraw = () => {
           if (redrawFrame) return;
-          redrawFrame = window.requestAnimationFrame(() => {
+          const schedule = callback => {
+            if (!isMobilePerformanceMode()) return window.requestAnimationFrame(callback);
+            const delay = Math.max(0, 32 - (performance.now() - lastInteractiveDraw));
+            return window.setTimeout(() => window.requestAnimationFrame(callback), delay);
+          };
+          redrawFrame = schedule(() => {
             redrawFrame = 0;
+            lastInteractiveDraw = performance.now();
             redraw();
           });
         };
@@ -70212,6 +70248,26 @@
         });
       }
 
+      function installMobileSidebar() {
+        const toggle = byId("mobileSidebarToggle");
+        const panel = byId("structuralSidebar");
+        const main = document.querySelector(".workspace > main");
+        if (!toggle || !panel || toggle.dataset.ready) return;
+        toggle.dataset.ready = "true";
+        const setOpen = open => {
+          document.body.classList.toggle("mobile-sidebar-open", open);
+          toggle.setAttribute("aria-expanded", String(open));
+          toggle.textContent = open ? "Close Controls" : "Controls";
+        };
+        toggle.addEventListener("click", () => setOpen(!document.body.classList.contains("mobile-sidebar-open")));
+        main?.addEventListener("pointerdown", () => {
+          if (window.matchMedia("(max-width: 700px)").matches) setOpen(false);
+        });
+        window.addEventListener("resize", () => {
+          if (!window.matchMedia("(max-width: 700px)").matches) setOpen(false);
+        });
+      }
+
       installProjectPersistenceBridge();
 
       window.addEventListener("load", () => {
@@ -70220,6 +70276,8 @@
         installCurrentProcessTracker();
         installNewDesignConfirmation();
         installSidebarPackageToggles();
+        installMobileSidebar();
+        installMobilePerformanceMode();
         installSidebarSubgroups();
         installSidebarLearningHelp();
         installCadImport();

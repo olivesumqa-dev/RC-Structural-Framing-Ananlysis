@@ -440,3 +440,95 @@ main{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:c
   line-height: 1.3;
   color: var(--text-muted, #536167);
 }
+
+/* Android phone/tablet layout. Desktop rules above 1280px remain unchanged. */
+.mobile-sidebar-toggle{display:none}
+@media (min-width:701px) and (max-width:1280px){
+  body .topbar{height:112px!important;flex-basis:112px!important;grid-template-columns:150px minmax(330px,1fr) minmax(220px,.7fr) 28px!important;grid-template-rows:52px 44px!important;gap:6px 8px!important;padding:6px 9px!important}
+  body .topbar-logo-wrap{grid-column:1!important;grid-row:1 / 3!important;height:96px!important;padding-right:7px!important}
+  body .topbar-logo{width:140px!important;height:58px!important}
+  body .topbar-project{grid-column:2!important;grid-row:1!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-areas:"title owner" "location designer"!important;border-right:0!important;padding-right:0!important}
+  body .topbar-project label{grid-template-columns:88px minmax(0,1fr)!important;font-size:9px!important}
+  body .topbar-brand{grid-column:3!important;grid-row:1!important;border-right:0!important}
+  body .topbar-title{font-size:13px!important;white-space:normal!important}
+  body .topbar-right{display:flex!important;grid-column:2 / 4!important;grid-row:2!important;max-width:none!important;justify-content:flex-end!important;border:0!important;padding:0!important}
+  body .header-disclaimer{display:none!important}
+  body .topbar-theme-toggle{grid-column:4!important;grid-row:1 / 3!important}
+  body .workspace{flex-direction:row!important}
+  body .panel{width:310px!important;flex:0 0 310px!important;max-height:none!important;border-right:1px solid var(--line)!important;border-bottom:0!important;padding:12px!important}
+  body main{min-width:0!important}
+  body .tutorial-drawer{top:112px!important}
+  body .structural-plan-title-row .topbar-icon-dock{min-width:0!important;overflow-x:auto!important;overscroll-behavior-x:contain}
+  body .tool-icon-group{min-width:max-content!important;margin:0!important;justify-content:flex-start!important}
+  body .drawing-toolbar,body .plan-level-tabs{overflow-x:auto!important;overscroll-behavior-x:contain;scrollbar-width:thin}
+  body button,body summary,body select{touch-action:manipulation}
+  body .panel button,body .drawing-tool-btn,body .toolbar-icon-btn,body .plan-level-btn{min-height:40px}
+}
+
+@media (max-width:700px){
+  html,body{height:100%;height:100dvh;overflow:hidden}
+  body .app{height:100dvh!important;min-height:100dvh!important}
+  body .topbar{height:128px!important;flex:0 0 128px!important;grid-template-columns:92px minmax(0,1fr) 30px!important;grid-template-rows:48px 38px 30px!important;gap:4px 6px!important;padding:5px 7px!important}
+  body .topbar-logo-wrap{grid-column:1!important;grid-row:1!important;height:46px!important;padding-right:5px!important}
+  body .topbar-logo{width:88px!important;height:42px!important}
+  body .topbar-brand{grid-column:2!important;grid-row:1!important;border:0!important;text-align:left!important}
+  body .topbar-title{font-size:11px!important;white-space:normal!important;line-height:1.05!important}
+  body .topbar-subtitle,body .topbar-scope{font-size:8px!important;white-space:normal!important}
+  body .topbar-theme-toggle{grid-column:3!important;grid-row:1!important;align-self:start!important}
+  body .topbar-project{grid-column:1 / 4!important;grid-row:2!important;display:flex!important;gap:7px!important;overflow-x:auto!important;border:0!important;padding:0 0 3px!important;scrollbar-width:thin}
+  body .topbar-project label{display:grid!important;grid-template-columns:74px 132px!important;flex:0 0 213px!important;gap:4px!important;font-size:8px!important;line-height:28px!important}
+  body .topbar-project input{height:28px!important;min-height:28px!important;font-size:11px!important}
+  body .topbar-right{display:flex!important;grid-column:1 / 4!important;grid-row:3!important;max-width:none!important;justify-self:stretch!important;justify-content:flex-end!important;transform:none!important;border:0!important;padding:0!important}
+  body .header-disclaimer{display:none!important}
+  body .header-controls{align-items:center!important;gap:8px!important}
+  body .topbar-control{flex-direction:row!important;align-items:center!important}
+  body .topbar-control select,body .legend-menu summary,body .header-tutorial-btn{min-height:28px!important}
+  body .workspace{display:block!important;position:relative!important;overflow:hidden!important}
+  body .panel{position:fixed!important;z-index:500!important;left:0!important;top:128px!important;bottom:0!important;width:min(88vw,360px)!important;height:auto!important;max-height:none!important;transform:translateX(-103%);transition:transform .2s ease;box-shadow:8px 0 22px rgba(0,0,0,.45);border-right:1px solid var(--line)!important;border-bottom:0!important;padding:12px!important;overscroll-behavior:contain}
+  body.mobile-sidebar-open .panel{transform:translateX(0)}
+  body .mobile-sidebar-toggle{display:block;position:fixed;z-index:520;left:10px;bottom:10px;min-width:92px;min-height:44px;padding:8px 12px;border:2px solid #F3AD4B;border-radius:22px;background:#071719;color:#fff;font-size:11px;box-shadow:0 4px 16px rgba(0,0,0,.5);touch-action:manipulation}
+  body.mobile-sidebar-open .mobile-sidebar-toggle{left:min(calc(88vw - 104px),256px);background:#F3AD4B;color:#17100a}
+  body main{width:100%!important;height:100%!important;min-width:0!important;overflow:auto!important;overscroll-behavior:contain}
+  body .structural-plan-title-row{min-height:84px!important;grid-template-columns:42px minmax(130px,1fr)!important;align-content:start!important}
+  body .structural-plan-title-row h2{font-size:12px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body .structural-plan-title-row .topbar-icon-dock{grid-column:1 / 3!important;grid-row:2!important;width:100%!important;min-width:0!important;margin:0!important;overflow-x:auto!important;overscroll-behavior-x:contain;scrollbar-width:thin}
+  body .tool-icon-group{min-width:max-content!important;margin:0!important;padding:3px 5px!important;gap:6px!important;justify-content:flex-start!important}
+  body .toolbar-icon-btn,body .drawing-tool-btn{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important}
+  body .toolbar-calc-icon{width:auto!important;min-width:78px!important;padding:0 8px!important;margin-left:8px!important}
+  body .drawing-control-row.plan-control-row{top:84px!important;display:block!important;overflow:hidden!important}
+  body .drawing-control-row .drawing-toolbar,body .drawing-control-row .plan-level-tabs{display:flex!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  body .drawing-control-row .plan-level-btn{flex:0 0 auto!important;min-width:72px!important;min-height:40px!important;padding:7px 10px!important}
+  body .sequence-sheet #statusLabel.unified-general-status{min-height:28px!important;max-height:44px!important;overflow:auto!important;font-size:9px!important}
+  body .unified-drawing-stage{min-height:430px!important;height:calc(100dvh - 285px)!important;overflow:hidden!important}
+  body #structuralPlanCanvas,body #yAxisCanvas,body #canvas{min-height:430px!important;height:100%!important;touch-action:none!important}
+  body .member-results-sheet{overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+  body .member-props-title{min-height:54px!important;height:auto!important;flex-wrap:wrap!important;padding:7px!important}
+  body .mpr-member-summary{position:static!important;order:3!important;width:100%!important;max-width:100%!important;transform:none!important;white-space:normal!important;font-size:9px!important;text-align:center!important}
+  body .mpr-table-scroll{max-height:55dvh!important;overflow:auto!important;-webkit-overflow-scrolling:touch}
+  body .member-results-sheet .member-props-table table{min-width:980px!important}
+  body dialog,body .girder-direction-dialog,body .column-tool-dialog,body .mpr-solution-dialog{max-width:calc(100vw - 18px)!important;max-height:calc(100dvh - 18px)!important;margin:auto!important;overflow:auto!important}
+  body .girder-direction-dialog input,body .girder-direction-dialog select,body .girder-direction-dialog button{min-height:42px!important;font-size:16px!important}
+  body .tutorial-drawer,body .tutorial-drawer:hover,body .tutorial-drawer:focus-within{top:128px!important}
+  body .tutorial-drawer-panel{width:calc(100vw - 36px)!important}
+  body button,body summary,body select,body input{touch-action:manipulation}
+}
+
+@media (max-width:700px) and (orientation:landscape) and (max-height:520px){
+  body .topbar{height:78px!important;flex-basis:78px!important;grid-template-rows:34px 34px!important}
+  body .topbar-logo-wrap{height:32px!important}
+  body .topbar-logo{height:30px!important}
+  body .topbar-project{grid-row:2!important}
+  body .topbar-right{display:none!important}
+  body .panel{top:78px!important}
+  body .tutorial-drawer,body .tutorial-drawer:hover,body .tutorial-drawer:focus-within{top:78px!important}
+  body .unified-drawing-stage{height:calc(100dvh - 205px)!important;min-height:250px!important}
+  body #structuralPlanCanvas,body #yAxisCanvas,body #canvas{min-height:250px!important}
+}
+
+body.mobile-performance-mode .sidebar-package.is-collapsed,body.mobile-performance-mode .results-subsection.is-collapsed{content-visibility:auto;contain:layout paint style}
+body.mobile-performance-mode .panel,body.mobile-performance-mode .unified-drawing-stage{contain:layout paint style}
+body.mobile-performance-mode .panel,body.mobile-performance-mode .mobile-sidebar-toggle{will-change:transform}
+@media (prefers-reduced-motion:reduce),(max-width:700px){
+  body.mobile-performance-mode *,body.mobile-performance-mode *::before,body.mobile-performance-mode *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
+  body.mobile-performance-mode .panel,body.mobile-performance-mode .tutorial-drawer{transition-duration:.12s!important}
+}
