@@ -25,11 +25,12 @@ assert(html.includes('disabled data-legacy-diameter="true"'), "Legacy calculated
 assert(!/type="number"[^>]+data-field="(?:longitudinalBarDiameter|stirrupDiameter|barDiameter|tieDiameter|barDiameterX|barDiameterY)"/.test(html), "MPR diameter cells must not fall back to unrestricted one-millimetre number inputs");
 assert(html.includes("function installMprColumnResizing()") && html.includes("const minimumWidth = 56") && html.includes("const maximumWidth = 260"), "MPR columns must be user-resizable within safe readable limits");
 assert(css.includes(".mpr-column-resizer") && css.includes("cursor:col-resize"), "MPR resizable headings need an obvious drag handle");
-assert(css.includes('.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:82px!important'), "Editable numeric MPR cells need enough width for their value and spinner");
-assert(css.includes('input[type="number"]{field-sizing:fixed;width:11ch!important;min-width:11ch!important;max-width:13ch!important;box-sizing:border-box;padding:3px 23px 3px 6px!important'), "MPR number inputs need reserved right-side space before the vertical spinner");
-assert(css.includes('input[type="number"]::-webkit-inner-spin-button{margin-left:7px}'), "MPR number spinners need a visible gap from the editable value");
+assert(css.includes('.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:108px!important'), "Editable numeric MPR cells need enough width for their full value and spinner");
+assert(css.includes('input[type="number"]{field-sizing:fixed;width:15ch!important;min-width:15ch!important;max-width:18ch!important;box-sizing:border-box;padding:3px 36px 3px 7px!important'), "MPR number inputs need ample reserved right-side space before the vertical spinner");
+assert(css.includes('input[type="number"]::-webkit-inner-spin-button{margin-left:12px;opacity:1}'), "MPR number spinners need a clearly visible gap from the editable value");
 assert(html.includes("function installDraggableDialogs()") && html.includes("const onBackdrop =") && html.includes("installDraggableDialogs();"), "All popup dialogs must support dragging from any non-control portion while excluding the backdrop");
 assert(html.includes('<span class="mpr-title-text">Member Properties / Results (MPR)</span>'), "The main results heading must use the requested full MPR title");
+assert(html.includes('id="mprMemberSummary"') && html.includes("function updateMprMemberSummary(counts = {})") && html.includes("No. of Beams=${Number(counts.beams) || 0}"), "The MPR title strip must show live beam, column, slab and footing totals");
 assert(css.includes('.mpr-title-text{font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:16px;font-weight:300;line-height:1;color:#fff'), "The MPR title must use white Aptos Light text on the green strip");
 assert(css.includes('letter-spacing:.08em;background:#16845b;color:#fff'), "The main MPR strip must use the calculated-state green with white text");
 assert(css.includes('.results-subsection.is-collapsed,.member-props-table.is-collapsed{overflow:hidden!important;scrollbar-width:none!important}'), "Collapsed MPR tables must not show a vertical scrollbar");
@@ -56,6 +57,11 @@ assert(html.includes("function mprAcademicSolution(input)"), "Member-specific ac
 assert(html.includes('panel.addEventListener("dblclick"'), "MPR member names must open the academic solution on double-click");
 assert(html.includes("Gross concrete area") && html.includes("Service bearing pressure") && html.includes("Apply the panel moment coefficients"), "Academic walkthroughs must cover beams, columns, slabs, and footings");
 assert(html.includes("function mprAcademicLoadSteps") && html.includes('name: "Wall load"') && html.includes('name: "Earthquake load (EQ)"'), "Every academic solution must identify all loads affecting its member");
+assert(html.includes('function mprStatusGuidance(kind, status, details = "")') && html.includes('function mprStatusAttributes(kind, status, details = "")'), "MPR Status cells need member-specific explanations and corrective guidance");
+assert((html.match(/mprStatusAttributes\("(?:beam|column|slab|footing)"/g) || []).length === 4, "Every MPR member table must attach contextual Status guidance");
+assert(html.includes("function installMprStatusHelp()") && html.includes("installMprStatusHelp();") && html.includes("data-mpr-status-help"), "MPR Status guidance must appear in the custom hover/focus popup");
+assert(css.includes('#memberPropsTable .member-id-input{color:#008f3b!important;font-weight:800!important}'), "All MPR member IDs must be vibrant green and bold");
+assert(html.includes('slab-on-fill-status') && css.includes('td.design-status.slab-on-fill-status{color:#78e89a!important}'), "Slab-on-Fill Status text must use the requested light green color");
 assert(/\.design-status\.warn,\s*\.design-status\.fail\s*\{\s*color:\s*#F3AD4B;\s*\}/.test(html), "Every warning or failed MPR Status cell must use #F3AD4B text");
 assert(/body\[data-theme="green_teal"\][^{]+td\.design-status\.fail\s*\{\s*color:\s*#F3AD4B\s*!important;/.test(html), "Night theme must not override the #F3AD4B non-passing MPR Status color");
 assert(html.includes('.design-status.warn,.design-status.fail{color:#F3AD4B!important}'), "Printed/PDF MPR tables must preserve the non-passing Status font color");

@@ -951,7 +951,7 @@
       font: 700 10.8px/1.15 Arial, sans-serif;
       text-align: center;
     }
-    #beamResultsTable .member-id-input { color: #c1121f; }
+    #beamResultsTable .member-id-input { color: #008f3b; font-weight: 800; }
     .mpr-sort-button {
       display: inline-flex;
       align-items: center;
@@ -2795,6 +2795,7 @@
           <div class="member-props-title">
             <button id="memberPropsToggle" class="member-props-toggle" type="button" title="Hide Member Properties / Results" aria-label="Hide Member Properties / Results">Hide</button>
             <span class="mpr-title-text">Member Properties / Results (MPR)</span>
+            <span id="mprMemberSummary" class="mpr-member-summary">No. of Beams=0, Columns=0, Slabs=0, Footings=0</span>
             <span class="member-props-actions" aria-label="Member Properties and Results output tools">
               <button id="mprPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT" aria-label="Print Member Properties / Results" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button>
               <button id="mprPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF" aria-label="Print Member Properties / Results to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
@@ -66708,6 +66709,61 @@
         };
       }
 
+      function mprStatusGuidance(kind, status, details = "") {
+        const statement = String(status || "CHECK RESULTS").trim();
+        const upper = statement.toUpperCase();
+        let meaning = "The member did not satisfy one or more preliminary design checks.";
+        let correction = "Review the governing demand, member dimensions, reinforcement, support conditions and applied loads, then recalculate.";
+        const guidance = {
+          beam: [
+            ["FLEXURAL", "The factored bending demand exceeds the available design moment capacity.", "Increase beam depth first; if needed increase width or longitudinal reinforcement, reduce the span or load, and then verify bar fit and ductility."],
+            ["SHEAR", "The factored shear demand exceeds the concrete-and-stirrup design capacity.", "Increase beam depth or width, use larger or more closely spaced stirrups, reduce the load, and recalculate."],
+            ["DEFLECTION", "The calculated service deflection exceeds the adopted limit.", "Increase member depth and stiffness, shorten the effective span, reduce service load, or revise continuity and recalculate."],
+            ["LONG-SPAN STEEL RESERVE", "The required long-span reinforcement reserve cannot be provided within the current section and detailing limits.", "Enlarge the beam, revise the permitted bar diameter/count, or reduce demand while maintaining clear spacing and concrete-steel ratio limits."],
+            ["REBAR DOES NOT FIT", "The selected longitudinal bars cannot fit inside the available beam width with the required cover and spacing.", "Increase beam width or select a practical smaller-diameter/higher-count arrangement, then verify cover and clear spacing."],
+            ["CONGESTION", "The reinforcement arrangement is too congested for the current section.", "Increase the section width or revise bar sizes and count to provide code-compliant cover and clear spacing."],
+            ["MINIMUM FLEXURAL STEEL", "The provided longitudinal steel is below the required minimum.", "Increase the number or diameter of main bars to at least the calculated minimum and recalculate."],
+            ["TENSION STRAIN", "The section is too heavily reinforced to meet the adopted ductility strain limit.", "Increase the concrete section or reduce/rearrange tension steel; do not solve this check by simply adding more bars."],
+            ["UNSUPPORTED LOAD PATH", "The load does not have a complete supported path to the columns or foundations.", "Add or connect the required supporting beam/column and verify that every load reaches the foundation."],
+            ["PASS", "Flexure, shear, deflection and detailing checks implemented by the app are within their limits.", "Retain the section for detailed engineering review and verify all project loads, detailing and code requirements."]
+          ],
+          column: [
+            ["AXIAL CAPACITY", "The factored axial load exceeds the column design resistance.", "Increase the column section, concrete strength or longitudinal reinforcement, or reduce the supported load."],
+            ["SECOND-ORDER INSTABILITY", "Slenderness amplification indicates that the column is unstable for the current size and effective length.", "Increase section stiffness, reduce effective length with bracing, revise end restraint, or reduce load."],
+            ["P-M-M INTERACTION", "The combined axial load and biaxial bending demand exceeds the interaction capacity.", "Increase column dimensions first, then revise reinforcement or material strength and recalculate the full interaction."],
+            ["MIN. STEEL", "Longitudinal reinforcement is below the minimum column steel ratio.", "Increase bar area to at least the stated minimum while preserving bar spacing and confinement."],
+            ["MAX. STEEL", "Longitudinal reinforcement exceeds the permitted maximum ratio.", "Increase the concrete section or reduce/rearrange the bars to avoid congestion and brittle behavior."],
+            ["REBAR CONGESTION", "The bars do not fit with the required cover and clear spacing.", "Increase the column dimensions or revise bar diameter and count."],
+            ["TIE SPACING", "A constructible tie arrangement could not be produced within the spacing limits.", "Increase the section, revise tie diameter/spacing, or revise the longitudinal bar layout."],
+            ["PASS", "Axial, biaxial interaction, stability, reinforcement and confinement checks implemented by the app are within their limits.", "Retain the design for detailed engineering and constructability review."]
+          ],
+          slab: [
+            ["REBAR/DEPTH", "The current slab thickness or reinforcement is insufficient for the calculated bending demand.", "Increase slab thickness or reinforcement, reduce span/load, or add a supporting beam and recalculate."],
+            ["THICKNESS", "The current slab thickness is below the required serviceability or strength thickness.", "Increase thickness to at least the calculated minimum and recalculate."],
+            ["ONE-WAY SHEAR", "The slab one-way shear demand exceeds its capacity.", "Increase slab depth, reduce span/load, or add a supporting beam."],
+            ["IRREGULAR PANEL", "The detected panel geometry or support arrangement is not suitable for the regular-panel design method.", "Correct the panel boundary/support geometry or use a more appropriate analysis method."],
+            ["SLAB FAILS", "A wall or concentrated demand is not adequately supported by the current slab system.", "Provide a supporting beam below the wall/load, or redesign the slab with an appropriate strip or finite-element analysis."],
+            ["GROUND LEVEL", "Slab-on-fill is assigned above the supported earth-filled level.", "Use Slab on Fill only where continuous earth support exists, or change the slab type to a suspended slab."],
+            ["USE ONE-WAY", "The span/support proportions require one-way slab action rather than the current two-way treatment.", "Set the correct one-way span direction and detail main reinforcement along that direction."],
+            ["PASS", "The slab strength, thickness, shear and reinforcement checks implemented by the app are within their limits.", "Retain the panel for detailed engineering and detailing review."]
+          ],
+          footing: [
+            ["REBAR/DEPTH", "The footing depth or reinforcement is insufficient for flexure or shear.", "Increase footing thickness or reinforcement and recalculate one-way and punching shear."],
+            ["REVISE SIZE", "The footing plan area is insufficient for the governing soil-pressure condition.", "Increase footing width or length, reduce load, or use the verified site allowable bearing pressure."],
+            ["REVISE CONTACT", "Load eccentricity causes unacceptable or incomplete soil contact.", "Enlarge or reposition the footing, connect it with a strap/combined footing, or revise the supported-column layout."],
+            ["NO LOAD", "A complete column/load path was not available for footing design.", "Connect the footing to an active column and calculate the structural model again."],
+            ["PASS", "Bearing, eccentricity, flexure, one-way shear and punching checks implemented by the app are within their limits.", "Confirm the allowable bearing pressure with the project geotechnical report and complete detailed engineering review."]
+          ]
+        };
+        const match = (guidance[kind] || []).find(([token]) => upper.includes(token));
+        if (match) [, meaning, correction] = match;
+        return `${statement}. Meaning: ${meaning} How to correct: ${correction}${details ? ` Current calculation: ${String(details).trim()}` : ""}`;
+      }
+
+      function mprStatusAttributes(kind, status, details = "") {
+        return `data-mpr-status-help="${escapeHtml(mprStatusGuidance(kind, status, details))}" aria-describedby="sidebarHelpTooltip" tabindex="0"`;
+      }
+
       function resultTableMemberRows(axis, frameLine, frameModel, result, startIndex = 0) {
         return beamDesignGroups(frameModel).map((group, index) => {
           const member = group.members[0];
@@ -66749,7 +66805,7 @@
               `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><select class="design-input" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="stirrupDiameter" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} stirrup diameter">${mprDiameterOptions(MPR_TIE_STIRRUP_BAR_DIAMETERS, reinforcement.stirrupDiameter)}</select></td>` +
               `<td class="stirrup-spacing-cell" title="${escapeHtml(reinforcement.title)}">` +
                 `${stirrupSchedule}</td>` +
-              `<td class="design-status ${reinforcement.pass ? "pass" : "fail"}" title="${escapeHtml(reinforcement.title)}">${reinforcement.pass ? "PASS" : escapeHtml(reinforcement.reason)}<br>F ${valueCell(reinforcement.flexureRatio)} / V ${valueCell(reinforcement.shearRatio)} / D ${valueCell(reinforcement.deflectionRatio)}</td>`
+              `<td class="design-status ${reinforcement.pass ? "pass" : "fail"}" ${mprStatusAttributes("beam", reinforcement.pass ? "PASS" : reinforcement.reason, reinforcement.title)}>${reinforcement.pass ? "PASS" : escapeHtml(reinforcement.reason)}<br>F ${valueCell(reinforcement.flexureRatio)} / V ${valueCell(reinforcement.shearRatio)} / D ${valueCell(reinforcement.deflectionRatio)}</td>`
             : '<td class="not-applicable-cell">-</td>'.repeat(6);
           return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-frame="${axis}" data-frame-line="${frameLineAttribute}" data-kind="member" data-sort-sequence="${startIndex + index}" data-sort-name="${escapeHtml(displayName)}" data-sort-level="${beamLevelIndex}" data-sort-type="${escapeHtml(beamType)}" data-sort-width="${Number(member.width) || 0}" data-sort-height="${Number(member.height) || 0}" data-sort-length="${Number(length) || 0}" data-sort-shear="${Number(displayedShear) || 0}" data-sort-moment="${Number(displayedMoment) || 0}" data-sort-rebar="${Number(reinforcement?.barDiameter) || 0}">` +
             `<td>${mprItemNumber(startIndex + index)}</td>` +
@@ -67619,7 +67675,7 @@
               `<td><select class="design-input" data-column-design="${escapeHtml(design.overrideKey)}" data-field="barDiameter" aria-label="${escapeHtml(design.name)} longitudinal bar diameter">${mprDiameterOptions(MPR_COLUMN_BEAM_BAR_DIAMETERS, design.barDiameter)}</select></td>` +
               `<td><input class="design-input" type="number" min="4" step="2" data-column-design="${escapeHtml(design.overrideKey)}" data-field="barCount" value="${design.barCount}"></td><td>${valueCell(design.steelArea)}</td><td>${valueCell(design.steelRatio)}</td>` +
               `<td><select class="design-input" data-column-design="${escapeHtml(design.overrideKey)}" data-field="tieDiameter" aria-label="${escapeHtml(design.name)} tie bar diameter">${mprDiameterOptions(MPR_TIE_STIRRUP_BAR_DIAMETERS, design.tieDiameter)}</select></td>` +
-              `<td>${design.tieSchedule}</td><td>${valueCell(design.ratio)}</td><td class="design-status ${design.statusClass}" title="${escapeHtml(columnStatusTitle(design))}">${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`);
+              `<td>${design.tieSchedule}</td><td>${valueCell(design.ratio)}</td><td class="design-status ${design.statusClass}" ${mprStatusAttributes("column", design.status, columnStatusTitle(design))}>${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`);
             itemIndex += 1;
           });
         }
@@ -68045,7 +68101,7 @@
             `<td>${valueCell(design.momentX)}</td><td>${valueCell(design.momentY)}</td>` +
             `<td><select class="design-input" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterX" aria-label="${escapeHtml(design.name)} X bar diameter">${mprDiameterOptions(MPR_SLAB_FOOTING_BAR_DIAMETERS, design.barDiameterX)}</select></td><td>${design.spacingX}</td>` +
             `<td><select class="design-input" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterY" aria-label="${escapeHtml(design.name)} Y bar diameter">${mprDiameterOptions(MPR_SLAB_FOOTING_BAR_DIAMETERS, design.barDiameterY)}</select></td><td>${design.spacingY}</td>` +
-            `<td>${valueCell(design.oneWayRatio)}</td><td>${valueCell(design.punchingRatio)}</td><td class="design-status ${design.statusClass}" title="Bearing: ${escapeHtml(design.governingServiceCombination || "-")}; eccentricity: ${escapeHtml(design.governingEccentricityCombination || "-")} (${valueCell(design.eccentricityUtilization)} utilization); D+L P/Mx/My: ${valueCell(longTermCase.vertical)} / ${valueCell(longTermCase.momentX)} / ${valueCell(longTermCase.momentY)}; contact: ${escapeHtml(design.contactMode || "FULL")}">${design.status}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`;
+            `<td>${valueCell(design.oneWayRatio)}</td><td>${valueCell(design.punchingRatio)}</td><td class="design-status ${design.statusClass}" ${mprStatusAttributes("footing", design.status, `Bearing: ${design.governingServiceCombination || "-"}; eccentricity: ${design.governingEccentricityCombination || "-"} (${valueCell(design.eccentricityUtilization)} utilization); D+L P/Mx/My: ${valueCell(longTermCase.vertical)} / ${valueCell(longTermCase.momentX)} / ${valueCell(longTermCase.momentY)}; contact: ${design.contactMode || "FULL"}`)}>${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`;
         });
       }
 
@@ -68464,7 +68520,7 @@
           `<td>${designValues.wu}</td><td>${designValues.momentX}</td><td>${designValues.momentY}</td>` +
           `<td>${designValues.bar}</td><td>${designValues.topSpacingX}</td><td>${designValues.topExtentX}</td><td>${designValues.topSpacingY}</td><td>${designValues.topExtentY}</td>` +
           `<td>${designValues.bottomSpacingX}</td><td>${designValues.bottomSpacingY}</td>` +
-          `<td>${designValues.minimumThickness}</td><td>${designValues.shearRatio}</td><td class="design-status ${design.statusClass}"${design.supportBeamDesignNote ? ` title="${escapeHtml(design.supportBeamDesignNote)}"` : ""}>${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.slabId)}</tr>`;
+          `<td>${designValues.minimumThickness}</td><td>${designValues.shearRatio}</td><td class="design-status ${design.statusClass}${design.slabType === "SLAB_ON_FILL" ? " slab-on-fill-status" : ""}" ${mprStatusAttributes("slab", design.status, design.supportBeamDesignNote || design.wallLoadNote || "")}>${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.slabId)}</tr>`;
         });
       }
 
@@ -68473,7 +68529,10 @@
         const columnBody = byId("columnResultsBody");
         const footingBody = byId("footingResultsBody");
         const slabBody = byId("slabResultsBody");
-        if (!body || !columnBody || !footingBody || !slabBody || !yFrameState.model) return;
+        if (!body || !columnBody || !footingBody || !slabBody || !yFrameState.model) {
+          updateMprMemberSummary();
+          return;
+        }
         const rows = [];
         ["X", "Y"].forEach(axis => {
           orderedFrameCatalogEntries(axis).forEach(([frameLine, entry]) => {
@@ -68489,11 +68548,18 @@
         footingBody.innerHTML = footingRows.join("") || '<tr><td colspan="26">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr>';
         const slabRows = slabResultRows();
         slabBody.innerHTML = slabRows.join("") || '<tr><td colspan="27">No supported slab panels evaluated. Place columns on at least two X and two Y grid lines, then Calculate.</td></tr>';
+        updateMprMemberSummary({beams: rows.length, columns: columnRows.length, slabs: slabRows.length, footings: footingRows.length});
         byId("memberPropsTable")?.querySelectorAll("[data-member-rename]").forEach(input => {
           input.title = "Double-click to view the step-by-step academic design solution";
         });
         applyAllAdditionalMprSorts();
         updateMprVisibilityControls();
+      }
+
+      function updateMprMemberSummary(counts = {}) {
+        const summary = byId("mprMemberSummary");
+        if (!summary) return;
+        summary.textContent = `No. of Beams=${Number(counts.beams) || 0}, Columns=${Number(counts.columns) || 0}, Slabs=${Number(counts.slabs) || 0}, Footings=${Number(counts.footings) || 0}`;
       }
 
       function setYMemberTableValue(memberId, field, value) {
@@ -69340,6 +69406,49 @@
         dialog.addEventListener("click", event => { if (event.target === dialog) close(); });
       }
 
+      function installMprStatusHelp() {
+        const panel = byId("memberPropsTable");
+        const tooltip = byId("sidebarHelpTooltip");
+        if (!panel || !tooltip || panel.dataset.statusHelpReady) return;
+        panel.dataset.statusHelpReady = "true";
+        let activeCell = null;
+        const hide = cell => {
+          if (cell && activeCell && cell !== activeCell) return;
+          activeCell = null;
+          tooltip.hidden = true;
+          tooltip.classList.remove("is-mpr-status-tooltip");
+        };
+        const show = cell => {
+          const message = cell?.dataset?.mprStatusHelp;
+          if (!message) return;
+          activeCell = cell;
+          tooltip.textContent = message;
+          tooltip.classList.add("is-mpr-status-tooltip");
+          tooltip.hidden = false;
+          const rect = cell.getBoundingClientRect();
+          const margin = 9;
+          const width = tooltip.offsetWidth;
+          const height = tooltip.offsetHeight;
+          let left = rect.right + margin;
+          if (left + width > window.innerWidth - margin) left = rect.left - width - margin;
+          left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+          const top = Math.max(margin, Math.min(rect.top + (rect.height - height) / 2, window.innerHeight - height - margin));
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top = `${top}px`;
+        };
+        panel.addEventListener("pointerover", event => {
+          const cell = event.target.closest("[data-mpr-status-help]");
+          if (cell && !cell.contains(event.relatedTarget)) show(cell);
+        });
+        panel.addEventListener("pointerout", event => {
+          const cell = event.target.closest("[data-mpr-status-help]");
+          if (cell && !cell.contains(event.relatedTarget)) hide(cell);
+        });
+        panel.addEventListener("focusin", event => show(event.target.closest("[data-mpr-status-help]")));
+        panel.addEventListener("focusout", event => hide(event.target.closest("[data-mpr-status-help]")));
+        window.addEventListener("scroll", () => hide(), true);
+      }
+
       function installMemberNameEditing() {
         const table = byId("memberPropsTable");
         if (!table || table.dataset.memberNameEditingReady) return;
@@ -70175,6 +70284,7 @@
         installDesignTableEditing();
         installMemberNameEditing();
         installMprAcademicSolutions();
+        installMprStatusHelp();
         installDrawingMemberNameEditing();
         installMprVisibilityControls();
         installBeamMprSorting();
