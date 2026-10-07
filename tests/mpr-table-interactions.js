@@ -25,10 +25,10 @@ assert(html.includes('disabled data-legacy-diameter="true"'), "Legacy calculated
 assert(!/type="number"[^>]+data-field="(?:longitudinalBarDiameter|stirrupDiameter|barDiameter|tieDiameter|barDiameterX|barDiameterY)"/.test(html), "MPR diameter cells must not fall back to unrestricted one-millimetre number inputs");
 assert(html.includes("function installMprColumnResizing()") && html.includes("const minimumWidth = 56") && html.includes("const maximumWidth = 260"), "MPR columns must be user-resizable within safe readable limits");
 assert(css.includes(".mpr-column-resizer") && css.includes("cursor:col-resize"), "MPR resizable headings need an obvious drag handle");
-assert(css.includes('.mpr-column-resizer::after{content:"◀─▶"') && html.includes('Drag left or right to resize this column'), "MPR column resizing must use two outward arrows with a short center line");
-assert(css.includes('.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:92px!important'), "Editable numeric MPR cells should closely fit their value and spinner");
-assert(css.includes('input[type="number"]{field-sizing:fixed;width:12ch!important;min-width:12ch!important;max-width:14ch!important;box-sizing:border-box;padding:3px 29px 3px 6px!important'), "MPR number inputs need a compact value area with reserved spinner space");
-assert(css.includes('input[type="number"]::-webkit-inner-spin-button{margin-left:9px;opacity:1}'), "MPR number spinners need a readable gap from the editable value");
+assert(css.includes('.mpr-column-resizer::after{content:"←─→"') && html.includes('Drag left or right to resize this column'), "MPR column resizing must use two horizontal arrows with a short center line");
+assert(css.includes('.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:96px!important'), "Editable numeric MPR cells should closely fit their value and spinner");
+assert(css.includes('input[type="number"]{field-sizing:content;width:auto!important;min-width:calc(7ch + 40px)!important;max-width:calc(12ch + 40px)!important;box-sizing:border-box;padding:3px 32px 3px 6px!important'), "MPR number inputs need an auto-fitting value area with reserved spinner space");
+assert(css.includes('input[type="number"]::-webkit-inner-spin-button{margin-left:12px;opacity:1}'), "MPR number spinners need a readable gap from the editable value");
 assert(html.includes("function installMprTabNavigation()") && html.includes("installMprTabNavigation();"), "Tab and Shift+Tab must move predictably between editable MPR cells");
 assert(html.includes("function installDraggableDialogs()") && html.includes("const onBackdrop =") && html.includes("installDraggableDialogs();"), "All popup dialogs must support dragging from any non-control portion while excluding the backdrop");
 assert(html.includes('<span class="mpr-title-text">Member Properties / Results (MPR)</span>'), "The main results heading must use the requested full MPR title");

@@ -14,9 +14,9 @@ assert(html.includes('[byId("toolbarCalcBtn"), byId("calculateBtn"), byId("calcu
 assert((html.match(/<section class="sidebar-package is-collapsed"/g) || []).length === 6, "All six MSBM packages must start collapsed");
 assert(html.includes("window.setTimeout(() => collapse(section), 60000)"), "An open MSBM package must auto-close after one minute without activity");
 assert(html.includes('id="sidebarVisibilityBtn"') && html.includes('id="sidebarShowBtn"') && html.includes("function installSidebarVisibility()"), "The sidebar needs working Hide and Show controls");
-assert(html.includes("function installSidebarPackageReordering()") && html.includes("strucforgeMsbmOrder") && html.includes("setPointerCapture"), "MSBM packages must support persistent vertical pointer reordering");
+assert(html.includes("function installSidebarPackageReordering()") && html.includes("strucforgeMsbmOrder") && html.includes('window.addEventListener("pointermove", move)'), "MSBM packages must support persistent document-level pointer reordering");
 assert(css.includes("body.sidebar-hidden .panel{display:none!important}") && css.includes(".msbm-drag-handle"), "Sidebar hiding and visible reorder grips need styling");
-assert(html.includes('handle.textContent = "⋮⋮"') && css.includes("cursor:grab"), "MSBM reordering must use a grip rather than the table column-resize arrow");
+assert(html.includes('handle.textContent = ""') && css.includes('.msbm-drag-handle::before{content:"";width:15px;height:2px') && css.includes("cursor:grab"), "MSBM reordering must use a borderless three-line grip rather than the table column-resize arrow");
 assert(css.includes('#generateLoadsQuick{background:#03545E;color:#fff;border:1px solid #4f777a!important}'), "Generate Loads must not use an orange border");
 
 console.log("Sidebar workflow control regression tests: passed");
