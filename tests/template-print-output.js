@@ -24,5 +24,8 @@ assert(html.includes('showUnifiedDrawingView("ISO")'), "Save as Template must se
 assert(html.includes("isometricView.zoom = previousView.zoom") && html.includes("isometricView.pan = previousView.pan"), "Thumbnail capture must restore the user's 3D view");
 assert(html.includes("#saveTemplateDialog #saveTemplateName"), "Save-template title input contrast styling is missing");
 assert(html.includes("background:#fff!important") && html.includes("color:#070b0c!important"), "Save-template title input must have high-contrast text and background");
+assert(html.indexOf('id="toolbarTemplatesBtn"') < html.indexOf('id="toolbarCalcBtn"'), "Templates must be immediately available to the left of Calculate in the MPR toolbar");
+assert(html.includes('byId("toolbarTemplatesBtn")?.addEventListener("click"') && html.includes('showUnifiedDrawingView("TEMPLATES")'), "The relocated Templates menu must open the templates workspace");
+assert(!html.includes('{label: "TEMPLATES", view: "TEMPLATES"}'), "Templates must no longer remain at the far right of the drawing-view tabs");
 
 console.log("template gallery and MPR print-output regression tests: passed");

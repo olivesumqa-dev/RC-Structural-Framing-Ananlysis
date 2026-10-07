@@ -1760,12 +1760,29 @@
       width: 72px;
       min-width: 72px;
       flex: 0 0 72px;
-      margin-left: 9px;
+      margin-left: 4px;
       padding: 0 9px;
       background: #c1121f;
       border-color: #fff;
       color: #fff;
       font-size: 10px;
+    }
+    .topbar-icon-dock .toolbar-template-menu {
+      width: 72px;
+      min-width: 72px;
+      flex: 0 0 72px;
+      margin-left: 7px;
+      padding: 0 8px;
+      background: #17343a;
+      border-color: #92C7C9;
+      color: #fff;
+      font-size: 10px;
+    }
+    .topbar-icon-dock .toolbar-template-menu:hover,
+    .topbar-icon-dock .toolbar-template-menu.is-active {
+      background: #F3AD4B;
+      border-color: #fff;
+      color: #10191b;
     }
     .topbar-icon-dock .toolbar-calc-icon.is-calculated {
       background: #16845b;
@@ -2502,6 +2519,7 @@
                 <button id="toolbarPrintPdfBtn" class="toolbar-icon-btn app-tool-icon print-icon-btn" type="button" title="PRINT PDF" aria-label="Print application PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"/><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
                 <button id="toolbarNewBtn" class="toolbar-icon-btn app-tool-icon " type="button" title="New File" aria-label="New File"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M12 10v6"/></svg></button>
                 <button id="toolbarMprVisibilityBtn" class="toolbar-icon-btn app-tool-icon" type="button" title="Hide/Unhide MPR rows" aria-label="Hide/Unhide MPR rows" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button id="toolbarTemplatesBtn" class="toolbar-icon-btn app-tool-icon toolbar-template-menu" type="button" title="Open Templates" aria-label="Open Templates">Templates</button>
                 <button id="toolbarCalcBtn" class="toolbar-icon-btn app-tool-icon toolbar-calc-icon" type="button" title="Calculate both frames" aria-label="Calculate both frames">Calculate</button>
               </div>
             </div>
@@ -56637,9 +56655,9 @@
         planState.activeLevelIndex = Math.max(-1, Math.min(levelCount - 1, planState.activeLevelIndex));
         const levelDefinitions = [{index: -1, label: "FOUNDATION", view: "PLAN"}].concat(
           Array.from({length: levelCount}, (_, index) => ({index, label: frameLevelLabel(index + 1, data), view: "PLAN"})),
-          [{label: "X-AXIS FRAME", view: "X"}, {label: "Y-AXIS FRAME", view: "Y"}, {label: "3D ISOMETRIC", view: "ISO"}, {label: "TEMPLATES", view: "TEMPLATES"}]
+          [{label: "X-AXIS FRAME", view: "X"}, {label: "Y-AXIS FRAME", view: "Y"}, {label: "3D ISOMETRIC", view: "ISO"}]
         );
-        const signature = `FOUNDATION|${data.levels.join("|")}|X|Y|ISO|TEMPLATES`;
+        const signature = `FOUNDATION|${data.levels.join("|")}|X|Y|ISO`;
         if (container.dataset.signature !== signature || container.children.length !== levelDefinitions.length) {
           container.dataset.signature = signature;
           container.innerHTML = "";
@@ -56672,6 +56690,7 @@
           button.setAttribute("aria-selected", active ? "true" : "false");
           button.tabIndex = active ? 0 : -1;
         });
+        byId("toolbarTemplatesBtn")?.classList.toggle("is-active", planState.activeView === "TEMPLATES");
         if (byId("modeColumn")) {
           byId("modeColumn").textContent = planState.activeView === "PLAN" && planState.activeLevelIndex === -1
             ? "Create Footing"
@@ -66563,6 +66582,7 @@
             handle.setAttribute("aria-orientation", "vertical");
             handle.setAttribute("aria-label", "Drag left or right to resize this column");
             handle.title = "Drag left or right to resize this column";
+            handle.innerHTML = `<svg viewBox="0 0 24 18" aria-hidden="true" focusable="false"><path d="M8 2 2 9l6 7M16 2l6 7-6 7M8 9h8"/></svg>`;
             heading.appendChild(handle);
             handle.addEventListener("pointerdown", event => {
               if (event.button !== 0) return;
@@ -70586,6 +70606,11 @@
         byId("assignWallLoad")?.addEventListener("click", handleWallBeamSelectionButton);
         byId("calculateBtn")?.addEventListener("click", () => setTimeout(runCoordinatedAnalysis, 0));
         byId("calculateQuickBtn")?.addEventListener("click", () => setTimeout(runCoordinatedAnalysis, 0));
+        byId("toolbarCalcBtn")?.addEventListener("click", () => setTimeout(runCoordinatedAnalysis, 0));
+        byId("toolbarTemplatesBtn")?.addEventListener("click", () => {
+          showUnifiedDrawingView("TEMPLATES");
+          if (typeof status === "function") status("Templates are active in the coordinated drawing workspace.");
+        });
         byId("showDiagramBtn")?.addEventListener("click", () => drawYAxisCanvas(makePlanData()));
         byId("toggleLoadsBtn")?.addEventListener("click", () => drawYAxisCanvas(makePlanData()));
         window.strucForgeRedrawScaledViews = () => {

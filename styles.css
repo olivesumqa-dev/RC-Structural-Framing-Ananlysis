@@ -239,8 +239,9 @@ body.delete-mode #yAxisCanvas{cursor:url("data:image/svg+xml,%3Csvg xmlns='http:
 .draggable-popup button,.draggable-popup input,.draggable-popup select,.draggable-popup textarea,.draggable-popup a{cursor:auto;touch-action:auto}
 .draggable-popup.is-dragging{user-select:none}
 .mpr-resizable-heading{position:sticky!important;top:0!important;z-index:12!important}
-.mpr-column-resizer{position:absolute;top:0;right:-9px;width:19px;height:100%;z-index:8;cursor:col-resize;touch-action:none;background:transparent;color:#F3AD4B}
-.mpr-column-resizer::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:12px;transform:translate(-50%,-50%);background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 12'%3E%3Cpath d='M6 1 2 6l4 5M12 1l4 5-4 5M6 6h6' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 12'%3E%3Cpath d='M6 1 2 6l4 5M12 1l4 5-4 5M6 6h6' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;pointer-events:none}
+.mpr-column-resizer{position:absolute;top:0;right:-11px;width:23px;height:100%;z-index:8;cursor:col-resize;touch-action:none;background:transparent;color:#F3AD4B}
+.mpr-column-resizer svg{position:absolute;left:50%;top:50%;width:22px;height:16px;transform:translate(-50%,-50%);overflow:visible;pointer-events:none}
+.mpr-column-resizer svg path{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:square;stroke-linejoin:miter;vector-effect:non-scaling-stroke}
 .mpr-column-resizer:hover,.mpr-column-resizer:focus{background:rgba(243,173,75,.6);outline:none}
 body.mpr-column-resizing,body.mpr-column-resizing *{cursor:col-resize!important;user-select:none!important}
 .member-props-title::before{content:"";width:31px;height:16px;margin-right:9px;background:#25f340;clip-path:polygon(0 50%,55% 0,55% 30%,100% 30%,100% 70%,55% 70%,55% 100%);filter:drop-shadow(0 0 1px rgba(0,0,0,.4))}
