@@ -27,5 +27,6 @@ assert(html.includes("background:#fff!important") && html.includes("color:#070b0
 assert(html.indexOf('id="toolbarTemplatesBtn"') < html.indexOf('id="toolbarCalcBtn"'), "Templates must be immediately available to the left of Calculate in the MPR toolbar");
 assert(html.includes('byId("toolbarTemplatesBtn")?.addEventListener("click"') && html.includes('showUnifiedDrawingView("TEMPLATES")'), "The relocated Templates menu must open the templates workspace");
 assert(!html.includes('{label: "TEMPLATES", view: "TEMPLATES"}'), "Templates must no longer remain at the far right of the drawing-view tabs");
+assert(html.includes('id="toolbarTemplatesBtn"') && html.includes('title="Show Templates" aria-label="Show Templates"><svg') && html.includes('.toolbar-template-menu {') && html.includes('color: #ff7a00;'), "Templates must be an orange icon-only control with a Show Templates hover label");
 
 console.log("template gallery and MPR print-output regression tests: passed");
