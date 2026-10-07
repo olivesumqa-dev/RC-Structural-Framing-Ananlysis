@@ -52793,7 +52793,7 @@
           handle.setAttribute("aria-label", `Move ${toggle.textContent.trim()} vertically`);
           handle.title = "Drag up or down to reorder this sidebar item";
           handle.textContent = "";
-          toggle.insertBefore(handle, toggle.querySelector(".msbm-index"));
+          toggle.appendChild(handle);
           let dragging = false;
           handle.addEventListener("click", event => {
             event.preventDefault();

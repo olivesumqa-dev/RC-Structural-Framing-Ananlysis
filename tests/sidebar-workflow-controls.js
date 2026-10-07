@@ -17,6 +17,7 @@ assert(html.includes('id="sidebarVisibilityBtn"') && html.includes('id="sidebarS
 assert(html.includes("function installSidebarPackageReordering()") && html.includes("strucforgeMsbmOrder") && html.includes('window.addEventListener("pointermove", move)'), "MSBM packages must support persistent document-level pointer reordering");
 assert(css.includes("body.sidebar-hidden .panel{display:none!important}") && css.includes(".msbm-drag-handle"), "Sidebar hiding and visible reorder grips need styling");
 assert(html.includes('handle.textContent = ""') && css.includes('.msbm-drag-handle::before{content:"";width:15px;height:2px') && css.includes("cursor:grab"), "MSBM reordering must use a borderless three-line grip rather than the table column-resize arrow");
+assert(html.includes("toggle.appendChild(handle)") && css.includes(".msbm-index{flex:0 0 22px;margin-left:auto;text-align:center") && css.includes(".msbm-index+.msbm-drag-handle{margin-right:-5px}"), "MSBM numbers must share one aligned column and the reorder grip must be the far-right control");
 assert(css.includes('#generateLoadsQuick{background:#03545E;color:#fff;border:1px solid #4f777a!important}'), "Generate Loads must not use an orange border");
 
 console.log("Sidebar workflow control regression tests: passed");
