@@ -101,9 +101,9 @@ assert.match(html, /Dashed\/hidden lines are read as no structural member/, "sou
 assert.match(html, /const cadAllowed = \["annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text"\]/, "CAD mode must limit editing to line/text/dimension annotations");
 
 for (const id of ["uploadCadPackage", "structuralPlanPackage", "modelCreationPackage", "saveLoadPackage", "memberPropertiesPackage", "loadAnalysisPackage"]) {
-  assert.match(html, new RegExp(`"${id}"`), `${id} must be included in the default expanded package set`);
+  assert.match(html, new RegExp(`"${id}"`), `${id} must be included in the default collapsed package set`);
 }
-assert.match(html, /<section class="sidebar-package" id="uploadCadPackage">/, "Upload Drawings must be expanded in the initial HTML before scripts finish loading");
+assert.match(html, /<section class="sidebar-package is-collapsed" id="uploadCadPackage">/, "Upload Drawings must be collapsed in the initial HTML before scripts finish loading");
 assert.match(html, /window\.strucForgeOpenStartupView = view =>[\s\S]{0,500}applyUnifiedDrawingView\(normalized\)/, "the bundled startup project must explicitly open its requested drawing view");
 assert.doesNotMatch(html, /Click to edit \$\{kind\} name/, "ordinary member-name hover must not display the sensitive click-to-edit popup");
 assert.match(html, /member-name-editable-hover/, "an exact member-name hover must indicate editability through the mouse cursor");

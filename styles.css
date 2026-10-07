@@ -145,9 +145,9 @@ canvas{background:var(--surface);display:block;width:100%;cursor:default}
 .member-results-sheet .member-props-table th,.member-results-sheet .member-props-table td{width:auto!important;max-width:150px;padding:3px 2px!important;font-size:11px!important;line-height:1.25!important;white-space:nowrap;vertical-align:middle}
 .member-results-sheet .member-props-table th{max-width:96px;white-space:normal!important;overflow-wrap:normal;word-break:normal;text-align:center}
 .member-results-sheet .member-props-table input,.member-results-sheet .member-props-table select{field-sizing:content;width:auto!important;min-width:5ch!important;max-width:13ch!important;padding:2px 3px!important;font-size:11px!important}
-.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:108px!important;padding-left:5px!important;padding-right:5px!important}
-.member-results-sheet .member-props-table input[type="number"]{field-sizing:fixed;width:15ch!important;min-width:15ch!important;max-width:18ch!important;box-sizing:border-box;padding:3px 36px 3px 7px!important;text-align:left!important;text-overflow:clip!important}
-.member-results-sheet .member-props-table input[type="number"]::-webkit-inner-spin-button{margin-left:12px;opacity:1}
+.member-results-sheet .member-props-table td:has(input[type="number"]){min-width:92px!important;padding-left:4px!important;padding-right:4px!important}
+.member-results-sheet .member-props-table input[type="number"]{field-sizing:fixed;width:12ch!important;min-width:12ch!important;max-width:14ch!important;box-sizing:border-box;padding:3px 29px 3px 6px!important;text-align:left!important;text-overflow:clip!important}
+.member-results-sheet .member-props-table input[type="number"]::-webkit-inner-spin-button{margin-left:9px;opacity:1}
 .mpr-member-summary{position:absolute;left:50%;transform:translateX(-50%);max-width:58%;overflow:hidden;text-overflow:ellipsis;color:#fff;font:800 11px/1.2 "Aptos Light",Aptos,Arial,sans-serif;letter-spacing:.02em;text-align:center;text-transform:none;pointer-events:none}
 #memberPropsTable .member-id-input{color:#008f3b!important;font-weight:800!important}
 body[data-theme="green_teal"] #memberPropsTable .member-id-input{color:#43f58a!important}
@@ -240,7 +240,7 @@ body.delete-mode #yAxisCanvas{cursor:url("data:image/svg+xml,%3Csvg xmlns='http:
 .draggable-popup.is-dragging{user-select:none}
 .mpr-resizable-heading{position:sticky!important;top:0!important;z-index:12!important}
 .mpr-column-resizer{position:absolute;top:0;right:-7px;width:15px;height:100%;z-index:8;cursor:col-resize;touch-action:none;background:transparent;color:#F3AD4B}
-.mpr-column-resizer::after{content:"\2194";position:absolute;right:1px;top:50%;transform:translateY(-50%);font:800 12px/1 Arial,sans-serif;color:inherit;text-shadow:0 1px 1px rgba(0,0,0,.75);pointer-events:none}
+.mpr-column-resizer::after{content:"◀─▶";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 8px/1 Arial,sans-serif;letter-spacing:-2px;color:inherit;text-shadow:0 1px 1px rgba(0,0,0,.75);white-space:nowrap;pointer-events:none}
 .mpr-column-resizer:hover,.mpr-column-resizer:focus{background:rgba(243,173,75,.6);outline:none}
 body.mpr-column-resizing,body.mpr-column-resizing *{cursor:col-resize!important;user-select:none!important}
 .member-props-title::before{content:"";width:31px;height:16px;margin-right:9px;background:#25f340;clip-path:polygon(0 50%,55% 0,55% 30%,100% 30%,100% 70%,55% 70%,55% 100%);filter:drop-shadow(0 0 1px rgba(0,0,0,.4))}
@@ -531,4 +531,27 @@ body.mobile-performance-mode .panel,body.mobile-performance-mode .mobile-sidebar
 @media (prefers-reduced-motion:reduce),(max-width:700px){
   body.mobile-performance-mode *,body.mobile-performance-mode *::before,body.mobile-performance-mode *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
   body.mobile-performance-mode .panel,body.mobile-performance-mode .tutorial-drawer{transition-duration:.12s!important}
+}
+
+/* Sidebar workflow controls and reorderable MSBM packages. */
+.sidebar-heading-row{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.sidebar-heading-row h1{flex:1;min-width:0;margin:4px 0 0!important}
+.panel .sidebar-visibility-btn{width:auto!important;min-width:54px;min-height:28px;margin:0!important;padding:4px 8px!important;border:1px solid #F3AD4B!important;border-radius:3px;background:#071719!important;color:#fff!important;font-size:10px!important}
+.sidebar-show-btn{position:fixed;z-index:530;left:0;top:50%;transform:translateY(-50%);min-width:32px;min-height:112px;padding:8px 6px;border:1px solid #F3AD4B;border-left:0;border-radius:0 5px 5px 0;background:#071719;color:#fff;font-size:10px;letter-spacing:.05em;line-height:1.1;writing-mode:vertical-rl;text-orientation:mixed;cursor:pointer}
+.sidebar-show-btn[hidden]{display:none!important}
+body.sidebar-hidden .panel{display:none!important}
+body.sidebar-hidden .workspace>main{width:100%!important;flex:1 1 100%!important}
+.sidebar-quick-actions{display:grid;gap:8px;margin:12px 0 3px;padding:11px;border:1px solid var(--line);border-radius:4px;background:var(--panel-bg)}
+.panel .sidebar-quick-actions button{width:100%;min-height:38px;margin:0;border:1px solid #F3AD4B!important;border-radius:3px}
+.panel #generateLoadsQuick{background:#03545E;color:#fff}
+.panel #calculateQuickBtn{background:#c1121f;border-color:#8f0c15!important;color:#fff}
+.panel #calculateQuickBtn.is-calculated{background:#16845b;border-color:#106b43!important;color:#fff}
+.msbm-drag-handle{display:inline-flex;align-items:center;justify-content:center;width:26px;height:24px;margin-left:auto;border:1px solid rgba(16,36,37,.45);border-radius:3px;color:#102425;font-size:15px;line-height:1;cursor:ns-resize;touch-action:none;user-select:none}
+.sidebar-package-toggle .msbm-drag-handle+.msbm-index{margin-left:2px}
+.sidebar-package.is-reordering{position:relative;z-index:20;opacity:.82;box-shadow:0 5px 15px rgba(0,0,0,.3)}
+.sidebar-package.is-reordering .sidebar-package-toggle{background:#F3AD4B!important}
+@media(max-width:700px){
+  body.sidebar-hidden .mobile-sidebar-toggle{display:none!important}
+  .sidebar-show-btn{top:auto;bottom:10px;min-width:44px;min-height:96px}
+  .msbm-drag-handle{width:36px;height:32px;font-size:18px}
 }

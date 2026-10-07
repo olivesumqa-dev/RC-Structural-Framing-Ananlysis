@@ -2105,7 +2105,7 @@
     <div class="workspace">
     <button id="mobileSidebarToggle" class="mobile-sidebar-toggle" type="button" aria-controls="structuralSidebar" aria-expanded="false">Controls</button>
     <aside class="panel" id="structuralSidebar">
-      <h1>Structural Design Tools</h1>
+      <div class="sidebar-heading-row"><h1>Structural Design Tools</h1><button id="sidebarVisibilityBtn" class="sidebar-visibility-btn" type="button" aria-controls="structuralSidebar" aria-expanded="true">Hide</button></div>
       <button id="newDesign" class="new-design-btn" type="button" aria-describedby="newDesignHoverNote"><span>CREATE NEW DESIGN</span><span id="newDesignHoverNote" class="new-design-hover-note" role="tooltip">This will delete all existing drawing</span></button>
       <div hidden aria-hidden="true">
         <input id="vPositions" value="0,1.5,6.5,11,12.5" />
@@ -2114,8 +2114,8 @@
         <button id="resetView" type="button">Reset View</button>
       </div>
 
-      <section class="sidebar-package" id="uploadCadPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (AutoCAD DXF, JPEG, or PNG files).">
+      <section class="sidebar-package is-collapsed" id="uploadCadPackage">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (AutoCAD DXF, JPEG, or PNG files).">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Upload Drawings</span><span class="msbm-index" aria-hidden="true">1</span>
         </button>
         <div class="sidebar-package-content" id="uploadCadPackageContent">
@@ -2154,8 +2154,8 @@
         </div>
       </section>
 
-      <section class="sidebar-package" id="structuralPlanPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="structuralPlanPackageContent">
+      <section class="sidebar-package is-collapsed" id="structuralPlanPackage">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="structuralPlanPackageContent">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Structural Plan</span><span class="msbm-index" aria-hidden="true">2</span>
         </button>
         <div class="sidebar-package-content" id="structuralPlanPackageContent">
@@ -2188,8 +2188,8 @@
         </div>
       </section>
 
-      <section class="sidebar-package" id="modelCreationPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="modelCreationPackageContent">
+      <section class="sidebar-package is-collapsed" id="modelCreationPackage">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="modelCreationPackageContent">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Model Creation</span><span class="msbm-index" aria-hidden="true">3</span>
         </button>
         <div class="sidebar-package-content" id="modelCreationPackageContent">
@@ -2259,8 +2259,8 @@
         </div>
       </section>
 
-      <section class="sidebar-package" id="saveLoadPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="saveLoadPackageContent">
+      <section class="sidebar-package is-collapsed" id="saveLoadPackage">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="saveLoadPackageContent">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Save / Open Project</span><span class="msbm-index" aria-hidden="true">4</span>
         </button>
         <div class="sidebar-package-content" id="saveLoadPackageContent">
@@ -2284,8 +2284,8 @@
         </div>
       </section>
 
-      <section class="sidebar-package" id="memberPropertiesPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="memberPropertiesPackageContent">
+      <section class="sidebar-package is-collapsed" id="memberPropertiesPackage">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="memberPropertiesPackageContent">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Member Properties</span><span class="msbm-index" aria-hidden="true">5</span>
         </button>
         <div class="sidebar-package-content" id="memberPropertiesPackageContent">
@@ -2357,8 +2357,8 @@
         </div>
       </section>
 
-      <section class="sidebar-package" id="loadAnalysisPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="true" aria-controls="loadAnalysisPackageContent">
+      <section class="sidebar-package is-collapsed" id="loadAnalysisPackage">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="loadAnalysisPackageContent">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Load Model &amp; Analysis</span><span class="msbm-index" aria-hidden="true">6</span>
         </button>
         <div class="sidebar-package-content" id="loadAnalysisPackageContent">
@@ -2471,7 +2471,12 @@
         </div>
         </div>
       </section>
+      <div class="sidebar-quick-actions" aria-label="Quick load and analysis actions">
+        <button id="generateLoadsQuick" type="button">Generate Loads</button>
+        <button id="calculateQuickBtn" class="sidebar-calculate-copy" type="button">Calculate</button>
+      </div>
     </aside>
+    <button id="sidebarShowBtn" class="sidebar-show-btn" type="button" aria-controls="structuralSidebar" aria-expanded="false" hidden>Show Sidebar</button>
 
     <div id="sidebarHelpTooltip" role="tooltip" hidden></div>
 
@@ -52442,7 +52447,7 @@
           loadProjectPackage(payload, template.fileName, {pushHistory: false, preserveTemplateUndo: true});
           if (byId("recordName")) byId("recordName").value = template.name;
           deactivateCadWorkspace(false);
-          expandDefaultSidebarPackages();
+          collapseDefaultSidebarPackages();
           planState.activeView = "PLAN";
           renderPlanLevelTabs(makePlanData());
           applyUnifiedDrawingView("PLAN");
@@ -52693,6 +52698,21 @@
       }
 
       function installSidebarPackageToggles() {
+        const idleTimers = new WeakMap();
+        const collapse = section => {
+          if (!section) return;
+          section.classList.add("is-collapsed");
+          section.querySelector(":scope > .sidebar-package-toggle")?.setAttribute("aria-expanded", "false");
+          const timer = idleTimers.get(section);
+          if (timer) window.clearTimeout(timer);
+          idleTimers.delete(section);
+        };
+        const armIdleCollapse = section => {
+          const current = idleTimers.get(section);
+          if (current) window.clearTimeout(current);
+          if (!section || section.classList.contains("is-collapsed")) return;
+          idleTimers.set(section, window.setTimeout(() => collapse(section), 60000));
+        };
         document.querySelectorAll(".sidebar-package-toggle").forEach(toggle => {
           if (toggle.dataset.ready) return;
           toggle.dataset.ready = "true";
@@ -52702,6 +52722,12 @@
             const collapsed = section.classList.toggle("is-collapsed");
             toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
             if (!collapsed && section.id === "structuralPlanPackage") deactivateCadWorkspace(false);
+            if (collapsed) collapse(section);
+            else armIdleCollapse(section);
+          });
+          const section = toggle.closest(".sidebar-package");
+          ["pointerdown", "input", "change", "keydown", "focusin"].forEach(type => {
+            section?.addEventListener(type, () => armIdleCollapse(section), {passive: type === "pointerdown"});
           });
         });
       }
@@ -52715,12 +52741,115 @@
         "loadAnalysisPackage"
       ];
 
-      function expandDefaultSidebarPackages() {
+      function collapseDefaultSidebarPackages() {
         defaultSidebarPackageIds.forEach(id => {
           const section = byId(id);
           if (!section) return;
-          section.classList.remove("is-collapsed");
-          section.querySelector(":scope > .sidebar-package-toggle")?.setAttribute("aria-expanded", "true");
+          section.classList.add("is-collapsed");
+          section.querySelector(":scope > .sidebar-package-toggle")?.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      function installSidebarVisibility() {
+        const hideButton = byId("sidebarVisibilityBtn");
+        const showButton = byId("sidebarShowBtn");
+        const mobileButton = byId("mobileSidebarToggle");
+        if (!hideButton || !showButton || hideButton.dataset.ready) return;
+        hideButton.dataset.ready = "true";
+        const setHidden = hidden => {
+          document.body.classList.toggle("sidebar-hidden", hidden);
+          hideButton.setAttribute("aria-expanded", String(!hidden));
+          showButton.setAttribute("aria-expanded", String(!hidden));
+          showButton.hidden = !hidden;
+          if (hidden) document.body.classList.remove("mobile-sidebar-open");
+          if (mobileButton) mobileButton.hidden = hidden;
+        };
+        hideButton.addEventListener("click", () => setHidden(true));
+        showButton.addEventListener("click", () => setHidden(false));
+      }
+
+      function installSidebarPackageReordering() {
+        const panel = byId("structuralSidebar");
+        if (!panel || panel.dataset.reorderingReady) return;
+        panel.dataset.reorderingReady = "true";
+        const storageKey = "strucforgeMsbmOrder";
+        const packageIds = defaultSidebarPackageIds.filter(id => byId(id));
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+          saved.filter(id => packageIds.includes(id)).forEach(id => panel.insertBefore(byId(id), panel.querySelector(".sidebar-quick-actions")));
+        } catch (error) {}
+        const saveOrder = () => {
+          const order = Array.from(panel.querySelectorAll(":scope > .sidebar-package")).map(section => section.id);
+          try { localStorage.setItem(storageKey, JSON.stringify(order)); } catch (error) {}
+        };
+        panel.querySelectorAll(":scope > .sidebar-package").forEach(section => {
+          const toggle = section.querySelector(":scope > .sidebar-package-toggle");
+          if (!toggle || toggle.querySelector(".msbm-drag-handle")) return;
+          const handle = document.createElement("span");
+          handle.className = "msbm-drag-handle";
+          handle.setAttribute("role", "button");
+          handle.setAttribute("tabindex", "0");
+          handle.setAttribute("aria-label", `Move ${toggle.textContent.trim()} vertically`);
+          handle.title = "Drag up or down to reorder this sidebar item";
+          handle.textContent = "↕";
+          toggle.insertBefore(handle, toggle.querySelector(".msbm-index"));
+          let dragging = false;
+          handle.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+          });
+          handle.addEventListener("pointerdown", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            dragging = true;
+            section.classList.add("is-reordering");
+            handle.setPointerCapture?.(event.pointerId);
+          });
+          handle.addEventListener("pointermove", event => {
+            if (!dragging) return;
+            const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".sidebar-package");
+            if (!target || target === section || target.parentElement !== panel) return;
+            const bounds = target.getBoundingClientRect();
+            panel.insertBefore(section, event.clientY < bounds.top + bounds.height / 2 ? target : target.nextSibling);
+          });
+          const finish = event => {
+            if (!dragging) return;
+            dragging = false;
+            section.classList.remove("is-reordering");
+            handle.releasePointerCapture?.(event.pointerId);
+            saveOrder();
+          };
+          handle.addEventListener("pointerup", finish);
+          handle.addEventListener("pointercancel", finish);
+          handle.addEventListener("keydown", event => {
+            if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const sibling = event.key === "ArrowUp" ? section.previousElementSibling : section.nextElementSibling;
+            if (!sibling?.classList.contains("sidebar-package")) return;
+            if (event.key === "ArrowUp") panel.insertBefore(section, sibling);
+            else panel.insertBefore(sibling, section);
+            saveOrder();
+            handle.focus();
+          });
+        });
+      }
+
+      function installMprTabNavigation() {
+        const panel = byId("memberPropsTable");
+        if (!panel || panel.dataset.tabNavigationReady) return;
+        panel.dataset.tabNavigationReady = "true";
+        panel.addEventListener("keydown", event => {
+          if (event.key !== "Tab") return;
+          const current = event.target.closest("input:not([disabled]), select:not([disabled])");
+          if (!current) return;
+          const editable = Array.from(panel.querySelectorAll("tbody input:not([disabled]), tbody select:not([disabled])")).filter(control => control.offsetParent !== null);
+          const index = editable.indexOf(current);
+          if (index < 0 || editable.length < 2) return;
+          const nextIndex = (index + (event.shiftKey ? -1 : 1) + editable.length) % editable.length;
+          event.preventDefault();
+          editable[nextIndex].focus();
+          editable[nextIndex].select?.();
         });
       }
 
@@ -54836,7 +54965,7 @@
         applyImportedDrawingTopology(xLabels, yLabels, cadImportState.sources);
         planState.isBlankNewDesign = false;
         deactivateCadWorkspace(false);
-        expandDefaultSidebarPackages();
+        collapseDefaultSidebarPackages();
         renderStructuralPlanEditors();
         populateFrameSelectors(makePlanData());
         const importedFrameLines = inferImportedFrameGridLines(primarySource, xLabels, yLabels);
@@ -55233,7 +55362,7 @@
         const changed = calculationDirty !== nextDirty;
         calculationDirty = nextDirty;
         const title = calculationDirty ? "Calculate updated structural model" : "Analysis is current";
-        [byId("toolbarCalcBtn"), byId("calculateBtn")].forEach(button => {
+        [byId("toolbarCalcBtn"), byId("calculateBtn"), byId("calculateQuickBtn")].forEach(button => {
           if (!button) return;
           button.classList.toggle("is-calculated", !calculationDirty);
           button.title = title;
@@ -70278,10 +70407,12 @@
         installSidebarPackageToggles();
         installMobileSidebar();
         installMobilePerformanceMode();
+        installSidebarVisibility();
+        installSidebarPackageReordering();
         installSidebarSubgroups();
         installSidebarLearningHelp();
         installCadImport();
-        expandDefaultSidebarPackages();
+        collapseDefaultSidebarPackages();
         installTemplateSaving();
         renderTemplateBrowser();
         const records = byId("savedRecords");
@@ -70352,6 +70483,7 @@
         installMprTableScrolling();
         installMprTableHeightResizing();
         installMprColumnResizing();
+        installMprTabNavigation();
         installXLoadDeletion();
         setupXAxisCanvasControls();
         setupCanvasControls({
@@ -70438,9 +70570,11 @@
           if (option && event.target.value !== "custom") byId("occupancyLiveLoad").value = option.dataset.ll || "0";
         });
         byId("generateEngineeringLoads")?.addEventListener("click", generateEngineeringLoads);
+        byId("generateLoadsQuick")?.addEventListener("click", generateEngineeringLoads);
         byId("assignEngineeringPointLoad")?.addEventListener("click", assignEngineeringPointLoad);
         byId("assignWallLoad")?.addEventListener("click", handleWallBeamSelectionButton);
         byId("calculateBtn")?.addEventListener("click", () => setTimeout(runCoordinatedAnalysis, 0));
+        byId("calculateQuickBtn")?.addEventListener("click", () => setTimeout(runCoordinatedAnalysis, 0));
         byId("showDiagramBtn")?.addEventListener("click", () => drawYAxisCanvas(makePlanData()));
         byId("toggleLoadsBtn")?.addEventListener("click", () => drawYAxisCanvas(makePlanData()));
         window.strucForgeRedrawScaledViews = () => {
@@ -70726,7 +70860,7 @@
         });
         byId("newDesign")?.addEventListener("click", () => {
           deactivateCadWorkspace(false);
-          expandDefaultSidebarPackages();
+          collapseDefaultSidebarPackages();
           planState.columns.clear();
           planState.deletedColumnStories.clear();
           planState.footings = {};
