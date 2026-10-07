@@ -2472,8 +2472,9 @@
         </div>
       </section>
       <div class="sidebar-quick-actions" aria-label="Quick load and analysis actions">
-        <button id="generateLoadsQuick" type="button">Generate Loads</button>
         <button id="calculateQuickBtn" class="sidebar-calculate-copy" type="button">Calculate</button>
+        <button id="generateLoadsQuick" type="button">Generate Loads</button>
+        <div id="generatedLoadsQuickSummary" class="quick-load-summary" aria-live="polite" hidden></div>
       </div>
     </aside>
     <button id="sidebarShowBtn" class="sidebar-show-btn" type="button" aria-controls="structuralSidebar" aria-expanded="false" hidden>Show Sidebar</button>
@@ -52791,7 +52792,7 @@
           handle.setAttribute("tabindex", "0");
           handle.setAttribute("aria-label", `Move ${toggle.textContent.trim()} vertically`);
           handle.title = "Drag up or down to reorder this sidebar item";
-          handle.textContent = "↕";
+          handle.textContent = "⋮⋮";
           toggle.insertBefore(handle, toggle.querySelector(".msbm-index"));
           let dragging = false;
           handle.addEventListener("click", event => {
@@ -64321,14 +64322,16 @@
         setCalculationDirty(true);
         if (typeof draw === "function") draw();
         drawYAxisCanvas(data);
-        const summary = byId("engineeringLoadSummary");
-        if (summary) {
-          summary.innerHTML = `<strong>Generated:</strong> ${gravityLoadCount} gravity member loads. ` +
-            `Floor DL=${slabLoad.toFixed(2)} kPa + SDL=${floorSdl.toFixed(2)} kPa; roof SDL=${roofSdl.toFixed(2)} kPa. ` +
-            `Wind frame forces: X=${xWindTotal.toFixed(2)} kN, Y=${yWindTotal.toFixed(2)} kN. ` +
-            `Seismic W=${totalWeight.toFixed(1)} kN including placed columns and full grid-beam framing; Vx=${eqX.baseShear.toFixed(2)} kN (T=${eqX.period.toFixed(3)} s), ` +
-            `Vy=${eqY.baseShear.toFixed(2)} kN (T=${eqY.period.toFixed(3)} s).`;
-        }
+        const generatedLoadSummaryMarkup = `<strong>Generated:</strong> ${gravityLoadCount} gravity member loads. ` +
+          `Floor DL=${slabLoad.toFixed(2)} kPa + SDL=${floorSdl.toFixed(2)} kPa; roof SDL=${roofSdl.toFixed(2)} kPa. ` +
+          `Wind frame forces: X=${xWindTotal.toFixed(2)} kN, Y=${yWindTotal.toFixed(2)} kN. ` +
+          `Seismic W=${totalWeight.toFixed(1)} kN including placed columns and full grid-beam framing; Vx=${eqX.baseShear.toFixed(2)} kN (T=${eqX.period.toFixed(3)} s), ` +
+          `Vy=${eqY.baseShear.toFixed(2)} kN (T=${eqY.period.toFixed(3)} s).`;
+        [byId("engineeringLoadSummary"), byId("generatedLoadsQuickSummary")].forEach(summary => {
+          if (!summary) return;
+          summary.innerHTML = generatedLoadSummaryMarkup;
+          summary.hidden = false;
+        });
         if (typeof status === "function") status("Gravity, wind and earthquake loads generated for both directional frames.");
       }
 
@@ -65818,7 +65821,7 @@
       const BEAM_MINIMUM_TENSION_STRAIN = 0.004;
       const BEAM_TENSION_CONTROLLED_STRAIN = 0.005;
       const BEAM_LONG_SPAN_THRESHOLD_M = 4.00;
-      const BEAM_LONG_SPAN_STEEL_AREA_FACTOR = 1.12;
+      const BEAM_LONG_SPAN_STEEL_AREA_FACTOR = 1.17;
       const REBAR_ELASTIC_MODULUS = 200000;
 
       function beamLongSpanSteelFactor(length) {
@@ -66097,7 +66100,7 @@
         };
         design.cost = beamCandidateCost(width, height, length, design);
         const longSpanReserveText = steelAreaFactor > 1
-          ? ` Application long-span rule applied: As,target = 1.12 As,baseline for L=${length.toFixed(2)} m; the selected whole-bar layout must still fit and maintain tensile strain at least ${BEAM_MINIMUM_TENSION_STRAIN.toFixed(3)}.`
+          ? ` Application long-span rule applied: As,target = 1.17 As,baseline for L=${length.toFixed(2)} m; the selected whole-bar layout must still fit, maintain the concrete-steel balance, and maintain tensile strain at least ${BEAM_MINIMUM_TENSION_STRAIN.toFixed(3)}.`
           : "";
         design.title = `NSCP 2015 / ACI preliminary check for ${member.name || member.id}. M+ ${valueCell(forces.positiveMoment)} kN-m (${forces.positiveCombination || "minimum steel"}); M- ${valueCell(forces.negativeMoment)} kN-m (${forces.negativeCombination || "minimum steel"}); Vu ${valueCell(forces.shear)} kN (${forces.shearCombination || "minimum steel"}); governing flexure ${governingFlexure.count}-D${barDiameter}, d=${governingFlexure.effectiveDepth.toFixed(1)} mm, tensile strain=${governingFlexure.tensileStrain.toFixed(5)}, phi=${governingFlexure.phi.toFixed(3)}, D/C ${valueCell(flexureRatio)}; shear D/C ${valueCell(shearRatio)}; ${seismicFrame ? "seismic end-zone" : "ordinary-frame"} stirrups D${stirrupDiameter} @${supportSpacing === fieldSpacing ? fieldSpacing : `${supportSpacing}/${fieldSpacing}`} mm; conservative D+L deflection ${valueCell(serviceDeflection.deflection)} mm / ${valueCell(serviceDeflection.limit)} mm (D/C ${valueCell(serviceDeflection.ratio)}).${longSpanReserveText}`;
         return design;
@@ -69465,7 +69468,7 @@
           const longSpanReserveApplies = length + 1e-9 >= BEAM_LONG_SPAN_THRESHOLD_M;
           sections.push({title: "3. Reinforced-concrete checks", steps: [
             academicStep(10, "Flexural strength", "F = Mu / (φMn) ≤ 1.00", ratios ? `F = ${ratios[1]}; longitudinal bars use D${academicNumber(bar, 0)}` : `Longitudinal bars use D${academicNumber(bar, 0)}`),
-            academicStep(11, "Application long-span main-steel reserve", longSpanReserveApplies ? "As,target = 1.12 As,baseline for L ≥ 4.00 m" : "As,target = As,baseline for L < 4.00 m", longSpanReserveApplies ? "Applied. The next adequate whole-bar count is used while retaining bar fit, flexural strength, and εt ≥ 0.004." : `Not applicable at L = ${academicNumber(length)} m.`),
+            academicStep(11, "Application long-span main-steel reserve", longSpanReserveApplies ? "As,target = 1.17 As,baseline for L ≥ 4.00 m" : "As,target = As,baseline for L < 4.00 m", longSpanReserveApplies ? "Applied. The next adequate whole-bar count is used while retaining bar fit, flexural strength, concrete-steel balance, and εt ≥ 0.004." : `Not applicable at L = ${academicNumber(length)} m.`),
             academicStep(12, "Shear strength", "V = Vu / [φ(Vc + Vs)] ≤ 1.00", ratios ? `V = ${ratios[2]}; stirrups D${academicNumber(stirrup, 0)} · ${spacing}` : `Stirrups D${academicNumber(stirrup, 0)} · ${spacing}`),
             academicStep(13, "Serviceability / span-depth check", "D = required depth / provided effective depth ≤ 1.00", ratios ? `D = ${ratios[3]}; table status: ${statusText}` : `Table status: ${statusText}`)
           ]});
