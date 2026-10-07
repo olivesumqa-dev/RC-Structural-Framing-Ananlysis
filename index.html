@@ -66582,7 +66582,6 @@
             handle.setAttribute("aria-orientation", "vertical");
             handle.setAttribute("aria-label", "Drag left or right to resize this column");
             handle.title = "Drag left or right to resize this column";
-            handle.innerHTML = `<svg viewBox="0 0 24 18" aria-hidden="true" focusable="false"><path d="M8 2 2 9l6 7M16 2l6 7-6 7M8 9h8"/></svg>`;
             heading.appendChild(handle);
             handle.addEventListener("pointerdown", event => {
               if (event.button !== 0) return;
