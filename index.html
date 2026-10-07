@@ -2277,7 +2277,7 @@
 
       <section class="sidebar-package is-collapsed" id="saveLoadPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="saveLoadPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Save / Open Project</span><span class="msbm-index" aria-hidden="true">4</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Save / Open Project</span><span class="msbm-index" aria-hidden="true">6</span>
         </button>
         <div class="sidebar-package-content" id="saveLoadPackageContent">
         <label>Project name</label>
@@ -2302,7 +2302,7 @@
 
       <section class="sidebar-package is-collapsed" id="memberPropertiesPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="memberPropertiesPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Member Properties</span><span class="msbm-index" aria-hidden="true">5</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Member Properties</span><span class="msbm-index" aria-hidden="true">4</span>
         </button>
         <div class="sidebar-package-content" id="memberPropertiesPackageContent">
         <label>Beam width b, mm</label>
@@ -2375,7 +2375,7 @@
 
       <section class="sidebar-package is-collapsed" id="loadAnalysisPackage">
         <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="loadAnalysisPackageContent">
-          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Load Model &amp; Analysis</span><span class="msbm-index" aria-hidden="true">6</span>
+          <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Load Model &amp; Analysis</span><span class="msbm-index" aria-hidden="true">5</span>
         </button>
         <div class="sidebar-package-content" id="loadAnalysisPackageContent">
         <div class="engineering-control">
@@ -2752,6 +2752,20 @@
             <span>Calculation trace generated from the current MPR row and active design model.</span>
             <button id="mprSolutionDone" type="button">CLOSE</button>
           </footer>
+        </div>
+      </dialog>
+
+      <dialog id="mprHideMembersDialog" class="girder-direction-dialog mpr-hide-members-dialog" aria-labelledby="mprHideMembersTitle">
+        <div class="girder-direction-dialog-inner">
+          <h3 id="mprHideMembersTitle">HIDE Members</h3>
+          <p id="mprHideMembersScope">Select member item numbers from the current table.</p>
+          <label for="mprHideMembersInput">Item Nos.</label>
+          <input id="mprHideMembersInput" type="text" autocomplete="off" placeholder="Examples: 1-12; 3,4,5,7,12; all; odd; even">
+          <p class="mpr-hide-members-hint">Enter a range, comma-separated numbers, or the word <strong>all</strong>, <strong>odd</strong>, or <strong>even</strong>.</p>
+          <div class="girder-direction-actions">
+            <button id="mprHideMembersApply" type="button">HIDE MEMBERS</button>
+            <button id="mprHideMembersCancel" class="girder-direction-cancel" type="button">CANCEL</button>
+          </div>
         </div>
       </dialog>
 
@@ -52754,9 +52768,9 @@
         "uploadCadPackage",
         "structuralPlanPackage",
         "modelCreationPackage",
-        "saveLoadPackage",
         "memberPropertiesPackage",
-        "loadAnalysisPackage"
+        "loadAnalysisPackage",
+        "saveLoadPackage"
       ];
 
       function collapseDefaultSidebarPackages() {
@@ -52790,13 +52804,23 @@
         const panel = byId("structuralSidebar");
         if (!panel || panel.dataset.reorderingReady) return;
         panel.dataset.reorderingReady = "true";
-        const storageKey = "strucforgeMsbmOrder";
+        const storageKey = "strucforgeMsbmOrderV2";
         const packageIds = defaultSidebarPackageIds.filter(id => byId(id));
+        const quickActions = panel.querySelector(".sidebar-quick-actions");
+        packageIds.forEach(id => panel.insertBefore(byId(id), quickActions));
         try {
           const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
-          saved.filter(id => packageIds.includes(id)).forEach(id => panel.insertBefore(byId(id), panel.querySelector(".sidebar-quick-actions")));
+          saved.filter(id => packageIds.includes(id)).forEach(id => panel.insertBefore(byId(id), quickActions));
         } catch (error) {}
+        const renumber = () => {
+          Array.from(panel.querySelectorAll(":scope > .sidebar-package")).forEach((section, index) => {
+            const number = section.querySelector(":scope > .sidebar-package-toggle .msbm-index");
+            if (number) number.textContent = String(index + 1);
+          });
+        };
+        renumber();
         const saveOrder = () => {
+          renumber();
           const order = Array.from(panel.querySelectorAll(":scope > .sidebar-package")).map(section => section.id);
           try { localStorage.setItem(storageKey, JSON.stringify(order)); } catch (error) {}
         };
@@ -66369,6 +66393,89 @@
         }
       }
 
+      function parseMprHideMemberNumbers(value, total) {
+        const count = Math.max(0, Math.floor(Number(total) || 0));
+        const normalized = String(value || "").trim().toLowerCase().replace(/\s*-\s*/g, "-");
+        const allNumbers = () => new Set(Array.from({length: count}, (_, index) => index + 1));
+        if (/\bodd\b/.test(normalized)) return new Set(Array.from({length: count}, (_, index) => index + 1).filter(number => number % 2 === 1));
+        if (/\beven\b/.test(normalized)) return new Set(Array.from({length: count}, (_, index) => index + 1).filter(number => number % 2 === 0));
+        if (/^all(?:\s+(?:members?|items?|nos?\.?))?$/.test(normalized)) return allNumbers();
+        const selected = new Set();
+        normalized.replace(/\b(?:members?|items?|nos?\.?)\b/g, "").split(/[\s,;]+/).filter(Boolean).forEach(token => {
+          const range = token.match(/^(\d+)-(\d+)$/);
+          if (range) {
+            const start = Math.max(1, Math.min(count, Number(range[1])));
+            const end = Math.max(1, Math.min(count, Number(range[2])));
+            const low = Math.min(start, end);
+            const high = Math.max(start, end);
+            for (let number = low; number <= high; number += 1) selected.add(number);
+            return;
+          }
+          if (/^\d+$/.test(token)) {
+            const number = Number(token);
+            if (number >= 1 && number <= count) selected.add(number);
+          }
+        });
+        return selected;
+      }
+
+      function installMprHideMembersDialog() {
+        const panel = byId("memberPropsTable");
+        const dialog = byId("mprHideMembersDialog");
+        const input = byId("mprHideMembersInput");
+        const scope = byId("mprHideMembersScope");
+        const applyButton = byId("mprHideMembersApply");
+        const cancelButton = byId("mprHideMembersCancel");
+        if (!panel || !dialog || !input || !applyButton || panel.dataset.hideMembersDialogReady) return;
+        panel.dataset.hideMembersDialogReady = "true";
+        const tableLabels = {
+          beamResultsTable: "Beam",
+          columnResultsTable: "Column",
+          slabResultsTable: "Slab",
+          footingResultsTable: "Footing"
+        };
+        panel.addEventListener("contextmenu", event => {
+          const eyeButton = event.target.closest("[data-mpr-visibility-key]");
+          if (!eyeButton) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const table = eyeButton.closest("table");
+          if (!table?.id) return;
+          const label = tableLabels[table.id] || "Member";
+          dialog.dataset.tableId = table.id;
+          if (scope) scope.textContent = `Hide ${label} item numbers from this MPR table. The members remain active in structural analysis and design.`;
+          input.value = "";
+          input.setCustomValidity("");
+          dialog.showModal?.();
+          window.setTimeout(() => input.focus(), 0);
+        });
+        applyButton.addEventListener("click", () => {
+          const table = byId(dialog.dataset.tableId);
+          const rows = table ? Array.from(table.tBodies).flatMap(body => Array.from(body.rows)).filter(row => row.dataset.mprRowKey) : [];
+          const selected = parseMprHideMemberNumbers(input.value, rows.length);
+          if (!selected.size) {
+            input.setCustomValidity("Enter valid item numbers, a range, all, odd, or even.");
+            input.reportValidity();
+            return;
+          }
+          input.setCustomValidity("");
+          rows.forEach((row, index) => {
+            if (selected.has(index + 1)) mprVisibilityState.hiddenRows.add(row.dataset.mprRowKey);
+          });
+          mprVisibilityState.revealHidden = false;
+          dialog.close();
+          appendCoordinatedResults();
+          if (typeof status === "function") status(`${selected.size} MPR member row${selected.size === 1 ? "" : "s"} hidden. The structural members remain active in analysis and design.`);
+        });
+        cancelButton?.addEventListener("click", () => dialog.close());
+        input.addEventListener("keydown", event => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            applyButton.click();
+          }
+        });
+      }
+
       function installMprVisibilityControls() {
         const panel = byId("memberPropsTable");
         if (!panel || panel.dataset.visibilityReady) return;
@@ -70515,6 +70622,7 @@
         installMprAcademicSolutions();
         installMprStatusHelp();
         installDrawingMemberNameEditing();
+        installMprHideMembersDialog();
         installMprVisibilityControls();
         installBeamMprSorting();
         installAdditionalMprSorting();

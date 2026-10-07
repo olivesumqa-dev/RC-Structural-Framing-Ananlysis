@@ -16,9 +16,9 @@ assert.match(html, /<span>Upload Drawings<\/span>/, "Upload Drawings package mus
 assert.match(html, /<span>Upload Drawings<\/span><span class="msbm-index"[^>]*>1<\/span>/, "Upload Drawings must be MSBM item 1");
 assert.match(html, /<span>Structural Plan<\/span><span class="msbm-index"[^>]*>2<\/span>/, "Structural Plan must be MSBM item 2");
 assert.match(html, /<span>Model Creation<\/span><span class="msbm-index"[^>]*>3<\/span>/, "Model Creation must be MSBM item 3");
-assert.match(html, /<span>Save \/ Open Project<\/span><span class="msbm-index"[^>]*>4<\/span>/, "Save/Open Project must be MSBM item 4");
-assert.match(html, /<span>Member Properties<\/span><span class="msbm-index"[^>]*>5<\/span>/, "Member Properties must be MSBM item 5");
-assert.match(html, /<span>Load Model &amp; Analysis<\/span><span class="msbm-index"[^>]*>6<\/span>/, "Load Model & Analysis must be MSBM item 6");
+assert.match(html, /<span>Member Properties<\/span><span class="msbm-index"[^>]*>4<\/span>/, "Member Properties must be MSBM item 4");
+assert.match(html, /<span>Load Model &amp; Analysis<\/span><span class="msbm-index"[^>]*>5<\/span>/, "Load Model & Analysis must be MSBM item 5");
+assert.match(html, /<span>Save \/ Open Project<\/span><span class="msbm-index"[^>]*>6<\/span>/, "Save/Open Project must be the final MSBM item 6");
 assert.ok(html.indexOf('id="uploadCadPackage"') < html.indexOf('id="structuralPlanPackage"'), "Upload Drawings must precede Structural Plan");
 assert.match(html, /accept="\.dxf,image\/png,image\/jpeg,\.png,\.jpg,\.jpeg" multiple/, "CAD uploader must accept multiple DXF, PNG, and JPEG drawings");
 assert.match(html, /id="cadRemoveUploadsBtn"[^>]*disabled>Remove Uploads<\/button>/, "Upload Drawings must provide an initially disabled Remove Uploads action");
