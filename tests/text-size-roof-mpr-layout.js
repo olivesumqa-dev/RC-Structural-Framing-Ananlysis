@@ -19,9 +19,12 @@ assert(html.includes("function scaledDrawingTextSize(size, minimum = 6)") && htm
 const embeddedProjectMatch = html.match(/<script id="defaultProjectData" type="application\/json">\s*([\s\S]*?)\s*<\/script>/);
 assert(embeddedProjectMatch, "A default project package must be embedded for startup");
 const embeddedProject = JSON.parse(embeddedProjectMatch[1]);
-assert.strictEqual(embeddedProject.project?.title, "Dela Cruz Residence", "The supplied 2-STO. BLDG project must be the embedded startup package");
+assert.strictEqual(embeddedProject.project?.title, "Dela Cruz Residence", "The supplied 9-Storey project must be the embedded startup package");
 assert(embeddedProject.structuralProject?.workspace, "The default project must include the coordinated structural workspace");
-assert(app.includes('loadProjectPackage(data, "2-STO. BLDG"') && app.includes('recordName.value = "2-STO. BLDG"'), "Startup must identify the supplied package as 2-STO. BLDG");
+assert.strictEqual(embeddedProject.model?.h?.length, 10, "The startup project must contain the nine-storey vertical model");
+assert.strictEqual(embeddedProject.structuralProject?.workspace?.planActiveView, "ISO", "The startup project must preserve 3D Isometric as its active drawing view");
+assert(app.includes('loadProjectPackage(data, "9-Storey"') && app.includes('recordName.value = "9-Storey"'), "Startup must identify the supplied package as 9-Storey");
+assert(app.includes('window.strucForgeOpenStartupView("ISO")'), "Startup must explicitly open the 3D Isometric View");
 
 assert(html.includes('function selectedRoofOnlyComponentLoad()') && html.includes('checkedLoadTotal(["roofSolar", "roofEquipment"])'), "Solar and roof equipment need a dedicated roof-only load total");
 assert(html.includes('floorDead: slab + floorFinishes') && html.includes('roofDead: slab + roofFinishes + roofOnlyEquipment'), "Roof-only loads must be excluded from floor area loads");

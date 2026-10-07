@@ -1775,7 +1775,7 @@ function getRecordNames() {
   }
 }
 
-const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261005a";
+const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261008a";
 const bundledPersistenceVersionsKey = "strucforge_bundled_persistence_versions_v1";
 let bundledStartupProject = null;
 
@@ -1896,8 +1896,8 @@ async function loadDefaultProject() {
       data = await response.json();
     }
     currentFileHandle = null;
-    loadProjectPackage(data, "2-STO. BLDG", {pushHistory: false, applyTheme: false});
-    recordName.value = "2-STO. BLDG";
+    loadProjectPackage(data, "9-Storey", {pushHistory: false, applyTheme: false});
+    recordName.value = "9-Storey";
   } catch (err) {
     status("Ready. Default sample project was not loaded.");
   }

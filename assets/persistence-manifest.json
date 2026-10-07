@@ -1,10 +1,10 @@
 {
-  "id": "2026-10-05-two-storey-startup-v1",
-  "defaultProject": "2-STO. BLDG",
+  "id": "2026-10-08-nine-storey-startup-v1",
+  "defaultProject": "9-Storey",
   "projects": [
     {
-      "name": "2-STO. BLDG",
-      "source": "assets/projects/2-storey-bldg.json",
+      "name": "9-Storey",
+      "source": "assets/projects/9-storey.json",
       "replaceExisting": true
     }
   ]

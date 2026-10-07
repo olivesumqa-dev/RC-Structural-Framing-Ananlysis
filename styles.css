@@ -392,6 +392,9 @@ main{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:c
 .mpr-hide-members-dialog{width:min(380px,calc(100vw - 24px))}
 .mpr-hide-members-dialog .girder-direction-dialog-inner{padding:14px!important}
 .mpr-hide-members-dialog .mpr-hide-members-hint{margin:-5px 0 13px!important;font-size:10px!important;color:#314648!important}
+.mpr-hide-members-dialog .mpr-hide-members-axis{width:100%;min-height:32px;margin:0 0 5px;padding:6px 8px;border:1px solid #16845b!important;background:#16845b!important;color:#fff!important;font-size:10px;line-height:1.25;white-space:normal;cursor:pointer}
+.mpr-hide-members-dialog .mpr-hide-members-axis:hover,.mpr-hide-members-dialog .mpr-hide-members-axis:focus-visible{background:#0f6d4a!important;color:#fff!important}
+.mpr-hide-members-dialog .mpr-hide-members-axis-hint{margin:0 0 13px!important;font-size:9px!important;line-height:1.35!important;color:#314648!important}
 .mpr-hide-members-dialog .girder-direction-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .mpr-solution-shell{display:grid;grid-template-rows:auto minmax(0,1fr) auto;max-height:calc(100vh - 40px);font-family:"Aptos Light","Aptos",Arial,sans-serif!important;font-weight:300!important}
 .mpr-solution-shell>header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:15px 18px 11px;border-bottom:1px solid rgba(244,240,223,.28);background:#173a31}
