@@ -116,6 +116,8 @@ assert.match(html, /planState\.memberStart = endpoint;[\s\S]{0,220}Continue clic
 assert(html.includes('id="overlapObjectDialog"') && html.includes("Select object/s to delete"), "overlapping delete hits must open a multi-object chooser");
 assert.match(html, /window\.strucForgeOpenOverlapChooser/, "plan and frame tools must share the overlap chooser");
 assert.match(html, /id="overlapObjectDelete"[^>]*>Delete Selected</, "selection-tool overlap chooser must expose a Delete Selected action");
+assert.match(css, /\.overlap-object-option\{[^}]*background:#fff!important;[^}]*color:#071719!important/, "Delete Tool object choices must keep dark readable text on a white background in every theme");
+assert.match(css, /#overlapObjectApply,.overlap-object-dialog #overlapObjectDelete\{[^}]*background:#ff7a00!important;[^}]*color:#fff!important/, "Delete Tool popup actions must use white text on an orange background");
 assert.match(html, /function planOverlapCandidates\([\s\S]{0,700}kind: "column"/, "plan overlap selection must include columns, not only beams");
 assert.match(html, /onDelete: selected => deletePlanOverlapCandidates/, "selected overlapping plan objects must be deletable from the chooser");
 
