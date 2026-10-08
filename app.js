@@ -1896,8 +1896,8 @@ async function loadDefaultProject() {
       data = await response.json();
     }
     currentFileHandle = null;
-    loadProjectPackage(data, "9-Storey", {pushHistory: false, applyTheme: false});
-    recordName.value = "9-Storey";
+    loadProjectPackage(data, "9-STO. BLDG.stf", {pushHistory: false, applyTheme: false, restoreTemplateLibrary: false});
+    recordName.value = "9-STO. BLDG";
   } catch (err) {
     status("Ready. Default sample project was not loaded.");
   }

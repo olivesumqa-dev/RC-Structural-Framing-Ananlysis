@@ -23,7 +23,7 @@ assert.strictEqual(embeddedProject.project?.title, "Dela Cruz Residence", "The s
 assert(embeddedProject.structuralProject?.workspace, "The default project must include the coordinated structural workspace");
 assert.strictEqual(embeddedProject.model?.h?.length, 10, "The startup project must contain the nine-storey vertical model");
 assert.strictEqual(embeddedProject.structuralProject?.workspace?.planActiveView, "ISO", "The startup project must preserve 3D Isometric as its active drawing view");
-assert(app.includes('loadProjectPackage(data, "9-Storey"') && app.includes('recordName.value = "9-Storey"'), "Startup must identify the supplied package as 9-Storey");
+assert(app.includes('loadProjectPackage(data, "9-STO. BLDG.stf"') && app.includes('recordName.value = "9-STO. BLDG"'), "Startup must identify the supplied package as 9-STO. BLDG");
 assert(app.includes('window.strucForgeOpenStartupView("ISO")'), "Startup must explicitly open the 3D Isometric View");
 
 assert(html.includes('function selectedRoofOnlyComponentLoad()') && html.includes('checkedLoadTotal(["roofSolar", "roofEquipment"])'), "Solar and roof equipment need a dedicated roof-only load total");

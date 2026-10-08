@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="title desc">
+  <title id="title">9-storey reinforced concrete building template</title>
+  <desc id="desc">Isometric schematic of the saved nine-storey StrucForge model.</desc>
+  <rect width="640" height="400" fill="#071719"/>
+  <g stroke="#b9d8d8" stroke-width="3" fill="none" stroke-linejoin="round">
+    <path d="M180 322 370 350 500 280 310 252Z" fill="#123033"/>
+    <path d="M180 322V92L310 24V252M370 350V120L500 52V280M180 92 370 120 500 52 310 24Z"/>
+    <g stroke="#F3AD4B" opacity=".9">
+      <path d="M180 296 370 324 500 254 310 226Z"/><path d="M180 270 370 298 500 228 310 200Z"/>
+      <path d="M180 244 370 272 500 202 310 174Z"/><path d="M180 218 370 246 500 176 310 148Z"/>
+      <path d="M180 192 370 220 500 150 310 122Z"/><path d="M180 166 370 194 500 124 310 96Z"/>
+      <path d="M180 140 370 168 500 98 310 70Z"/><path d="M180 114 370 142 500 72 310 44Z"/>
+    </g>
+    <g stroke="#43f58a" opacity=".85"><path d="M244 336V106L374 38"/><path d="M308 345V115L438 46"/><path d="M310 252 500 280"/></g>
+  </g>
+  <text x="32" y="56" fill="#F3AD4B" font-family="Aptos,Arial,sans-serif" font-size="30">9-STO. BLDG</text>
+  <text x="34" y="84" fill="#dceeee" font-family="Aptos,Arial,sans-serif" font-size="15">Saved StrucForge project template</text>
+</svg>

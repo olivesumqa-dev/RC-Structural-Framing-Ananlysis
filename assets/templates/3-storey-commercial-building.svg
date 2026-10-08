@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="title desc">
+  <title id="title">3-storey commercial building template</title>
+  <desc id="desc">Isometric schematic of the saved commercial StrucForge model.</desc>
+  <rect width="640" height="400" fill="#071719"/>
+  <g stroke="#c5dddd" stroke-width="3" fill="none" stroke-linejoin="round">
+    <path d="M125 320 410 350 535 278 250 248Z" fill="#123033"/>
+    <path d="M125 320V140L250 70V248M410 350V170L535 100V278M125 140 410 170 535 100 250 70Z"/>
+    <g stroke="#F3AD4B"><path d="M125 260 410 290 535 218 250 188Z"/><path d="M125 200 410 230 535 158 250 128Z"/></g>
+    <g stroke="#43f58a"><path d="M196 328V148L321 78"/><path d="M268 335V155L393 85"/><path d="M339 343V163L464 93"/></g>
+  </g>
+  <text x="32" y="50" fill="#F3AD4B" font-family="Aptos,Arial,sans-serif" font-size="27">3-STO. COMM. BLDG</text>
+  <text x="34" y="78" fill="#dceeee" font-family="Aptos,Arial,sans-serif" font-size="15">Saved StrucForge project template</text>
+</svg>

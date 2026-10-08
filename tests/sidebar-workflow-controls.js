@@ -8,7 +8,7 @@ const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
 assert(html.includes('id="generateLoadsQuick"') && html.includes('id="calculateQuickBtn"'), "Quick Generate Loads and Calculate copies must appear below MSBM 6");
 assert(html.indexOf('id="calculateQuickBtn"') < html.indexOf('id="generateLoadsQuick"'), "Generate Loads must appear below the Calculate copy");
-assert(html.includes('byId("generateLoadsQuick")?.addEventListener("click", generateEngineeringLoads)') && html.includes('byId("calculateQuickBtn")?.addEventListener("click"'), "Quick load and calculation buttons must execute the original actions");
+assert(html.includes('byId("generateLoadsQuick")?.addEventListener("click", generateEngineeringLoads)') && html.includes("requestCoordinatedAnalysis();"), "Quick load and calculation buttons must execute the coordinated actions without duplicate solver runs");
 assert(html.includes('[byId("engineeringLoadSummary"), byId("generatedLoadsQuickSummary")]'), "Quick Generate Loads must display the same generated-load list as the MSBM generator");
 assert(html.includes('[byId("toolbarCalcBtn"), byId("calculateBtn"), byId("calculateQuickBtn")]'), "Both Calculate copies must share red/green calculation state");
 assert((html.match(/<section class="sidebar-package is-collapsed"/g) || []).length === 6, "All six MSBM packages must start collapsed");
