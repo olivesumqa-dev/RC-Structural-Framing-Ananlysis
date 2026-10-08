@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
 
 assert(html.includes("function cloneResultTableForOutput(source)"), "MPR print output sanitizer is missing");
 assert(html.includes('table.querySelectorAll(".mpr-sort-button").forEach'), "MPR sort controls are not converted to print labels");
@@ -28,5 +29,10 @@ assert(html.indexOf('id="toolbarTemplatesBtn"') < html.indexOf('id="toolbarCalcB
 assert(html.includes('byId("toolbarTemplatesBtn")?.addEventListener("click"') && html.includes('showUnifiedDrawingView("TEMPLATES")'), "The relocated Templates menu must open the templates workspace");
 assert(!html.includes('{label: "TEMPLATES", view: "TEMPLATES"}'), "Templates must no longer remain at the far right of the drawing-view tabs");
 assert(html.includes('id="toolbarTemplatesBtn"') && html.includes('title="Show Templates" aria-label="Show Templates"><svg') && html.includes('.toolbar-template-menu {') && html.includes('color: #ff7a00;'), "Templates must be an orange icon-only control with a Show Templates hover label");
+assert(html.includes('accept=".stf,.json,application/x-strucforge+json,application/json"'), "Project opening must accept native .stf files and legacy .json projects");
+assert(app.includes('return `${base}.stf`;') && app.includes('application/x-strucforge+json') && app.includes('StrucForge Project'), "Project saves must use the native .stf extension and media type");
+assert(html.includes('function projectTemplateLibrarySnapshot()') && html.includes('payload.strucForgeTemplateLibrary = projectTemplateLibrarySnapshot();'), ".stf project files must carry saved user templates");
+assert(html.includes('function restoreProjectTemplateLibrary(library)') && html.includes('restoreProjectTemplateLibrary(data?.strucForgeTemplateLibrary)'), "Opening an .stf project must restore bundled user templates");
+assert(html.includes('return `${base}.stf`;'), "New or updated user templates must use .stf file metadata");
 
 console.log("template gallery and MPR print-output regression tests: passed");

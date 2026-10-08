@@ -2293,10 +2293,10 @@
           <button id="deleteRecordBtn">Delete</button>
         </div>
         <div class="row">
-          <button id="exportJson">Export JSON</button>
-          <button id="importJsonBtn">Load File</button>
+          <button id="exportJson" title="Save the current project and updated user templates as a StrucForge .stf file">Save STF File</button>
+          <button id="importJsonBtn" title="Open a StrucForge .stf file or a legacy .json project">Load File</button>
         </div>
-        <input id="importJsonFile" type="file" accept=".json,application/json" hidden />
+        <input id="importJsonFile" type="file" accept=".stf,.json,application/x-strucforge+json,application/json" hidden />
         </div>
       </section>
 
@@ -51979,7 +51979,7 @@
 }
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=73"></script>
+  <script src="app.js?v=74"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -52412,6 +52412,7 @@
         };
         loadProjectPackage = function (data, sourceName, options = {}) {
           baseLoadProjectPackage(data, sourceName, options);
+          const restoredTemplateCount = restoreProjectTemplateLibrary(data?.strucForgeTemplateLibrary);
           planState.isBlankNewDesign = false;
           const savedWorkspace = data?.structuralProject?.workspace;
           if (!savedWorkspace) {
@@ -52425,7 +52426,7 @@
           if (!options.preserveTemplateUndo) templateUndoHistory.length = 0;
           updateUndoControls();
           setCalculationDirty(true);
-          if (typeof status === "function") status(`Loaded ${sourceName || "project"} with Structural Plan, X-axis frame, Y-axis frame, and design data.`);
+          if (typeof status === "function") status(`Loaded ${sourceName || "project"} with Structural Plan, X-axis frame, Y-axis frame, and design data.${restoredTemplateCount ? ` ${restoredTemplateCount} saved template${restoredTemplateCount === 1 ? "" : "s"} restored.` : ""}`);
         };
       }
 
@@ -52648,8 +52649,42 @@
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "")
           .slice(0, 64) || "structural-template";
-        return `${base}.json`;
+        return `${base}.stf`;
       }
+
+      function projectTemplateLibrarySnapshot() {
+        return {
+          version: 1,
+          userTemplates: deepCopy(loadStoredUserTemplates())
+        };
+      }
+
+      function restoreProjectTemplateLibrary(library) {
+        const imported = Array.isArray(library?.userTemplates)
+          ? library.userTemplates.filter(template => template
+            && typeof template.id === "string"
+            && typeof template.name === "string"
+            && typeof template.thumbnail === "string"
+            && template.payload)
+          : [];
+        if (!imported.length) return 0;
+        const merged = new Map(loadStoredUserTemplates().map(template => [template.name.trim().toLowerCase(), template]));
+        imported.forEach(template => merged.set(template.name.trim().toLowerCase(), deepCopy(template)));
+        const mergedTemplates = Array.from(merged.values());
+        localStorage.setItem(userTemplateStorageKey, JSON.stringify(mergedTemplates));
+        const builtInTemplates = structuralTemplates.filter(template => !template.userCreated);
+        structuralTemplates.splice(0, structuralTemplates.length, ...builtInTemplates, ...mergedTemplates);
+        selectedTemplateIds.clear();
+        renderTemplateBrowser();
+        return imported.length;
+      }
+
+      window.strucForgeBuildProjectFilePayload = payload => {
+        payload.fileFormat = "StrucForge Project";
+        payload.fileVersion = 1;
+        payload.strucForgeTemplateLibrary = projectTemplateLibrarySnapshot();
+        return payload;
+      };
 
       function captureIsometricTemplateThumbnail() {
         const source = byId("isometricCanvas");
@@ -57348,6 +57383,11 @@
         const selectedXValue = selectedXIndex >= 0 ? data.xPos[selectedXIndex] : data.xPos[Math.floor(data.xPos.length / 2)];
         const selectedYCanvas = t.y(selectedYValue);
         const selectedXCanvas = t.x(selectedXValue);
+        // Keep the dashed axis-frame markers beside, rather than directly on top
+        // of, their structural grid lines and beams.
+        const axisFrameOffset = Math.max(10, Math.min(16, 12 * planView.zoom));
+        const xFrameCanvasY = selectedYCanvas - axisFrameOffset;
+        const yFrameCanvasX = selectedXCanvas + axisFrameOffset;
         ctx.save();
         const xFrameColor = "#ff7a00";
         const yFrameColor = "#00d43b";
@@ -57355,13 +57395,13 @@
         ctx.setLineDash([14, 10]);
         ctx.strokeStyle = xFrameColor;
         ctx.beginPath();
-        ctx.moveTo(t.x(0) - 30, selectedYCanvas);
-        ctx.lineTo(t.x(totalX) + 30, selectedYCanvas);
+        ctx.moveTo(t.x(0) - 30, xFrameCanvasY);
+        ctx.lineTo(t.x(totalX) + 30, xFrameCanvasY);
         ctx.stroke();
         ctx.strokeStyle = yFrameColor;
         ctx.beginPath();
-        ctx.moveTo(selectedXCanvas, t.y(0) + 30);
-        ctx.lineTo(selectedXCanvas, t.y(totalY) - 30);
+        ctx.moveTo(yFrameCanvasX, t.y(0) + 30);
+        ctx.lineTo(yFrameCanvasX, t.y(totalY) - 30);
         ctx.stroke();
         ctx.setLineDash([]);
         const leftFrameLabelRoom = Math.abs(selectedXCanvas - t.x(0));
@@ -57372,8 +57412,8 @@
         const yFrameLabelY = upperFrameLabelRoom >= 180
           ? (t.y(totalY) + selectedYCanvas) / 2
           : (selectedYCanvas + t.y(0)) / 2;
-        drawNonOverlappingText(ctx, "X-AXIS STRUCTURAL FRAME", xFrameLabelX, selectedYCanvas - 18, {font: "800 13px Arial", color: xFrameColor}, [{x: 0, y: -18}, {x: 0, y: 18}]);
-        drawNonOverlappingText(ctx, "Y-AXIS STRUCTURAL FRAME", selectedXCanvas + 20, yFrameLabelY, {font: "800 13px Arial", color: yFrameColor, rotate: Math.PI / 2}, [{x: 18, y: 0}, {x: -36, y: 0}]);
+        drawNonOverlappingText(ctx, "X-AXIS STRUCTURAL FRAME", xFrameLabelX, xFrameCanvasY - 18, {font: "800 13px Arial", color: xFrameColor}, [{x: 0, y: -18}, {x: 0, y: 18}]);
+        drawNonOverlappingText(ctx, "Y-AXIS STRUCTURAL FRAME", yFrameCanvasX + 20, yFrameLabelY, {font: "800 13px Arial", color: yFrameColor, rotate: Math.PI / 2}, [{x: 18, y: 0}, {x: -36, y: 0}]);
         ctx.restore();
 
         renderPlanLevelTabs(data);

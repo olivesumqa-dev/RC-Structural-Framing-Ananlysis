@@ -105,6 +105,8 @@ for (const id of ["uploadCadPackage", "structuralPlanPackage", "modelCreationPac
 }
 assert.match(html, /<section class="sidebar-package is-collapsed" id="uploadCadPackage">/, "Upload Drawings must be collapsed in the initial HTML before scripts finish loading");
 assert.match(html, /window\.strucForgeOpenStartupView = view =>[\s\S]{0,500}applyUnifiedDrawingView\(normalized\)/, "the bundled startup project must explicitly open its requested drawing view");
+assert.match(html, /const axisFrameOffset = Math\.max\(10, Math\.min\(16, 12 \* planView\.zoom\)\)/, "X/Y axis-frame markers must be offset from their structural grid and beam lines");
+assert.match(html, /ctx\.moveTo\(t\.x\(0\) - 30, xFrameCanvasY\)[\s\S]{0,300}ctx\.moveTo\(yFrameCanvasX, t\.y\(0\) \+ 30\)/, "Both horizontal and vertical axis-frame markers must use the offset coordinates");
 assert.doesNotMatch(html, /Click to edit \$\{kind\} name/, "ordinary member-name hover must not display the sensitive click-to-edit popup");
 assert.match(html, /member-name-editable-hover/, "an exact member-name hover must indicate editability through the mouse cursor");
 assert.doesNotMatch(html, /id="memberNameHoverInput"/, "member-name hover must no longer show the oversized inline editor");

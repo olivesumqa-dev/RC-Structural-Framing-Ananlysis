@@ -1846,7 +1846,7 @@ function saveRecord() {
 function loadProjectPackage(data, sourceName, options = {}) {
   const payload = normalizeModelPayload(data);
   if (!payload.model || typeof payload.model !== "object") {
-    throw new Error("Invalid frame model JSON.");
+    throw new Error("Invalid StrucForge project file.");
   }
 
   if (options.pushHistory !== false) pushHistory();
@@ -1873,7 +1873,7 @@ function loadProjectPackage(data, sourceName, options = {}) {
   if (payload.theme && options.applyTheme !== false) setTheme(payload.theme, true);
   prepareCanvasSizes();
   draw();
-  status(`Loaded ${sourceName || "JSON file"}.`);
+  status(`Loaded ${sourceName || "StrucForge project file"}.`);
 }
 
 async function loadDefaultProject() {
@@ -2458,7 +2458,7 @@ document.querySelectorAll("[data-theme-choice]").forEach(btn => {
 });
 if (fontScaleSelect) fontScaleSelect.onchange = () => applyFontScale(fontScaleSelect.value);
 importJsonBtn.onclick = () => importJsonFile.click();
-importJsonFile.onchange = async () => { const file = importJsonFile.files && importJsonFile.files[0]; if (!file) return; try { const data = JSON.parse(await file.text()); currentFileHandle = null; loadProjectPackage(data, file.name); recordName.value = file.name.replace(/\.json$/i, ""); } catch (err) { status("Could not load JSON file. Check that it is a valid frame model."); } finally { importJsonFile.value = ""; } };
+importJsonFile.onchange = async () => { const file = importJsonFile.files && importJsonFile.files[0]; if (!file) return; try { const data = JSON.parse(await file.text()); currentFileHandle = null; loadProjectPackage(data, file.name); recordName.value = file.name.replace(/\.(?:stf|json)$/i, ""); } catch (err) { status("Could not load the project file. Select a valid StrucForge .stf file or legacy .json project."); } finally { importJsonFile.value = ""; } };
 
 assignSelectedProps.onclick = () => {
   const members = selectedMembers();
@@ -2738,8 +2738,51 @@ toggleLoadsBtn.onclick = () => {
   status(loadsVisible ? (calculated ? "Loadings shown." : "Loadings will display after Calculate.") : "Loadings hidden.");
 };
 
-function downloadProjectJson(filename) { const blob = new Blob([JSON.stringify(modelPackage(), null, 2)], {type:"application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename || `${(recordName.value || "frame-model").trim() || "frame-model"}.json`; a.click(); URL.revokeObjectURL(a.href); }
-async function saveProjectFile(forcePicker) { const filename = `${(recordName.value || "frame-model").trim() || "frame-model"}.json`; try { if (filePickerSupported) { if (forcePicker || !currentFileHandle) { currentFileHandle = await window.showSaveFilePicker({suggestedName: filename, types: [{description:"StrucForge JSON", accept:{"application/json":[".json"]}}]}); } const writable = await currentFileHandle.createWritable(); await writable.write(JSON.stringify(modelPackage(), null, 2)); await writable.close(); status(forcePicker ? "Saved as JSON file." : "Saved JSON file."); return; } downloadProjectJson(filename); status("JSON downloaded. Browser security may ask where to save it."); } catch (err) { if (err && err.name === "AbortError") { status("Save cancelled."); return; } downloadProjectJson(filename); status("JSON downloaded using browser fallback."); } }
+function projectFilePayload() {
+  const payload = modelPackage();
+  return typeof window.strucForgeBuildProjectFilePayload === "function"
+    ? window.strucForgeBuildProjectFilePayload(payload)
+    : payload;
+}
+function projectFileName() {
+  const base = ((recordName.value || "frame-model").trim() || "frame-model").replace(/\.(?:stf|json)$/i, "");
+  return `${base}.stf`;
+}
+function downloadProjectFile(filename) {
+  const blob = new Blob([JSON.stringify(projectFilePayload(), null, 2)], {type:"application/x-strucforge+json"});
+  const anchor = document.createElement("a");
+  anchor.href = URL.createObjectURL(blob);
+  anchor.download = filename || projectFileName();
+  anchor.click();
+  URL.revokeObjectURL(anchor.href);
+}
+async function saveProjectFile(forcePicker) {
+  const filename = projectFileName();
+  try {
+    if (filePickerSupported) {
+      if (forcePicker || !currentFileHandle) {
+        currentFileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{description:"StrucForge Project", accept:{"application/x-strucforge+json":[".stf"]}}]
+        });
+      }
+      const writable = await currentFileHandle.createWritable();
+      await writable.write(JSON.stringify(projectFilePayload(), null, 2));
+      await writable.close();
+      status(forcePicker ? "Saved as StrucForge .stf file." : "Saved StrucForge .stf file.");
+      return;
+    }
+    downloadProjectFile(filename);
+    status("StrucForge .stf file downloaded. Browser security may ask where to save it.");
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      status("Save cancelled.");
+      return;
+    }
+    downloadProjectFile(filename);
+    status("StrucForge .stf file downloaded using browser fallback.");
+  }
+}
 exportJson.onclick = () => saveProjectFile(true);
 
 window.addEventListener("load", async () => {

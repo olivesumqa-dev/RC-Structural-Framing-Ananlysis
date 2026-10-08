@@ -38,7 +38,7 @@ assert(html.includes("installSidebarLearningHelp();"), "Sidebar learning help is
 assert(html.includes("const sidebarSubgroupHelp") && html.includes('"Level Heights": "Input the floor-to-floor height in metres for every adjacent level pair, or accept the default values.'), "Orange sidebar groups must provide task-specific hover guidance");
 assert(html.includes("attachSidebarSubgroupHelp(summary, title)"), "Generated orange sidebar headings must receive contextual hover guidance");
 assert(app.includes("window.strucForgeToggleTutorials"), "Tutorial button does not expose the repaired drawer control");
-assert(html.includes('app.js?v=73'), "The repaired drawing behavior must bypass the previous cached script");
+assert(html.includes('app.js?v=74'), "The repaired drawing behavior must bypass the previous cached script");
 assert(html.includes('styles.css?v=61'), "The sticky MPR and drawing-tool styles must bypass the previous cached stylesheet");
 assert(html.includes('"structural-wall-plan", "manual-wall-plan", "manual-wall"'), "All structural and assigned wall-load sources must be reported in MPR load records");
 assert(html.includes('`WALL ${total.toFixed(2)} kN/m`') && html.includes('`WALL ${wallLoad.toFixed(2)} | D ${deadLoad.toFixed(1)} | L ${liveLoad.toFixed(1)} kN/m`') && html.includes("immediateWallPointLoads"), "X/Y frame views must label wall-load values and positions");
