@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=63" />
+  <link rel="stylesheet" href="styles.css?v=64" />
   <style>
     .structural-sequence {
       display: grid;
@@ -2748,7 +2748,11 @@
               <h3 id="mprSolutionTitle">Member Calculation</h3>
               <p id="mprSolutionSubtitle"></p>
             </div>
-            <button id="mprSolutionClose" type="button" aria-label="Close calculation walkthrough">×</button>
+            <div class="mpr-solution-header-actions" aria-label="Academic walkthrough output actions">
+              <button id="mprSolutionPrintLocal" class="mpr-solution-print-btn print-icon-btn" type="button" title="PRINT WALKTHROUGH LOCALLY" aria-label="Print academic design walkthrough to a local printer" data-tooltip="PRINT LOCAL"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button>
+              <button id="mprSolutionPrintPdf" class="mpr-solution-print-btn print-icon-btn" type="button" title="PRINT WALKTHROUGH TO PDF" aria-label="Print academic design walkthrough to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
+              <button id="mprSolutionClose" type="button" aria-label="Close calculation walkthrough">×</button>
+            </div>
           </header>
           <div id="mprSolutionContent" class="mpr-solution-content"></div>
           <footer>
@@ -88575,6 +88579,18 @@
         else dialog.setAttribute("open", "");
       }
 
+      function academicWalkthroughOutputMarkup() {
+        const title = byId("mprSolutionTitle")?.textContent?.trim() || "Member Calculation";
+        const subtitle = byId("mprSolutionSubtitle")?.textContent?.trim() || "Academic design walkthrough";
+        const content = byId("mprSolutionContent")?.innerHTML || "<p>No academic walkthrough is available.</p>";
+        return `<article class="academic-walkthrough-output"><p class="academic-walkthrough-subtitle">${escapeOutputHtml(subtitle)}</p>${content}</article>`;
+      }
+
+      function printAcademicWalkthrough(outputMode = "printer") {
+        const title = byId("mprSolutionTitle")?.textContent?.trim() || "Academic Design Walkthrough";
+        printStandaloneOutput(title, academicWalkthroughOutputMarkup(), outputMode);
+      }
+
       function installMprAcademicSolutions() {
         const panel = byId("memberPropsTable");
         const dialog = byId("mprSolutionDialog");
@@ -88588,6 +88604,8 @@
           openMprAcademicSolution(input);
         });
         const close = () => dialog.close?.();
+        byId("mprSolutionPrintLocal")?.addEventListener("click", () => printAcademicWalkthrough("printer"));
+        byId("mprSolutionPrintPdf")?.addEventListener("click", () => printAcademicWalkthrough("pdf"));
         byId("mprSolutionClose")?.addEventListener("click", close);
         byId("mprSolutionDone")?.addEventListener("click", close);
         dialog.addEventListener("click", event => { if (event.target === dialog) close(); });
@@ -89291,7 +89309,7 @@
           @page{size:landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;color:#111;font-family:Arial,sans-serif}
           header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
           h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{width:100%;height:auto;max-height:175mm;object-fit:contain}
-          .audit{font-size:9px;font-weight:700;margin:7px 0 0}table{width:100%;border-collapse:collapse;font-size:9.45px}caption{background:#878181;color:#fff;font-weight:700;padding:4px;border-top:2mm solid #fff}th,td{border:1px solid #777;padding:3px;white-space:nowrap}th{background:#e9e9e9}.design-status.warn,.design-status.fail{color:#F3AD4B!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#303637!important;color:#fff!important;font-weight:700}
+          .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#39514b;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #9aa5a2}.mpr-solution-section h4{margin:0 0 7px;color:#553c00;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #4c625c;border-radius:50%;color:#173a31;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#111;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#553c00;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #f3ad4b;background:#fff7e8;color:#2a2925;font-size:9px;line-height:1.35}table{width:100%;border-collapse:collapse;font-size:9.45px}caption{background:#878181;color:#fff;font-weight:700;padding:4px;border-top:2mm solid #fff}th,td{border:1px solid #777;padding:3px;white-space:nowrap}th{background:#e9e9e9}.design-status.warn,.design-status.fail{color:#F3AD4B!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#303637!important;color:#fff!important;font-weight:700}
         </style></head><body><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
         printDocument.close();
         const cleanup = () => window.setTimeout(() => frame.remove(), 400);

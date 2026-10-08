@@ -63,6 +63,10 @@ assert(html.includes("function mprAcademicSolution(input)"), "Member-specific ac
 assert(html.includes('panel.addEventListener("dblclick"'), "MPR member names must open the academic solution on double-click");
 assert(html.includes("Gross concrete area") && html.includes("Service bearing pressure") && html.includes("Apply the panel moment coefficients"), "Academic walkthroughs must cover beams, columns, slabs, and footings");
 assert(html.includes("function mprAcademicLoadSteps") && html.includes('name: "Wall load"') && html.includes('name: "Earthquake load (EQ)"'), "Every academic solution must identify all loads affecting its member");
+assert(html.includes('id="mprSolutionPrintLocal"') && html.includes('id="mprSolutionPrintPdf"'), "Academic walkthrough must provide local-print and PDF-print icons");
+assert(html.includes("function academicWalkthroughOutputMarkup()") && html.includes("function printAcademicWalkthrough(outputMode"), "Academic walkthrough needs a dedicated printable output builder");
+assert(html.includes('printAcademicWalkthrough("printer")') && html.includes('printAcademicWalkthrough("pdf")'), "Academic walkthrough print icons must open the appropriate print workflow");
+assert(css.includes('.mpr-solution-print-btn') && html.includes('.academic-walkthrough-output'), "Academic walkthrough print controls and print layout must be styled");
 assert(html.includes('function mprStatusGuidance(kind, status, details = "")') && html.includes('function mprStatusAttributes(kind, status, details = "")'), "MPR Status cells need member-specific explanations and corrective guidance");
 assert((html.match(/mprStatusAttributes\("(?:beam|column|slab|footing)"/g) || []).length === 4, "Every MPR member table must attach contextual Status guidance");
 assert(html.includes("function installMprStatusHelp()") && html.includes("installMprStatusHelp();") && html.includes("data-mpr-status-help"), "MPR Status guidance must appear in the custom hover/focus popup");
