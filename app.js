@@ -43,7 +43,6 @@ const lockToggleBtn = document.getElementById("lockToggleBtn");
 const toolbarDeleteBtn = document.getElementById("toolbarDeleteBtn");
 const toolbarSaveBtn = document.getElementById("toolbarSaveBtn");
 const toolbarSaveAsBtn = document.getElementById("toolbarSaveAsBtn");
-const toolbarImportBtn = document.getElementById("toolbarImportBtn");
 const toolbarExportBtn = document.getElementById("toolbarExportBtn");
 const toolbarOpenBtn = document.getElementById("toolbarOpenBtn");
 const toolbarPrintBtn = document.getElementById("toolbarPrintBtn");
@@ -1151,14 +1150,14 @@ function drawMemberLabel(m, A, B) {
 
   ctx.fillStyle = annotationColor();
   setScaledFont(10);
-  if (m.type === "Beam") {
+  if (m.type === "Beam" || m.type === "Tie Beam") {
     const p = findClearLabelPoint(midX, midY, label, [
       {x: 0, y: scaled(13)},
       {x: scaled(30), y: scaled(13)},
       {x: -scaled(30), y: scaled(13)},
       {x: 0, y: scaled(-13)}
     ]);
-    drawRotatedText(label, p.x, p.y, 0, "#c1121f");
+    drawRotatedText(label, p.x, p.y, 0, "#ff1744");
     mainMemberNameTargets.push({memberId: m.id, box: labelBox(p.x, p.y, label, scaled(1))});
   } else if (m.type === "Column") {
     const side = midX < canvas.width / 2 ? 1 : -1;
@@ -1168,7 +1167,7 @@ function drawMemberLabel(m, A, B) {
       {x: side * scaled(14), y: scaled(14)},
       {x: side * scaled(14), y: -scaled(14)}
     ]);
-    drawRotatedText(label, p.x, p.y, -Math.PI/2, "#00c853");
+    drawRotatedText(label, p.x, p.y, -Math.PI/2, "#00e676");
   } else {
     let angle = Math.atan2(dy, dx);
     if (angle > Math.PI / 2) angle -= Math.PI;
@@ -1775,7 +1774,7 @@ function getRecordNames() {
   }
 }
 
-const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261008a";
+const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261012b";
 const bundledPersistenceVersionsKey = "strucforge_bundled_persistence_versions_v1";
 let bundledStartupProject = null;
 
@@ -1834,7 +1833,18 @@ function refreshRecords() {
 function saveRecord() {
   const name = recordName.value.trim() || savedRecords.value || "Frame 1";
   recordName.value = name;
-  localStorage.setItem("strucforge_record_" + name, JSON.stringify(modelPackage()));
+  // modelPackage is extended by the structural workspace to include the open
+  // plans, frames, annotations, templates, and MPR editing state.  Save that
+  // complete package so the browser Save button restores the current project,
+  // not merely the legacy analysis canvas model.
+  try {
+    const payload = typeof projectFilePayload === "function" ? projectFilePayload() : modelPackage();
+    localStorage.setItem("strucforge_record_" + name, JSON.stringify(payload));
+    if (!localStorage.getItem("strucforge_record_" + name)) throw new Error("The browser did not confirm the saved project.");
+  } catch (error) {
+    status(`Could not save project "${name}" in this browser. Free browser storage and try again.`);
+    return;
+  }
   const names = getRecordNames();
   if (!names.includes(name)) names.push(name);
   saveRecordNames(names);
@@ -1896,8 +1906,8 @@ async function loadDefaultProject() {
       data = await response.json();
     }
     currentFileHandle = null;
-    loadProjectPackage(data, "9-STO. BLDG.stf", {pushHistory: false, applyTheme: false, restoreTemplateLibrary: false});
-    recordName.value = "9-STO. BLDG";
+    loadProjectPackage(data, "3-STO. BLDG.stf", {pushHistory: false, applyTheme: false});
+    recordName.value = "3-STO. BLDG";
   } catch (err) {
     status("Ready. Default sample project was not loaded.");
   }
@@ -2444,7 +2454,6 @@ saveAsBtn.onclick = () => saveProjectFile(true);
 deleteRecordBtn.onclick = deleteRecord;
 if (toolbarSaveBtn) toolbarSaveBtn.onclick = saveRecord;
 if (toolbarSaveAsBtn) toolbarSaveAsBtn.onclick = () => saveProjectFile(true);
-if (toolbarImportBtn) toolbarImportBtn.onclick = () => importJsonFile.click();
 if (toolbarExportBtn) toolbarExportBtn.onclick = () => saveProjectFile(true);
 if (toolbarOpenBtn) toolbarOpenBtn.onclick = () => importJsonFile.click();
 if (toolbarPrintBtn) toolbarPrintBtn.onclick = () => printReport("printer");
@@ -2783,7 +2792,7 @@ async function saveProjectFile(forcePicker) {
     status("StrucForge .stf file downloaded using browser fallback.");
   }
 }
-exportJson.onclick = () => saveProjectFile(true);
+if (exportJson) exportJson.onclick = () => saveProjectFile(true);
 
 window.addEventListener("load", async () => {
   updateLoadInputs();

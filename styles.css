@@ -409,14 +409,22 @@ main{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:c
 .mpr-solution-shell h3{margin:0;color:#fff;font-size:18px;font-weight:300!important}
 .mpr-solution-shell header p{margin:4px 0 0;color:#cae0d8;font-size:11px}
 #mprSolutionClose{flex:0 0 28px;width:28px;height:28px;padding:0;border:1px solid #9fb8af;border-radius:3px;background:#244a40;color:#fff;font-size:19px;line-height:1;cursor:pointer}
-.mpr-solution-content{overflow:auto;padding:16px 18px;background-color:#102a24;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px);background-size:100% 25px}
-.mpr-solution-section{margin:0 0 16px;padding:0 0 12px;border-bottom:1px dashed rgba(244,240,223,.25)}
+.mpr-solution-content{overflow:auto;padding:20px 22px;background-color:#f7f4eb;background-image:linear-gradient(rgba(16,42,36,.06) 1px,transparent 1px);background-size:100% 26px;color:#151515}
+.mpr-solution-section{margin:0 0 16px;padding:0 0 12px;border-bottom:1px dashed rgba(25,36,31,.34)}
 .mpr-solution-section:last-child{margin-bottom:0;border-bottom:0}
-.mpr-solution-section h4{margin:0 0 8px;color:#ffd37c;font-size:12px;font-weight:300!important;text-transform:uppercase;letter-spacing:.06em}
-.mpr-solution-step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;margin:7px 0;color:#f4f0df;font-size:12px;line-height:1.45}
-.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid #94b5aa;border-radius:50%;color:#bfe5d7;font-size:10px}
-.mpr-solution-equation{display:block;margin:2px 0;color:#fff;font-family:"Aptos Light","Aptos",Arial,sans-serif!important;font-size:13px;font-weight:300!important}
-.mpr-solution-result{color:#ffd37c}
+.mpr-solution-section h4{margin:0 0 8px;color:#152e27;font-family:Georgia,"Times New Roman",serif;font-size:13px;font-weight:700!important;text-transform:uppercase;letter-spacing:.04em}
+.mpr-solution-step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;margin:8px 0;color:#151515;font-family:Georgia,"Times New Roman",serif;font-size:13px;line-height:1.48}
+.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid #355b50;border-radius:50%;color:#173a31;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:10px}
+.mpr-solution-equation{display:block;margin:3px 0;color:#111;font-family:"Cambria Math",Cambria,Georgia,serif!important;font-size:14px;font-weight:700!important}
+.mpr-solution-result{display:block;color:#553c00;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:12px;font-weight:700}
+.mpr-academic-figure{margin:0 0 22px;padding:16px 18px 13px;border:1px solid #8f9d98;background:#fff;box-shadow:0 2px 7px rgba(0,0,0,.09);break-inside:avoid;page-break-inside:avoid}
+.mpr-academic-figure figcaption{margin:0 0 12px;color:#132b25;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:11px;font-weight:300!important;letter-spacing:.05em}
+.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:250px;color:#151515;background:#fff;overflow:visible}
+.mpr-academic-figure svg text{fill:currentColor;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:11px;font-weight:300!important}
+.academic-diagram-lines,.academic-force-block{fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+.academic-beam-outline{fill:#fff;stroke:currentColor;stroke-width:1.7}.academic-compression-block{fill:#e4e0d5;stroke:currentColor;stroke-width:1.05}.academic-stirrup{stroke:#345b50;stroke-width:1.65}
+.academic-diagram-lines circle{fill:#d58019;stroke:currentColor;stroke-width:1.05}.academic-dimension{stroke:#4b5f58;stroke-width:.9}.academic-neutral-axis{stroke:#666;stroke-width:.8;stroke-dasharray:5 4}.academic-baseline{stroke:#777;stroke-width:.8}
+.mpr-academic-figure p{margin:11px 0 0;color:#3a453f;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:10px;font-weight:300!important;line-height:1.45}
 .mpr-solution-note{margin:10px 0 0;padding:8px 10px;border-left:3px solid #f3ad4b;background:rgba(0,0,0,.16);color:#e9e3cf;font-size:10px;line-height:1.4}
 .mpr-solution-shell>footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;border-top:1px solid rgba(244,240,223,.25);background:#173a31;color:#bdd3cb;font-size:9px}
 #mprSolutionDone{min-width:76px;height:28px;border:1px solid #a45d00;border-radius:3px;background:#f3ad4b;color:#261607;cursor:pointer}
@@ -508,6 +516,7 @@ main{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:c
   body .tool-icon-group{min-width:max-content!important;margin:0!important;padding:3px 5px!important;gap:6px!important;justify-content:flex-start!important}
   body .toolbar-icon-btn,body .drawing-tool-btn{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important}
   body .toolbar-calc-icon{width:auto!important;min-width:78px!important;padding:0 8px!important;margin-left:8px!important}
+  body .toolbar-template-menu{width:78px!important;min-width:78px!important;flex-basis:78px!important;padding:0 8px!important;margin-left:0!important}
   body .drawing-control-row.plan-control-row{top:84px!important;display:block!important;overflow:hidden!important}
   body .drawing-control-row .drawing-toolbar,body .drawing-control-row .plan-level-tabs{display:flex!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
   body .drawing-control-row .plan-level-btn{flex:0 0 auto!important;min-width:72px!important;min-height:40px!important;padding:7px 10px!important}
@@ -549,7 +558,7 @@ body.mobile-performance-mode .panel,body.mobile-performance-mode .mobile-sidebar
 /* Sidebar workflow controls and reorderable MSBM packages. */
 .sidebar-heading-row{display:flex;align-items:center;gap:8px;margin:0 0 8px}
 .sidebar-heading-row h1{flex:1;min-width:0;margin:4px 0 0!important}
-.panel .sidebar-visibility-btn{width:auto!important;min-width:54px;min-height:28px;margin:0!important;padding:4px 8px!important;border:1px solid #F3AD4B!important;border-radius:3px;background:#071719!important;color:#fff!important;font-size:10px!important}
+.panel .sidebar-visibility-btn{width:auto!important;min-width:54px;min-height:28px;margin:0!important;padding:4px 8px!important;border:1px solid #fff!important;border-radius:3px;background:#5C5756!important;color:#fff!important;font-size:10px!important}
 .sidebar-show-btn{position:fixed;z-index:530;left:0;top:50%;transform:translateY(-50%);min-width:32px;min-height:112px;padding:8px 6px;border:1px solid #F3AD4B;border-left:0;border-radius:0 5px 5px 0;background:#071719;color:#fff;font-size:10px;letter-spacing:.05em;line-height:1.1;writing-mode:vertical-rl;text-orientation:mixed;cursor:pointer}
 .sidebar-show-btn[hidden]{display:none!important}
 body.sidebar-hidden .panel{display:none!important}
@@ -566,6 +575,17 @@ body.sidebar-hidden .workspace>main{width:100%!important;flex:1 1 100%!important
 .sidebar-package-toggle .msbm-index+.msbm-drag-handle{margin-right:-5px}
 .sidebar-package.is-reordering{position:relative;z-index:20;opacity:.82;box-shadow:0 5px 15px rgba(0,0,0,.3)}
 .sidebar-package.is-reordering .sidebar-package-toggle{background:#F3AD4B!important}
+
+/* Result-calculation mode and fully centered Member Properties / Results cells. */
+.result-calculation-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;align-items:center}
+.result-calculation-options label{display:flex!important;align-items:center;gap:6px;margin:0!important;color:var(--text)!important;font-size:11px!important;font-weight:800;cursor:pointer}
+.result-calculation-options input[type="checkbox"]{width:16px!important;height:16px!important;min-height:0!important;margin:0!important;accent-color:#16845b}
+.result-calculation-options p{grid-column:1/-1;margin:2px 0 0!important;color:var(--text-muted);font-size:10px;line-height:1.35}
+#memberPropsTable th,
+#memberPropsTable td{ text-align:center!important; }
+#memberPropsTable input,
+#memberPropsTable select,
+#memberPropsTable textarea{ text-align:center!important; }
 @media(max-width:700px){
   body.sidebar-hidden .mobile-sidebar-toggle{display:none!important}
   .sidebar-show-btn{top:auto;bottom:10px;min-width:44px;min-height:96px}

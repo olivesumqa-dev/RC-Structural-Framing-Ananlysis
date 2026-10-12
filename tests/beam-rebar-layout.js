@@ -29,8 +29,13 @@ const api = Function(
   `${sourceConstant("BEAM_MINIMUM_TENSION_STRAIN")}
    ${sourceConstant("BEAM_TENSION_CONTROLLED_STRAIN")}
    ${sourceConstant("BEAM_LONG_SPAN_THRESHOLD_M")}
-   ${sourceConstant("BEAM_LONG_SPAN_STEEL_AREA_FACTOR")}
+   ${sourceConstant("BEAM_LONG_SPAN_DEFAULT_STEEL_RESERVE_PERCENT")}
+   ${sourceConstant("BEAM_LONG_SPAN_MAX_STEEL_RESERVE_PERCENT")}
+   ${sourceConstant("BEAM_LONG_SPAN_STEEL_RESERVE_STORAGE_KEY")}
    ${sourceConstant("REBAR_ELASTIC_MODULUS")}
+   ${sourceFunction("normalizedBeamLongSpanSteelReservePercent")}
+   ${sourceFunction("beamLongSpanSteelReservePercent")}
+   ${sourceFunction("setBeamLongSpanSteelReservePercent")}
    ${sourceFunction("beamLongSpanSteelFactor")}
    ${sourceFunction("concreteBeta1")}
    ${sourceFunction("beamStrengthReductionFactor")}
@@ -40,12 +45,14 @@ const api = Function(
    ${sourceFunction("selectBeamFlexuralLayout")}
    ${sourceFunction("beamScheduleUtilization")}
    ${sourceFunction("governingBeamGroupSchedule")}
-   return {beamLongSpanSteelFactor, beamBarLayout, beamBarCentroidDepth, selectBeamFlexuralLayout, governingBeamGroupSchedule};`
+   return {beamLongSpanSteelFactor, beamLongSpanSteelReservePercent, setBeamLongSpanSteelReservePercent, beamBarLayout, beamBarCentroidDepth, selectBeamFlexuralLayout, governingBeamGroupSchedule};`
 )();
 
-assert.strictEqual(api.beamLongSpanSteelFactor(3.999, true), 1, "The 10% economical-design reserve must not apply below 4.00 m");
-assert.strictEqual(api.beamLongSpanSteelFactor(4.00, true), 1.10, "The 10% reserve must start at 4.00 m while Economical Design is ON");
+assert.strictEqual(api.beamLongSpanSteelFactor(3.999, true), 1, "The 25% economical-design reserve must not apply below 4.00 m");
+assert.strictEqual(api.beamLongSpanSteelFactor(4.00, true), 1.25, "The 25% reserve must start at 4.00 m while Economical Design is ON");
 assert.strictEqual(api.beamLongSpanSteelFactor(4.00, false), 1, "The long-span reserve must not apply while Economical Design is OFF");
+assert.strictEqual(api.setBeamLongSpanSteelReservePercent(99), 25, "The user setting must be capped at 25%");
+assert.strictEqual(api.setBeamLongSpanSteelReservePercent(25), 25, "The user setting must retain valid percentages");
 
 const sevenD21 = api.beamBarLayout(300, 40, 10, 21, 7);
 const sixD22 = api.beamBarLayout(300, 40, 10, 22, 6);
@@ -65,14 +72,14 @@ assert(design21.tensileStrain >= 0.004 && design22.tensileStrain >= 0.004, "Both
 assert(design21.phi < 0.90 && design22.phi === 0.90, "The transition-region design must use a reduced phi while the tension-controlled design uses phi=0.90");
 
 const constrainedReserve = api.selectBeamFlexuralLayout(...common, 21, 303.76, 28, 415, api.beamLongSpanSteelFactor(4.00));
-assert(!constrainedReserve.pass && constrainedReserve.steelReservePass === false, "A section that cannot hold the 10% reserve without violating ductility must fail for resizing");
+assert(!constrainedReserve.pass && constrainedReserve.steelReservePass === false, "A section that cannot hold the 25% reserve without violating ductility must fail for resizing");
 
 const longSpanCommon = [300, 550, 40, 10];
 const longSpanBaseline = api.selectBeamFlexuralLayout(...longSpanCommon, 21, 303.76, 28, 415);
 const longSpanReserved = api.selectBeamFlexuralLayout(...longSpanCommon, 21, 303.76, 28, 415, api.beamLongSpanSteelFactor(4.00));
 assert(longSpanReserved.pass, "The long-span reserve layout must retain all flexural acceptance checks");
 assert(longSpanReserved.count > longSpanBaseline.count, "The long-span reserve must increase the whole main-bar count for the regression section");
-assert(longSpanReserved.areaSteel + 1e-6 >= longSpanBaseline.areaSteel * 1.10, "The provided long-span main steel area must be at least 110% of baseline");
+assert(longSpanReserved.areaSteel + 1e-6 >= longSpanBaseline.areaSteel * 1.25, "The provided long-span main steel area must be at least 125% of baseline");
 assert(longSpanReserved.fits, "The reserved bars must fit within the checked two-layer layout");
 assert(longSpanReserved.tensileStrain >= 0.004, "The reserved layout must retain the minimum tensile strain");
 assert.strictEqual(longSpanReserved.steelReservePass, true, "The reserve result must explicitly report that the project rule passed");

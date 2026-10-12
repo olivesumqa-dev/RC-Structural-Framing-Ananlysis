@@ -15,8 +15,12 @@ assert(html.includes("function installMprTableScrolling()"), "MPR scroll-region 
 assert(html.includes("const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([10, 12, 16, 20, 25, 30]);"), "Beam and column MPR bar selectors must use only the requested longitudinal diameters");
 assert(html.includes("const MPR_SLAB_FOOTING_BAR_DIAMETERS = Object.freeze([10, 12, 16]);"), "Slab and footing MPR bar selectors must use only the requested diameters");
 assert(html.includes("const MPR_TIE_STIRRUP_BAR_DIAMETERS = Object.freeze([10, 12]);"), "Tie and stirrup MPR selectors must use only 10 mm and 12 mm diameters");
+assert(html.includes('id="beamLongSpanSteelDialog"') && html.includes('id="beamLongSpanSteelPercent"'), "Beam-strip long-span steel reserve dialog is missing");
+assert(html.includes("function installBeamLongSpanSteelDialog()") && html.includes("installBeamLongSpanSteelDialog();"), "Beam-strip long-span steel reserve dialog is not installed");
+assert(html.includes("BEAM_LONG_SPAN_DEFAULT_STEEL_RESERVE_PERCENT = 25") && html.includes("BEAM_LONG_SPAN_MAX_STEEL_RESERVE_PERCENT = 25"), "Long-span steel reserve must default to and be limited to 25%");
+assert(html.includes("function applyMemberPropertyReinforcementDefaults(memberType = \"ALL\")") && html.includes("applyMemberPropertyReinforcementDefaults(memberType);"), "Member Properties changes must propagate default detailing into the MPR model");
 assert(html.includes("const STANDARD_LONGITUDINAL_BARS = MPR_COLUMN_BEAM_BAR_DIAMETERS;") && html.includes("const STANDARD_STIRRUP_BARS = MPR_TIE_STIRRUP_BAR_DIAMETERS;"), "Beam optimization must stay within the MPR diameter choices");
-assert(html.includes("for (const barDiameter of MPR_COLUMN_BEAM_BAR_DIAMETERS)") && html.includes("for (const tieDiameter of MPR_TIE_STIRRUP_BAR_DIAMETERS)"), "Column optimization must stay within the MPR diameter choices");
+assert(html.includes('const defaultBarDiameter = Math.max(10, detailingValue("columnLongitudinalBarDiameter", 16, 10));') && html.includes('const defaultTieDiameter = Math.max(6, detailingValue("columnTieDiameter", 10, 6));'), "Column optimization must follow the default longitudinal-bar and tie sizes in Member Properties");
 assert(html.includes("allowedDiameters = MPR_SLAB_FOOTING_BAR_DIAMETERS"), "Slab and footing reinforcement searches must stay within the MPR diameter choices");
 assert((html.match(/mprDiameterOptions\(MPR_COLUMN_BEAM_BAR_DIAMETERS,/g) || []).length === 2, "Both beam and column longitudinal-bar cells must use the discrete diameter selector");
 assert((html.match(/mprDiameterOptions\(MPR_SLAB_FOOTING_BAR_DIAMETERS,/g) || []).length === 3, "Slab plus both footing directions must use the discrete diameter selector");
@@ -76,5 +80,10 @@ assert(/\.design-status\.warn,\s*\.design-status\.fail\s*\{\s*color:\s*#F3AD4B;\
 assert(/body\[data-theme="green_teal"\][^{]+td\.design-status\.fail\s*\{\s*color:\s*#F3AD4B\s*!important;/.test(html), "Night theme must not override the #F3AD4B non-passing MPR Status color");
 assert(html.includes('.design-status.warn,.design-status.fail{color:#F3AD4B!important}'), "Printed/PDF MPR tables must preserve the non-passing Status font color");
 assert(html.includes('background:#f8dddd;color:#F3AD4B') && html.includes('background:#fff0c7;color:#F3AD4B'), "Excel-exported warning and failure Status cells must preserve #F3AD4B text");
+assert(html.includes('id="resultCalculationDefault"') && html.includes('id="resultCalculationAutoPass"'), "Load Model & Analysis must offer Default and AUTO-PASS result-calculation modes");
+assert(html.includes('function syncResultCalculationMode(enabled)') && html.includes('window.setTimeout(() => byId("calculateBtn")?.click(), 0);'), "AUTO-PASS must synchronize with the existing automatic design engine and calculate the active model");
+assert(html.includes('n = ceil(As,target / Ab)') && html.includes('Top (support): ${topCount}-D${bar}') && html.includes('Bottom (midspan): ${bottomCount}-D${bar}'), "Beam academic walkthroughs must show whole-bar-count calculation and selected top/bottom bars");
+assert(html.includes('const ratio = heightValue / widthValue;') && !html.includes('<rect x="112" y="35" width="180" height="160" class="academic-beam-outline"/>'), "Beam academic sketches must use the current b:h member proportion rather than a fixed square-like section");
+assert(css.includes('#memberPropsTable th,') && css.includes('#memberPropsTable textarea{ text-align:center!important; }'), "All editable and display cells in MPR tables must be centered");
 
 console.log("MPR table interaction regression tests: passed");
