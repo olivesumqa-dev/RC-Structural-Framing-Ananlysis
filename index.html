@@ -1963,7 +1963,7 @@
       max-width: none;
       padding-right: 9px;
       border-right: 2px solid rgba(255, 255, 255, 0.62);
-      font-size: 8px;
+      font-size: 16px;
       line-height: 1.08;
     }
     .header-controls {
@@ -63802,7 +63802,8 @@
       function updateMprMemberSummary(counts = {}) {
         const summary = byId("mprMemberSummary");
         if (!summary) return;
-        const storeys = makePlanData().levels.length;
+        // Foundation is a support level, not an occupied building storey.
+        const storeys = Math.max(0, makePlanData().levels.length - 1);
         summary.textContent = `${storeys} Storey Bldg. | No. of Beams=${Number(counts.beams) || 0}, Columns=${Number(counts.columns) || 0}, Slabs=${Number(counts.slabs) || 0}, Footings=${Number(counts.footings) || 0}`;
       }
 
