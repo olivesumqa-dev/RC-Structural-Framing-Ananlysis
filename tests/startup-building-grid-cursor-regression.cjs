@@ -27,7 +27,7 @@ assert(/\.header-disclaimer\s*\{[^}]*font-size:\s*10px;[^}]*text-align:\s*center
 assert(/\.header-disclaimer\s*\{[^}]*border-right:\s*0;/.test(html), "The disclaimer must not add a divider line to the header");
 assert(html.includes('title="Aux. Grid Tool"') && html.includes('>AUX. GRID TOOL</h3>'), "The auxiliary grid tool must use its short requested name");
 assert(!html.includes('<summary>Wall load along beam</summary>'), "The obsolete Wall Load Along Beam sidebar control must not be rendered");
-assert(html.includes('wallLoad: 0') && html.includes('WALL ${wall.toFixed(2)} | D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m'), "X-frame wall loads must share one combined readable load band");
+assert(html.includes('renderXAxisUdlBands') && html.includes('drawXAxisUdlBand') && html.includes('WALL ${wall.toFixed(2)} | D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m'), "X-frame wall loads must be combined into readable clear bands");
 assert(html.includes('"#fff200"'), "WL and EQ frame labels must use bright yellow text");
 
 console.log("Startup template, building grid, wall tool, and cursor checks: passed");

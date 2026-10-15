@@ -59558,6 +59558,81 @@
 
       function installXAxisLoadRendering() {
         const forceColor = "#c1121f";
+        function drawXAxisUdlBand(load, start, end) {
+          const dx = end.x - start.x;
+          const dy = end.y - start.y;
+          const length = Math.hypot(dx, dy) || 1;
+          const horizontal = Math.abs(dy) < scaled(1.5);
+          if (!horizontal) {
+            drawUdl(load, 1);
+            return;
+          }
+          const depth = scaled(18);
+          const leftX = Math.min(start.x, end.x) + scaled(2);
+          const rightX = Math.max(start.x, end.x) - scaled(2);
+          const beamTopY = Math.min(start.y, end.y) - scaled(2.4);
+          const lowerY = beamTopY - scaled(0.6);
+          const upperY = lowerY - depth;
+          const color = load.wallLoad > 0 ? "#f3ad4b" : loadAnnotationColor();
+          ctx.save();
+          ctx.strokeStyle = color;
+          // An opaque band deliberately masks diagrams behind its label. It
+          // avoids the X-frame wall-load text being drawn on top of M/V data.
+          ctx.fillStyle = canvasTheme("--surface", "#071719");
+          ctx.lineWidth = scaled(1);
+          ctx.beginPath();
+          ctx.rect(leftX, upperY, Math.max(1, rightX - leftX), depth);
+          ctx.fill();
+          ctx.stroke();
+          for (let x = leftX + (rightX - leftX) * 0.14; x < rightX; x += Math.max(scaled(28), (rightX - leftX) * 0.16)) {
+            arrow(x, upperY + scaled(2), x, lowerY - scaled(0.2), color, 6, 1.5);
+          }
+          const wallOnlyLabel = `WALL ${(Number(load.wallLoad) || 0).toFixed(2)} kN/m`;
+          const label = load.label || wallOnlyLabel;
+          const availableWidth = Math.max(1, rightX - leftX - scaled(10));
+          ctx.font = `700 ${Math.max(scaled(6), Math.min(scaled(9), availableWidth / Math.max(1, label.length * 0.62))).toFixed(1)}px Arial`;
+          const displayLabel = ctx.measureText(label).width <= availableWidth ? label : wallOnlyLabel;
+          ctx.fillStyle = color;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(displayLabel, (leftX + rightX) / 2, upperY + depth / 2 + scaled(1));
+          ctx.restore();
+        }
+
+        function renderXAxisUdlBands(entries) {
+          const rendered = new Set();
+          const wallRows = new Map();
+          entries.forEach(entry => {
+            if (!(entry.load.wallLoad > 0) || !entry.horizontal) return;
+            const rowKey = `${Math.round(entry.start.y)}|${entry.load.label}`;
+            if (!wallRows.has(rowKey)) wallRows.set(rowKey, []);
+            wallRows.get(rowKey).push(entry);
+          });
+          wallRows.forEach(row => {
+            row.sort((left, right) => Math.min(left.start.x, left.end.x) - Math.min(right.start.x, right.end.x));
+            let group = [];
+            const flush = () => {
+              if (!group.length) return;
+              const first = group[0];
+              const last = group[group.length - 1];
+              drawXAxisUdlBand(first.load, {x: Math.min(first.start.x, first.end.x), y: first.start.y}, {x: Math.max(last.start.x, last.end.x), y: last.end.y});
+              group.forEach(item => rendered.add(item.load.member));
+              group = [];
+            };
+            row.forEach(entry => {
+              const previous = group[group.length - 1];
+              const contiguous = previous && Math.abs(Math.max(previous.start.x, previous.end.x) - Math.min(entry.start.x, entry.end.x)) <= scaled(5);
+              if (previous && !contiguous) flush();
+              group.push(entry);
+            });
+            flush();
+          });
+          entries.forEach(entry => {
+            if (rendered.has(entry.load.member)) return;
+            if (entry.load.wallLoad > 0) drawXAxisUdlBand(entry.load, entry.start, entry.end);
+            else drawUdl(entry.load, 1);
+          });
+        }
         try {
           drawLoads = function () {
             const memberUdlMap = {};
@@ -59625,8 +59700,7 @@
                 memberUdlMap[key].cases["DL-SW"] = {w: Number(selfWeightLoad?.w) || 0, wx: 0};
               }
             });
-            const memberLoadStack = {};
-            Object.values(memberUdlMap).forEach(load => {
+            const renderedUdlEntries = Object.values(memberUdlMap).map(load => {
               const member = getMember(load.member);
               const ends = member && memberStartEnd(member);
               const pixels = ends ? Math.hypot(toCanvas(ends.end.x, ends.end.y).x - toCanvas(ends.start.x, ends.start.y).x, toCanvas(ends.end.x, ends.end.y).y - toCanvas(ends.start.x, ends.start.y).y) : 0;
@@ -59637,8 +59711,12 @@
               load.label = wall > 0
                 ? `WALL ${wall.toFixed(2)} | D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m`
                 : (pixels >= scaled(155) ? `D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m` : `w ${total.toFixed(1)} kN/m`);
-              drawUdl(load, 1);
-            });
+              if (!ends) return null;
+              const start = toCanvas(ends.start.x, ends.start.y);
+              const end = toCanvas(ends.end.x, ends.end.y);
+              return {load, start, end, horizontal: Math.abs(start.y - end.y) < scaled(1.5)};
+            }).filter(Boolean);
+            renderXAxisUdlBands(renderedUdlEntries);
             Object.values(nodeLoadMap).forEach(load => {
               const sources = Array.from(load.sources || []);
               if (sources.length && sources.every(source => String(source).startsWith("manual-point-"))) return;
