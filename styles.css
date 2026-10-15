@@ -438,6 +438,11 @@ main{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:c
 .auxiliary-grid-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .auxiliary-grid-fields label{display:grid;gap:3px;margin:0;font-size:10px}
 .auxiliary-grid-fields input{width:100%;height:28px;border:1px solid #51696b;background:#fff!important;color:#071719!important;padding:3px 6px;font-size:11px}
+.building-grid-dialog{border-color:#154f32!important}
+.building-grid-toggle{display:flex!important;align-items:center;gap:7px;margin:0 0 10px!important;font-weight:700}
+.building-grid-toggle input{width:16px!important;height:16px!important;margin:0;accent-color:#154f32}
+.building-grid-color{display:flex;align-items:center;gap:7px;margin-top:9px;color:#071719;font-size:10px}
+.building-grid-color span{width:18px;height:10px;border:1px solid #071719;background:#154f32}
 .wall-tool-dialog{width:min(390px,calc(100vw - 28px));max-height:min(620px,calc(100vh - 28px));overflow:auto;background:#f5fbfb!important;color:#071719!important;border:1px solid #35595b!important}
 .wall-tool-dialog .girder-direction-dialog-inner{padding:12px!important}
 .wall-tool-dialog h3,.wall-tool-dialog h4,.wall-tool-dialog p,.wall-tool-dialog label{color:#071719!important}

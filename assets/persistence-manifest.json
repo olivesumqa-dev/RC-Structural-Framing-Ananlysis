@@ -1,10 +1,10 @@
 {
-  "id": "2026-10-12-three-storey-startup-v2",
-  "defaultProject": "3-STO. BLDG",
+  "id": "2026-10-15-two-storey-sample-startup-v1",
+  "defaultProject": "2-STOREY SAMPLE",
   "projects": [
     {
-      "name": "3-STO. BLDG",
-      "source": "JSON/3-STO. BLDG.stf",
+      "name": "2-STOREY SAMPLE",
+      "source": "JSON/2-STOREY SAMPLE.stf",
       "replaceExisting": true
     }
   ]

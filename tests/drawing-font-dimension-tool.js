@@ -39,7 +39,7 @@ assert(html.includes("lineCountX: divisionsX + 1") && html.includes("lineCountY:
 assert(html.includes("function nearestAuxiliaryGridNode") && html.includes("function placeAuxiliaryGridAt"), "Auxiliary grids must snap to plan nodes and expose magnetic intersections");
 assert(html.includes('color: "#4f5658"'), "Auxiliary grids must use a visible dark-gray color");
 assert(html.includes("planAuxiliaryGrids: deepCopy(planState.auxiliaryGrids)"), "Auxiliary grids must participate in workspace Undo snapshots");
-assert(html.includes('id="modeWall"') && html.includes('id="wallToolDialog"'), "The sidebar needs a Structural Wall Tool and property dialog");
+assert(!html.includes('id="modeWall"') && html.includes('id="planWallToolBtn"') && html.includes('id="wallToolDialog"'), "The sidebar Wall entry must be removed while the toolbar Wall tool and property dialog remain available");
 assert(html.includes('id="wallToolUnitWeight"') && html.includes("WALL OPENING DEDUCTIONS"), "Structural Wall Tool must capture unit weight and opening deductions");
 assert(html.includes("function createPlanWallAt") && html.includes("function wallPathHasSlab"), "Structural walls must be created continuously between slab-supported nodes");
 assert(html.includes("planLevelWalls: deepCopy(planState.levelWalls)"), "Structural walls must participate in save and Undo snapshots");
@@ -48,7 +48,7 @@ assert(html.includes("netLineLoad") && html.includes("openingDeductionRatio"), "
 assert(html.includes("Save / Open Project") && html.includes("CURRENT PROJECT") && html.includes("SAVED PROJECTS"), "Project save/open labels must use the revised terminology");
 assert(html.includes('id="assignWallLoad" type="button">Select Beam(s)</button>'), "Wall-load beam action must be labeled Select Beam(s)");
 assert(html.indexOf('id="planWallToolBtn"') > html.indexOf('id="planDimensionToolBtn"'), "Wall Tool must appear immediately after the Dimension tool in the drawing toolbar");
-assert(html.includes('ctx.strokeStyle = "#c1121f"') && html.includes("strokeWallLine(-boundaryOffset)") && html.includes("strokeWallLine(boundaryOffset)") && html.includes("strokeWallLine(0)"), "Plan walls must render as two red dashed boundaries and one centerline");
+assert(html.includes('ctx.strokeStyle = "#ff3131"') && html.includes("ctx.lineWidth = 5.1") && html.includes("strokeWallLine(-boundaryOffset)") && html.includes("strokeWallLine(boundaryOffset)") && html.includes("strokeWallLine(0)"), "Plan walls must render as two 3x-thick bright-red dashed boundaries and one centerline");
 assert(html.includes('wallBeamSelectionState.active && wallBeamSelectionState.axis === "PLAN"') && html.includes("Select Beam(s) is not available on the Foundation plan"), "Select Beam(s) must support non-foundation Plan Views");
 assert(!html.includes('id="engineeringPointFx"') && !html.includes('id="engineeringPointX"'), "Member Point Load must not expose horizontal load or typed distance inputs");
 assert(html.includes("VERTICAL LOAD (Py), kN, downward (-)") && html.includes("Assign Point Load in Plan View"), "Member Point Load needs the revised vertical-only Plan-view workflow");
