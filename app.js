@@ -641,7 +641,12 @@ function loadAnnotationColor() {
 }
 
 function viewScale() {
-  return Math.max(0.45, Math.min(2.5, zoom));
+  // Canvas coordinates already include the model zoom.  Annotation geometry
+  // (text, arrow heads, dimensions, nodes and line weights) must remain in
+  // screen pixels, as it does in a CAD drawing.  Letting these values follow
+  // `zoom` made labels and point-load arrows grow/shrink and forced the
+  // collision solver to move them on every redraw.
+  return 1;
 }
 
 function scaled(value) {

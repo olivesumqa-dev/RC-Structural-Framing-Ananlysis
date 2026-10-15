@@ -55988,6 +55988,78 @@
         return displayed;
       }
 
+      // Draw member distributed loads in one screen-stable presentation layer.
+      // The model endpoints move with pan/zoom; the arrows, label and band
+      // depth stay in pixels.  Both axis frames call this same primitive so
+      // the X frame cannot gradually diverge from the Y-frame convention.
+      function drawFixedFrameUdlBand(ctx, member, a, b, label, color, targetCollection) {
+        const ax = a.x;
+        const ay = a.y;
+        const bx = b.x;
+        const by = b.y;
+        const dx = bx - ax;
+        const dy = by - ay;
+        const length = Math.hypot(dx, dy) || 1;
+        const tx = dx / length;
+        const ty = dy / length;
+        let nx = -ty;
+        let ny = tx;
+        if (Math.abs(dy) < 1.5 && ny > 0) { nx *= -1; ny *= -1; }
+        if (member.type === "Column") { nx = -1; ny = 0; }
+
+        const depth = 18;
+        const startPad = 3;
+        const x1 = ax + tx * startPad + nx * 2;
+        const y1 = ay + ty * startPad + ny * 2;
+        const x2 = bx - tx * startPad + nx * 2;
+        const y2 = by - ty * startPad + ny * 2;
+        const x3 = x2 + nx * depth;
+        const y3 = y2 + ny * depth;
+        const x4 = x1 + nx * depth;
+        const y4 = y1 + ny * depth;
+        const availableLabelWidth = Math.hypot(x3 - x4, y3 - y4) - 10;
+        const wallOnly = String(label || "").match(/^(WALL\s+[^|]+)(?:\s*\|.*)?$/i)?.[1];
+        let displayLabel = String(label || "w = 0.0 kN/m");
+
+        ctx.save();
+        ctx.font = "700 9px Arial";
+        if (ctx.measureText(displayLabel).width > availableLabelWidth && wallOnly) displayLabel = wallOnly;
+        if (ctx.measureText(displayLabel).width > availableLabelWidth) displayLabel = "LOAD";
+        ctx.strokeStyle = color;
+        ctx.fillStyle = "rgba(255,150,31,.08)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        for (let ratio = 0.14; ratio < 0.93; ratio += 0.16) {
+          const sx = x4 + (x3 - x4) * ratio;
+          const sy = y4 + (y3 - y4) * ratio;
+          drawCanvasArrowHead(ctx, sx - nx * (depth - 3), sy - ny * (depth - 3), Math.atan2(-ny, -nx));
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(sx - nx * (depth - 3), sy - ny * (depth - 3));
+          ctx.stroke();
+        }
+        // A fixed label inside the band avoids reflowing across M/V diagrams
+        // when users pan or zoom.  The opaque band remains legible in either
+        // theme and consistently matches the Y-axis convention.
+        drawCanvasText(ctx, displayLabel, (x3 + x4) / 2, (y3 + y4) / 2 + 1, {
+          font: "700 9px Arial",
+          color,
+          rotate: Math.atan2(ty, tx)
+        });
+        ctx.restore();
+
+        if (Array.isArray(targetCollection)) {
+          targetCollection.push({
+            kind: "member_udl",
+            member: member.id,
+            polygon: [{x: x1, y: y1}, {x: x2, y: y2}, {x: x3, y: y3}, {x: x4, y: y4}]
+          });
+        }
+      }
+
       function drawYAxisUdlBox(ctx, member, a, b, loads) {
         const ax = a.x;
         const ay = a.y;
@@ -56013,23 +56085,6 @@
         const x4 = x1 + nx * depth;
         const y4 = y1 + ny * depth;
         const color = canvasTheme("--load", "#b42318");
-        ctx.save();
-        ctx.strokeStyle = color;
-        ctx.fillStyle = "rgba(255,150,31,.08)";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        for (let ratio = 0.14; ratio < 0.93; ratio += 0.16) {
-          const sx = x4 + (x3 - x4) * ratio;
-          const sy = y4 + (y3 - y4) * ratio;
-          drawCanvasArrowHead(ctx, sx - nx * (depth - 3), sy - ny * (depth - 3), Math.atan2(-ny, -nx));
-          ctx.beginPath();
-          ctx.moveTo(sx, sy);
-          ctx.lineTo(sx - nx * (depth - 3), sy - ny * (depth - 3));
-          ctx.stroke();
-        }
         const byCase = new Map();
         loads.forEach(load => {
           const key = loadCaseLabel(load.case);
@@ -56047,18 +56102,7 @@
         const label = wallLoad > 0
           ? `WALL ${wallLoad.toFixed(2)} | D ${deadLoad.toFixed(1)} | L ${liveLoad.toFixed(1)} kN/m`
           : (availableLabelWidth >= 150 ? `D ${deadLoad.toFixed(1)} | L ${liveLoad.toFixed(1)} kN/m` : `w ${totalLoad.toFixed(1)} kN/m`);
-        const labelFontSize = Math.max(6, Math.min(9, availableLabelWidth / Math.max(1, label.length * 0.58)));
-        drawNonOverlappingText(ctx, label, (x3 + x4) / 2 + nx * 11, (y3 + y4) / 2 + ny * 11, {
-          font: `700 ${labelFontSize.toFixed(1)}px Arial`,
-          color,
-          rotate: Math.atan2(ty, tx)
-        }, [{x: nx * 14, y: ny * 14}, {x: -tx * 25, y: -ty * 25}, {x: tx * 25, y: ty * 25}]);
-        ctx.restore();
-        renderedLoadTargets.Y.push({
-          kind: "member_udl",
-          member: member.id,
-          polygon: [{x: x1, y: y1}, {x: x2, y: y2}, {x: x3, y: y3}, {x: x4, y: y4}]
-        });
+        drawFixedFrameUdlBand(ctx, member, a, b, label, color, renderedLoadTargets.Y);
       }
 
       function drawYAxisResultDiagrams(ctx, yModel, transform) {
@@ -59559,44 +59603,10 @@
       function installXAxisLoadRendering() {
         const forceColor = "#c1121f";
         function drawXAxisUdlBand(load, start, end) {
-          const dx = end.x - start.x;
-          const dy = end.y - start.y;
-          const length = Math.hypot(dx, dy) || 1;
-          const horizontal = Math.abs(dy) < scaled(1.5);
-          if (!horizontal) {
-            drawUdl(load, 1);
-            return;
-          }
-          const depth = scaled(18);
-          const leftX = Math.min(start.x, end.x) + scaled(2);
-          const rightX = Math.max(start.x, end.x) - scaled(2);
-          const beamTopY = Math.min(start.y, end.y) - scaled(2.4);
-          const lowerY = beamTopY - scaled(0.6);
-          const upperY = lowerY - depth;
           const color = load.wallLoad > 0 ? "#f3ad4b" : loadAnnotationColor();
-          ctx.save();
-          ctx.strokeStyle = color;
-          // An opaque band deliberately masks diagrams behind its label. It
-          // avoids the X-frame wall-load text being drawn on top of M/V data.
-          ctx.fillStyle = canvasTheme("--surface", "#071719");
-          ctx.lineWidth = scaled(1);
-          ctx.beginPath();
-          ctx.rect(leftX, upperY, Math.max(1, rightX - leftX), depth);
-          ctx.fill();
-          ctx.stroke();
-          for (let x = leftX + (rightX - leftX) * 0.14; x < rightX; x += Math.max(scaled(28), (rightX - leftX) * 0.16)) {
-            arrow(x, upperY + scaled(2), x, lowerY - scaled(0.2), color, 6, 1.5);
-          }
           const wallOnlyLabel = `WALL ${(Number(load.wallLoad) || 0).toFixed(2)} kN/m`;
-          const label = load.label || wallOnlyLabel;
-          const availableWidth = Math.max(1, rightX - leftX - scaled(10));
-          ctx.font = `700 ${Math.max(scaled(6), Math.min(scaled(9), availableWidth / Math.max(1, label.length * 0.62))).toFixed(1)}px Arial`;
-          const displayLabel = ctx.measureText(label).width <= availableWidth ? label : wallOnlyLabel;
-          ctx.fillStyle = color;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(displayLabel, (leftX + rightX) / 2, upperY + depth / 2 + scaled(1));
-          ctx.restore();
+          const xMember = {id: load.member, type: "Beam"};
+          drawFixedFrameUdlBand(ctx, xMember, start, end, load.label || wallOnlyLabel, color, renderedLoadTargets.X);
         }
 
         function renderXAxisUdlBands(entries) {

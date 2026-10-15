@@ -29,5 +29,8 @@ assert(html.includes('title="Aux. Grid Tool"') && html.includes('>AUX. GRID TOOL
 assert(!html.includes('<summary>Wall load along beam</summary>'), "The obsolete Wall Load Along Beam sidebar control must not be rendered");
 assert(html.includes('renderXAxisUdlBands') && html.includes('drawXAxisUdlBand') && html.includes('WALL ${wall.toFixed(2)} | D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m'), "X-frame wall loads must be combined into readable clear bands");
 assert(html.includes('"#fff200"'), "WL and EQ frame labels must use bright yellow text");
+assert(html.includes('function drawFixedFrameUdlBand') && html.includes('drawFixedFrameUdlBand(ctx, member, a, b, label, color, renderedLoadTargets.Y)') && html.includes('drawFixedFrameUdlBand(ctx, xMember, start, end'), "X and Y frames must share one distributed-load presentation primitive");
+assert(html.includes('font: "700 9px Arial"') && html.includes('const depth = 18;'), "Frame load labels and arrows must use fixed screen-pixel presentation sizes");
+assert(app.includes('function viewScale()') && app.includes('return 1;'), "Drawing annotations must not scale with drawing zoom");
 
 console.log("Startup template, building grid, wall tool, and cursor checks: passed");
