@@ -23,21 +23,52 @@ function capabilities(state) {
     excelExport: paid, csvExport: paid, cadExport: paid, downloadProject: paid, downloadReport: paid, allProductionExports: paid
   };
 }
-async function entitlementFor(userId) {
-  const rows = await request(`/rest/v1/feature_entitlements?user_id=eq.${encodeURIComponent(userId)}&feature=eq.${FEATURE}&select=*`);
-  let record = rows[0];
-  if (!record) {
-    const created = await request("/rest/v1/feature_entitlements", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ user_id: userId, feature: FEATURE }) });
-    record = created[0];
-  }
-  const now = Date.now();
-  if ((record.state === "TRIAL_ACTIVE" || record.state === "TRIAL_CANCELLED_PENDING_EXPIRY") && record.expires_at && Date.parse(record.expires_at) <= now) {
-    const nextState = record.cancel_at_trial_end ? "EXPIRED" : "PAYMENT_PENDING";
-    const updated = await request(`/rest/v1/feature_entitlements?id=eq.${record.id}`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ state: nextState, updated_at: new Date().toISOString() }) });
-    record = updated[0];
-  }
-  const paymentMethods = await request(`/rest/v1/billing_payment_methods?user_id=eq.${encodeURIComponent(userId)}&status=eq.VERIFIED&select=id&limit=1`);
-  return { state: record.state, feature: FEATURE, startsAt: record.starts_at, expiresAt: record.expires_at,
-    selectedPlan: record.selected_plan, cancelAtTrialEnd: record.cancel_at_trial_end, paymentMethodVerified: Boolean(paymentMethods[0]), capabilities: capabilities(record.state) };
+
+function isMissingPremiumSchema(error) {
+  const message = String(error?.message || error || "");
+  return /Could not find the table ['\"]public\.(feature_entitlements|billing_payment_methods)['\"] in the schema cache/i.test(message);
 }
-module.exports = { FEATURE, PLAN, capabilities, entitlementFor };
+
+function developmentTrialEnabled() {
+  return String(process.env.STRUC_FORGE_DEVELOPMENT_TRIAL || "").trim().toLowerCase() === "true";
+}
+
+function developmentTrialEntitlement() {
+  return {
+    state: "TRIAL_ACTIVE",
+    feature: FEATURE,
+    startsAt: null,
+    // This is deliberately a development-only access path. It is not a paid
+    // entitlement and it remains unavailable unless the server flag is set.
+    expiresAt: "2099-12-31T23:59:59.999Z",
+    selectedPlan: "PROFESSIONAL_MONTHLY",
+    cancelAtTrialEnd: false,
+    paymentMethodVerified: false,
+    developmentFallback: true,
+    capabilities: capabilities("TRIAL_ACTIVE")
+  };
+}
+
+async function entitlementFor(userId) {
+  try {
+    const rows = await request(`/rest/v1/feature_entitlements?user_id=eq.${encodeURIComponent(userId)}&feature=eq.${FEATURE}&select=*`);
+    let record = rows[0];
+    if (!record) {
+      const created = await request("/rest/v1/feature_entitlements", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ user_id: userId, feature: FEATURE }) });
+      record = created[0];
+    }
+    const now = Date.now();
+    if ((record.state === "TRIAL_ACTIVE" || record.state === "TRIAL_CANCELLED_PENDING_EXPIRY") && record.expires_at && Date.parse(record.expires_at) <= now) {
+      const nextState = record.cancel_at_trial_end ? "EXPIRED" : "PAYMENT_PENDING";
+      const updated = await request(`/rest/v1/feature_entitlements?id=eq.${record.id}`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ state: nextState, updated_at: new Date().toISOString() }) });
+      record = updated[0];
+    }
+    const paymentMethods = await request(`/rest/v1/billing_payment_methods?user_id=eq.${encodeURIComponent(userId)}&status=eq.VERIFIED&select=id&limit=1`);
+    return { state: record.state, feature: FEATURE, startsAt: record.starts_at, expiresAt: record.expires_at,
+      selectedPlan: record.selected_plan, cancelAtTrialEnd: record.cancel_at_trial_end, paymentMethodVerified: Boolean(paymentMethods[0]), capabilities: capabilities(record.state) };
+  } catch (error) {
+    if (developmentTrialEnabled() && isMissingPremiumSchema(error)) return developmentTrialEntitlement();
+    throw error;
+  }
+}
+module.exports = { FEATURE, PLAN, capabilities, entitlementFor, developmentTrialEnabled, isMissingPremiumSchema };
