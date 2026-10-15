@@ -55804,18 +55804,10 @@
       }
 
       function drawNonOverlappingText(ctx, value, x, y, options = {}, candidates = []) {
-        const offsets = [{x: 0, y: 0}, ...candidates];
-        let placement = {x, y};
-        for (const offset of offsets) {
-          const candidate = {x: x + offset.x, y: y + offset.y};
-          const box = auxiliaryTextBox(ctx, value, candidate.x, candidate.y, options);
-          if (!auxiliaryLabelBoxes.some(existing => boxesIntersect(existing, box))) {
-            placement = candidate;
-            auxiliaryLabelBoxes.push(box);
-            drawCanvasText(ctx, value, placement.x, placement.y, options);
-            return placement;
-          }
-        }
+        // Do not make drawing annotations hop between collision candidates as
+        // the user pans or zooms.  The chosen anchor is deterministic, like a
+        // CAD annotation; its size and relation to the member stay constant.
+        const placement = {x, y};
         const box = auxiliaryTextBox(ctx, value, placement.x, placement.y, options);
         auxiliaryLabelBoxes.push(box);
         drawCanvasText(ctx, value, placement.x, placement.y, options);

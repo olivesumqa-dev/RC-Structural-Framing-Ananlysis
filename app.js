@@ -674,17 +674,13 @@ function boxesOverlap(a, b) {
 }
 
 function findClearLabelPoint(x, y, text, candidates) {
-  for (const c of candidates) {
-    const p = {x: x + c.x, y: y + c.y};
-    const box = labelBox(p.x, p.y, text);
-    if (!mainLabelBoxes.some(existing => boxesOverlap(existing, box))) {
-      mainLabelBoxes.push(box);
-      return p;
-    }
-  }
-  const fallback = {x: x + candidates[0].x, y: y + candidates[0].y};
-  mainLabelBoxes.push(labelBox(fallback.x, fallback.y, text));
-  return fallback;
+  // Keep the first, deliberate annotation offset.  Re-evaluating a list of
+  // collision candidates during every zoom/pan redraw made labels jump to a
+  // different place even though the underlying member had not moved.
+  const preferred = candidates?.[0] || {x: 0, y: 0};
+  const point = {x: x + preferred.x, y: y + preferred.y};
+  mainLabelBoxes.push(labelBox(point.x, point.y, text));
+  return point;
 }
 
 function drawSafeText(text, x, y, candidates, align = "center", color = annotationColor()) {
