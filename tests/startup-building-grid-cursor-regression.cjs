@@ -33,5 +33,6 @@ assert(html.includes('function drawFixedFrameUdlBand') && html.includes('drawFix
 assert(html.includes('font: "700 9px Arial"') && html.includes('const depth = 18;'), "Frame load labels and arrows must use fixed screen-pixel presentation sizes");
 assert(app.includes('function viewScale()') && app.includes('return 1;'), "Drawing annotations must not scale with drawing zoom");
 assert(app.includes('Keep the first, deliberate annotation offset') && html.includes('Do not make drawing annotations hop between collision candidates'), "Drawing labels must retain stable CAD-style anchors during pan and zoom");
+assert(html.includes('app.js?v=78'), "The fixed annotation renderer must use a new script revision rather than a stale browser cache");
 
 console.log("Startup template, building grid, wall tool, and cursor checks: passed");
