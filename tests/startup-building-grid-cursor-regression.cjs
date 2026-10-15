@@ -22,7 +22,12 @@ assert(html.includes('id="buildingGridToolBtn"') && html.includes('id="buildingG
 assert(html.includes('buildingGridNodeEndpoint(nearestBuildingGridNode'), "Building-grid intersections must participate in magnetic snapping");
 assert(html.includes('planBuildingGrid: deepCopy(planState.buildingGrid)'), "Building-grid settings must persist in project snapshots");
 assert(html.includes('ctx.lineWidth = 5.1;') && html.includes('ctx.strokeStyle = "#ff3131";'), "Wall boundaries must be bright red and exactly three times thicker");
-assert(html.includes('https://www.strucforge.com/assets/mascot-cursor.js?v=production-2'), "The deployed RC app must load the production mascot cursor");
-assert(/\.header-disclaimer\s*\{[^}]*font-size:\s*16px;/.test(html), "The upper-right disclaimer must use twice its former 8 px font size");
+assert(html.includes('https://www.strucforge.com/assets/mascot-cursor.js?v=production-3'), "The deployed RC app must load the current production mascot cursor");
+assert(/\.header-disclaimer\s*\{[^}]*font-size:\s*10px;[^}]*text-align:\s*center;[^}]*align-items:\s*center;/.test(html), "The upper-right disclaimer must use the corrected readable size and centered header alignment");
+assert(/\.header-disclaimer\s*\{[^}]*border-right:\s*0;/.test(html), "The disclaimer must not add a divider line to the header");
+assert(html.includes('title="Aux. Grid Tool"') && html.includes('>AUX. GRID TOOL</h3>'), "The auxiliary grid tool must use its short requested name");
+assert(!html.includes('<summary>Wall load along beam</summary>'), "The obsolete Wall Load Along Beam sidebar control must not be rendered");
+assert(html.includes('wallLoad: 0') && html.includes('WALL ${wall.toFixed(2)} | D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m'), "X-frame wall loads must share one combined readable load band");
+assert(html.includes('"#fff200"'), "WL and EQ frame labels must use bright yellow text");
 
 console.log("Startup template, building grid, wall tool, and cursor checks: passed");

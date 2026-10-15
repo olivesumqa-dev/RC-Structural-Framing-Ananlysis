@@ -1961,10 +1961,15 @@
     .header-disclaimer {
       min-width: 0;
       max-width: none;
-      padding-right: 9px;
-      border-right: 2px solid rgba(255, 255, 255, 0.62);
-      font-size: 16px;
-      line-height: 1.08;
+      padding-right: 0;
+      border-right: 0;
+      font-size: 10px;
+      line-height: 1.1;
+      text-align: center;
+      align-items: center;
+    }
+    .header-disclaimer span {
+      text-align: center;
     }
     .header-controls {
       align-items: flex-end;
@@ -2508,14 +2513,6 @@
             <button id="assignEngineeringPointLoad" type="button">Assign Point Load in Plan View</button>
           </details>
 
-          <details>
-            <summary>Wall load along beam</summary>
-            <label>Wall unit weight, kN/m3</label><input id="wallDensity" value="19.6" />
-            <label>Wall thickness, m</label><input id="wallThickness" value="0.15" />
-            <label>Wall height, m</label><input id="wallHeight" value="3.0" />
-            <label>Opening deduction, %</label><input id="wallOpening" value="0" />
-            <button id="assignWallLoad" type="button">Select Beam(s)</button>
-          </details>
         </div>
 
         <div hidden aria-hidden="true">
@@ -2593,7 +2590,7 @@
                 <button id="planEditTextToolBtn" class="drawing-tool-btn" type="button" title="Edit Text" aria-label="Edit Text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h12M10 5v14M6 19h8"></path><path d="m15 18 4-4 2 2-4 4-3 1z"></path></svg></button>
                 <button id="planDimensionToolBtn" class="drawing-tool-btn" type="button" title="Dimension" aria-label="Create Dimension"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6v12M19 6v12M5 12h14"></path><path d="m9 9-4 3 4 3M15 9l4 3-4 3"></path></svg></button>
                 <button id="planWallToolBtn" class="drawing-tool-btn" type="button" title="Structural Wall Tool" aria-label="Create Structural Wall"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18" stroke="#ff3131" stroke-width="3" stroke-dasharray="3 2"></path><path d="M3 12h18" stroke="#ffffff" stroke-width="1"></path><path d="M3 17h18" stroke="#ff3131" stroke-width="3" stroke-dasharray="3 2"></path></svg></button>
-                <button id="planAuxGridToolBtn" class="drawing-tool-btn" type="button" title="Create Auxiliary Grid" aria-label="Create Auxiliary Grid"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"></path><path d="M2 2h4v4H2z"></path></svg></button>
+                <button id="planAuxGridToolBtn" class="drawing-tool-btn" type="button" title="Aux. Grid Tool" aria-label="Aux. Grid Tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"></path><path d="M2 2h4v4H2z"></path></svg></button>
                 <button id="buildingGridToolBtn" class="drawing-tool-btn" type="button" title="Bldg. Grid Tool" aria-label="Bldg. Grid Tool" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zM7.5 3v18M12 3v18M16.5 3v18M3 7.5h18M3 12h18M3 16.5h18"></path><path d="M1.5 1.5h5v5h-5z" fill="#154f32"></path></svg></button>
                 <button id="planMatchPropertiesToolBtn" class="drawing-tool-btn" type="button" title="Match Properties" aria-label="Match Properties"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 15 8-8 4 4-8 8H5z"></path><path d="m14 6 2-2 4 4-2 2M4 21h8"></path></svg></button>
                 <span class="drawing-toolbar-separator" aria-hidden="true"></span>
@@ -2735,7 +2732,7 @@
 
       <dialog id="auxiliaryGridDialog" class="girder-direction-dialog auxiliary-grid-dialog" aria-labelledby="auxiliaryGridTitle">
         <div class="girder-direction-dialog-inner">
-          <h3 id="auxiliaryGridTitle">CREATE AUXILIARY GRID</h3>
+          <h3 id="auxiliaryGridTitle">AUX. GRID TOOL</h3>
           <p>Set the grid's overall dimensions and required intersection spacing. After Apply, click a drawing node to insert the top-left grid handle.</p>
           <div class="auxiliary-grid-fields">
             <label for="auxGridDimensionX">X overall dimension, m<input id="auxGridDimensionX" type="number" min="0.10" max="100" step="0.10" value="4.00"></label>
@@ -46112,7 +46109,7 @@
   }
 }
   </script>
-  <script src="https://www.strucforge.com/assets/mascot-cursor.js?v=production-2"></script>
+  <script src="https://www.strucforge.com/assets/mascot-cursor.js?v=production-3"></script>
   <script src="solver.js?v=16"></script>
   <script src="app.js?v=77"></script>
   <script src="column-tool.js?v=11"></script>
@@ -56629,6 +56626,7 @@
               const sourceNames = Array.from(loadGroup.sources);
               if (sourceNames.length && sourceNames.every(source => String(source).startsWith("manual-point-"))) return;
               const offset = stackIndex * 20;
+              const labelColor = ["WL", "EQ"].includes(loadGroup.caseName) ? "#fff200" : loadColor;
               if (Math.abs(loadGroup.fx) > 0.001) {
                 ctx.strokeStyle = loadColor;
                 ctx.lineWidth = 2;
@@ -56643,7 +56641,7 @@
                 const horizontalTag = `${loadGroup.caseName} ${Math.abs(loadGroup.fx).toFixed(1)} kN`;
                 const labelMagnitude = 15 + (nodeIndex % 2) * 13;
                 const labelShift = loadGroup.caseName === "WL" ? labelMagnitude : -labelMagnitude;
-                drawNonOverlappingText(ctx, horizontalTag, x - direction * 38, arrowY + labelShift, {font: "700 12px Arial", color: loadColor}, [{x: 0, y: labelShift}, {x: -direction * 28, y: 0}, {x: direction * 28, y: 0}]);
+                drawNonOverlappingText(ctx, horizontalTag, x - direction * 38, arrowY + labelShift, {font: "700 12px Arial", color: labelColor}, [{x: 0, y: labelShift}, {x: -direction * 28, y: 0}, {x: direction * 28, y: 0}]);
                 renderedLoadTargets.Y.push({kind: "node", node: node.id, caseName: loadGroup.caseName, x: x - direction * 30, y: arrowY, radius: 28});
               }
               if (Math.abs(loadGroup.fy) > 0.001) {
@@ -56657,7 +56655,7 @@
                 ctx.stroke();
                 drawCanvasArrowHead(ctx, arrowX, y - direction * 10, direction > 0 ? Math.PI / 2 : -Math.PI / 2);
                 const verticalTag = `${loadGroup.caseName} ${Math.abs(loadGroup.fy).toFixed(1)} kN`;
-                drawNonOverlappingText(ctx, verticalTag, arrowX + 14, y - direction * 38, {font: "700 12px Arial", color: loadColor}, [{x: 16, y: 0}, {x: -30, y: 0}, {x: 0, y: -direction * 18}]);
+                drawNonOverlappingText(ctx, verticalTag, arrowX + 14, y - direction * 38, {font: "700 12px Arial", color: labelColor}, [{x: 16, y: 0}, {x: -30, y: 0}, {x: 0, y: -direction * 18}]);
                 renderedLoadTargets.Y.push({kind: "node", node: node.id, caseName: loadGroup.caseName, x: arrowX, y: y - direction * 30, radius: 28});
               }
             });
@@ -59590,12 +59588,21 @@
               }
               if (load.kind === "member_udl") {
                 const wallSource = ["structural-wall-plan", "manual-wall-plan", "manual-wall"].includes(String(load.source || ""));
-                const key = `${load.member}|${wallSource ? "WALL" : "STANDARD"}`;
-                if (!memberUdlMap[key]) memberUdlMap[key] = {kind: "member_udl", member: load.member, cases: {}, wallSource};
+                // Keep the wall and ordinary member loads together in one
+                // load band.  The old two-band presentation placed a wall
+                // on top of the other loads in the X frame and made both
+                // harder to read.
+                const key = String(load.member);
+                if (!memberUdlMap[key]) memberUdlMap[key] = {kind: "member_udl", member: load.member, cases: {}, wallLoad: 0};
                 const caseName = load.case || "UDL";
-                if (!memberUdlMap[key].cases[caseName]) memberUdlMap[key].cases[caseName] = {w: 0, wx: 0};
+                if (!memberUdlMap[key].cases[caseName]) memberUdlMap[key].cases[caseName] = {w: 0, wx: 0, wallW: 0};
                 memberUdlMap[key].cases[caseName].w += Number(load.w) || 0;
                 memberUdlMap[key].cases[caseName].wx += Number(load.wx) || 0;
+                if (wallSource) {
+                  const wallW = Math.abs(Number(load.w) || 0);
+                  memberUdlMap[key].cases[caseName].wallW += wallW;
+                  memberUdlMap[key].wallLoad += wallW;
+                }
               }
               if (load.kind === "member_point") {
                 memberPointStack[load.member] = (memberPointStack[load.member] || 0) + 1;
@@ -59619,18 +59626,18 @@
               }
             });
             const memberLoadStack = {};
-            Object.values(memberUdlMap).sort((left, right) => Number(left.wallSource) - Number(right.wallSource)).forEach(load => {
+            Object.values(memberUdlMap).forEach(load => {
               const member = getMember(load.member);
               const ends = member && memberStartEnd(member);
               const pixels = ends ? Math.hypot(toCanvas(ends.end.x, ends.end.y).x - toCanvas(ends.start.x, ends.start.y).x, toCanvas(ends.end.x, ends.end.y).y - toCanvas(ends.start.x, ends.start.y).y) : 0;
-              const dead = Object.entries(load.cases).filter(([caseName]) => ["DL", "SDL", "DL-SW"].includes(loadCaseLabel(caseName))).reduce((sum, [, values]) => sum + Math.abs(Number(values.w) || 0), 0);
+              const wall = Number(load.wallLoad) || 0;
+              const dead = Object.entries(load.cases).filter(([caseName]) => ["DL", "SDL", "DL-SW"].includes(loadCaseLabel(caseName))).reduce((sum, [, values]) => sum + Math.abs((Number(values.w) || 0) - (Number(values.wallW) || 0)), 0);
               const live = Object.entries(load.cases).filter(([caseName]) => ["LL", "P"].includes(loadCaseLabel(caseName))).reduce((sum, [, values]) => sum + Math.abs(Number(values.w) || 0), 0);
               const total = Object.values(load.cases).reduce((sum, values) => sum + Math.abs(Number(values.w) || 0), 0);
-              load.label = load.wallSource
-                ? `WALL ${total.toFixed(2)} kN/m`
+              load.label = wall > 0
+                ? `WALL ${wall.toFixed(2)} | D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m`
                 : (pixels >= scaled(155) ? `D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m` : `w ${total.toFixed(1)} kN/m`);
-              memberLoadStack[load.member] = (memberLoadStack[load.member] || 0) + 1;
-              drawUdl(load, memberLoadStack[load.member]);
+              drawUdl(load, 1);
             });
             Object.values(nodeLoadMap).forEach(load => {
               const sources = Array.from(load.sources || []);
@@ -59647,6 +59654,7 @@
             const fxValue = Number(load.fx) || 0;
             const fyValue = Number(load.fy) || 0;
             const mzValue = Number(load.mz) || 0;
+            const labelColor = ["WL", "EQ"].includes(loadCaseLabel(load.case)) ? "#fff200" : forceColor;
             const setForceFont = () => { ctx.font = `300 ${(scaled(12) * fontScale).toFixed(1)}px ${DRAWING_FONT_FAMILY}`; };
             if (fxValue) {
               const direction = fxValue >= 0 ? 1 : -1;
@@ -59661,7 +59669,7 @@
               const labelY = y + (load.case === "WL" ? scaled(16) : -scaled(16));
               drawSafeText(label, (startX + endX) / 2, labelY, [
                 {x: 0, y: 0}, {x: 0, y: load.case === "WL" ? scaled(18) : -scaled(18)}, {x: direction * scaled(28), y: 0}, {x: -direction * scaled(28), y: 0}
-              ], "center", forceColor);
+              ], "center", labelColor);
             }
             if (fyValue) {
               const direction = fyValue >= 0 ? -1 : 1;
@@ -59672,14 +59680,14 @@
               const label = `${load.case} ${valueText(Math.abs(fyValue), "kN")}`;
               drawSafeText(label, point.x, Math.min(startY, endY) - scaled(18), [
                 {x: 0, y: 0}, {x: scaled(34), y: 0}, {x: -scaled(34), y: 0}, {x: 0, y: -scaled(20)}
-              ], "center", forceColor);
+              ], "center", labelColor);
             }
             if (mzValue) {
               setForceFont();
               drawMomentArrow(point.x, point.y, mzValue, forceColor, 1.4);
               drawSafeText(`${load.case} ${valueText(Math.abs(mzValue), "kN-m")}`, point.x, point.y - scaled(46), [
                 {x: 0, y: 0}, {x: scaled(34), y: 0}, {x: -scaled(34), y: 0}, {x: 0, y: -scaled(18)}
-              ], "center", forceColor);
+              ], "center", labelColor);
             }
             ctx.textAlign = "left";
           };
