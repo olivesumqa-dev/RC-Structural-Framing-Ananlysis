@@ -22,6 +22,6 @@ assert(html.includes('id="buildingGridToolBtn"') && html.includes('id="buildingG
 assert(html.includes('buildingGridNodeEndpoint(nearestBuildingGridNode'), "Building-grid intersections must participate in magnetic snapping");
 assert(html.includes('planBuildingGrid: deepCopy(planState.buildingGrid)'), "Building-grid settings must persist in project snapshots");
 assert(html.includes('ctx.lineWidth = 5.1;') && html.includes('ctx.strokeStyle = "#ff3131";'), "Wall boundaries must be bright red and exactly three times thicker");
-assert(html.includes('https://www.strucforge.com/assets/mascot-cursor.js?v=production-1'), "The deployed RC app must load the production mascot cursor");
+assert(html.includes('https://www.strucforge.com/assets/mascot-cursor.js?v=production-2'), "The deployed RC app must load the production mascot cursor");
 
 console.log("Startup template, building grid, wall tool, and cursor checks: passed");
