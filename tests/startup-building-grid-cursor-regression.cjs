@@ -11,6 +11,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, "assets", "persisten
 const sample = JSON.parse(fs.readFileSync(path.join(root, "JSON", "2-STOREY SAMPLE.stf"), "utf8"));
 
 assert.strictEqual(manifest.defaultProject, "2-STOREY SAMPLE");
+assert.strictEqual(manifest.id, "2026-10-15-two-storey-sample-startup-v2");
 assert.strictEqual(manifest.projects[0].source, "JSON/2-STOREY SAMPLE.stf");
 assert(sample.model && sample.structuralProject?.workspace, "The startup STF must contain both frame and structural workspace data");
 assert(app.includes('loadProjectPackage(data, "2-STOREY SAMPLE.stf"'), "Embedded fallback must use the new sample name");
