@@ -15,6 +15,8 @@
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
   <link rel="stylesheet" href="styles.css?v=66" />
+  <link rel="stylesheet" href="auth-gate.css?v=1" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .structural-sequence {
       display: grid;
@@ -2179,7 +2181,27 @@
     }
   </style>
 </head>
-<body data-theme="green_teal">
+<body data-theme="green_teal" class="sf-auth-pending">
+  <section id="sf-auth-gate" class="sf-auth-gate" role="dialog" aria-modal="true" aria-labelledby="sf-auth-gate-title">
+    <div class="sf-auth-card">
+      <img src="assets/LOGO-STRUCF.png?v=4" alt="StrucForge" class="sf-auth-logo" />
+      <p class="sf-auth-eyebrow">MEMBER ACCESS</p>
+      <h1 id="sf-auth-gate-title">Sign in to use the Full R.C. Structural Designer</h1>
+      <p id="sf-auth-message" class="sf-auth-message">Checking your secure StrucForge session…</p>
+      <div id="sf-auth-actions" hidden>
+        <button id="sf-auth-google" class="sf-auth-google" type="button">Continue with Google</button>
+        <div class="sf-auth-divider"><span>or</span></div>
+        <form id="sf-auth-form" class="sf-auth-form">
+          <label>Email<input id="sf-auth-email" type="email" autocomplete="email" required /></label>
+          <label>Password<input id="sf-auth-password" type="password" autocomplete="current-password" minlength="6" required /></label>
+          <button type="submit">Sign in</button>
+        </form>
+        <a class="sf-auth-back" href="https://www.strucforge.com/structural-design-tools">Back to StrucForge</a>
+      </div>
+    </div>
+  </section>
+  <section id="sf-premium-gate" class="sf-premium-gate" role="dialog" aria-modal="true" aria-labelledby="sf-premium-title" hidden><div id="sf-premium-panel" class="sf-premium-card"></div></section>
+  <aside id="sf-trial-banner" class="sf-trial-banner" hidden aria-live="polite"></aside>
   <div class="app">
 
     <header class="topbar">
@@ -46214,6 +46236,8 @@
   }
 }
   </script>
+  <script src="auth-gate.js?v=1"></script>
+  <script src="premium-access.js?v=1"></script>
   <script src="https://www.strucforge.com/assets/mascot-cursor.js?v=production-3"></script>
   <script src="solver.js?v=16"></script>
   <script src="app.js?v=78"></script>
@@ -46845,6 +46869,7 @@
       }
 
       function deleteSelectedTemplates() {
+        if (!window.StrucForgePremium?.require("saveLocalProject", "Trial Workspace — saving is disabled. Template changes are available with an active StrucForge Professional plan.")) return;
         const selected = structuralTemplates.filter(template => selectedTemplateIds.has(template.id));
         if (!selected.length) return;
         const label = selected.length === 1 ? `"${selected[0].name}"` : `${selected.length} selected templates`;
@@ -46920,6 +46945,7 @@
       }
 
       function restoreProjectTemplateLibrary(library) {
+        if (!window.StrucForgePremium?.can("saveLocalProject")) return 0;
         const imported = Array.isArray(library?.userTemplates)
           ? library.userTemplates.filter(template => template
             && typeof template.id === "string"
@@ -46980,6 +47006,7 @@
       }
 
       function saveCurrentProjectAsTemplate() {
+        if (!window.StrucForgePremium?.require("saveLocalProject", "Trial Workspace — saving is disabled. Saving templates is available with an active StrucForge Professional plan.")) return;
         const nameInput = byId("saveTemplateName");
         const name = nameInput?.value?.trim();
         if (!name) {
@@ -66024,6 +66051,7 @@
       }
 
       function printStandaloneOutput(title, content, outputMode = "printer") {
+        if (!window.StrucForgePremium?.require(outputMode === "pdf" ? "printPDF" : "print", outputMode === "pdf" ? "Print to PDF is available with an active StrucForge Professional plan." : "Printing is available with an active StrucForge Professional plan.")) return;
         const frame = document.createElement("iframe");
         frame.title = `${title} print output`;
         frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
@@ -66059,6 +66087,7 @@
       }
 
       function exportMprToExcel() {
+        if (!window.StrucForgePremium?.require("excelExport", "Excel export is available with an active paid StrucForge Professional plan.")) return;
         const projectTitle = outputProjectTitle();
         const owner = byId("projectOwner")?.value?.trim() || "";
         const workbook = `<!doctype html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>html,body{background:#fff!important;color:#111!important;font-family:Aptos,Calibri,Arial,sans-serif}table{border-collapse:collapse;background:#fff;color:#111}caption{background:#334143!important;color:#fff!important;font-weight:700;padding:6px;border-top:2mm solid #fff}th,td{border:1px solid #777;padding:5px;white-space:nowrap;color:#111;background:#fff}th{font-weight:700;background:#e8eeee!important;color:#111!important;white-space:normal}.audit{margin-top:7px;font-weight:700;color:#111;background:#fff}</style></head><body><table style="border-collapse:collapse;background:#fff;color:#111"><tr><th style="background:#e8eeee;color:#111">Project</th><td style="background:#fff;color:#111">${escapeOutputHtml(projectTitle)}</td></tr><tr><th style="background:#e8eeee;color:#111">Project Owner</th><td style="background:#fff;color:#111">${escapeOutputHtml(owner)}</td></tr><tr><th style="background:#e8eeee;color:#111">Exported</th><td style="background:#fff;color:#111">${escapeOutputHtml(new Date().toLocaleString())}</td></tr></table><br>${excelResultsMarkup()}</body></html>`;

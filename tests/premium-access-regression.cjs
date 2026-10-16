@@ -1,0 +1,35 @@
+const assert = require("assert");
+const fs = require("fs");
+
+const read = file => fs.readFileSync(file, "utf8");
+const premium = read("premium-access.js");
+const app = read("app.js");
+const page = read("index.html");
+const column = read("column-tool.js");
+const entitlement = read("api/_lib/entitlements.js");
+const startTrial = read("api/trials/start.js");
+const cancelTrial = read("api/trials/cancel.js");
+const webhook = read("api/billing/webhook.js");
+const admin = read("api/admin/set-entitlement-test-state.js");
+
+assert.match(entitlement, /FULL_RC_STRUCTURAL_DESIGNER/);
+assert.match(entitlement, /TRIAL_CANCELLED_PENDING_EXPIRY/);
+assert.match(entitlement, /saveLocalProject: paid/);
+assert.match(premium, /beforeprint/);
+assert.match(premium, /Printing is disabled during the StrucForge Premium trial/);
+assert.match(premium, /Start 7-Day Free Trial/);
+assert.match(premium, /PROFESSIONAL_ANNUAL/);
+assert.match(startTrial, /7 \* 24 \* 60 \* 60 \* 1000/);
+assert.match(startTrial, /immediate_payment: false/);
+assert.match(cancelTrial, /\/deactivate/);
+assert.match(webhook, /timingSafeEqual/);
+assert.match(webhook, /payment_session\.completed/);
+assert.match(webhook, /recurring\.cycle\.succeeded/);
+assert.match(admin, /strucforge_admin/);
+assert.match(app, /requireProductionCapability\("saveLocalProject"/);
+assert.match(app, /requireProductionCapability\("downloadProject"/);
+assert.match(app, /requireProductionCapability\(target === "pdf" \? "printPDF" : "print"/);
+assert.match(page, /require\("excelExport"/);
+assert.match(page, /require\(outputMode === "pdf" \? "printPDF" : "print"/);
+assert.match(column, /require\("saveLocalProject"/);
+console.log("Premium trial capability regression checks passed.");

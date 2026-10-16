@@ -1,0 +1,48 @@
+body.sf-auth-pending .app {
+  visibility: hidden;
+}
+
+body.sf-premium-pending .app { visibility: hidden; }
+.sf-premium-gate { position:fixed; z-index:2147483646; inset:0; display:grid; place-items:center; overflow:auto; padding:24px; background:linear-gradient(135deg,#112421,#1f4c43); color:#f8f5ec; font-family:Arial,sans-serif; }
+.sf-premium-gate[hidden], .sf-trial-banner[hidden] { display:none; }
+.sf-premium-card { width:min(100%,560px); padding:32px; border:1px solid rgba(255,255,255,.22); border-radius:18px; box-shadow:0 24px 70px rgba(0,0,0,.32); background:rgba(16,32,29,.97); }
+.sf-premium-card h1 { margin:0 0 14px; font-size:26px; line-height:1.2; }.sf-premium-card p,.sf-premium-card li { line-height:1.48; }.sf-premium-eyebrow { margin:0 0 8px; color:#f3ad4b; font-size:12px; font-weight:800; letter-spacing:.12em; }.sf-premium-card button,.sf-trial-banner button { border:0; border-radius:8px; min-height:44px; padding:0 16px; margin:8px 8px 0 0; cursor:pointer; font:700 14px Arial,sans-serif; }.sf-premium-primary { background:#f3ad4b; color:#172126; }.sf-premium-secondary,.sf-trial-banner button { background:transparent; color:#f8f5ec; border:1px solid #789087!important; }.sf-plan { display:flex; gap:12px; margin:12px 0; padding:14px; border:1px solid #587168; border-radius:10px; cursor:pointer; }.sf-plan input { margin-top:5px; }.sf-plan span { display:grid; gap:4px; }.sf-plan b { color:#f3ad4b; }.sf-plan small { color:#d4dfdb; line-height:1.35; }.sf-plan em { color:#f3ad4b; font-size:11px; letter-spacing:.08em; }.sf-premium-feedback { min-height:22px; color:#d4dfdb; }.sf-trial-banner { position:fixed; z-index:2147483000; left:12px; right:12px; bottom:12px; display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 16px; border:1px solid #b8791f; border-radius:10px; background:#1d332d; color:#fff; box-shadow:0 8px 26px rgba(0,0,0,.24); font:13px/1.35 Arial,sans-serif; }.sf-trial-banner span { flex:1 1 360px; }.sf-trial-banner button { margin:0; min-height:34px; }
+@media print { body.sf-trial-restricted-print > * { display:none!important; } body.sf-trial-restricted-print::before { content:"Printing is disabled during the StrucForge Premium trial."; display:block!important; padding:38mm 20mm; color:#111; background:#fff; font:700 18pt Arial,sans-serif; } }
+
+.sf-auth-gate {
+  position: fixed;
+  z-index: 2147483647;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #112421, #1f4c43);
+  color: #f8f5ec;
+  font-family: Arial, sans-serif;
+}
+
+.sf-auth-gate[hidden] { display: none; }
+
+.sf-auth-card {
+  width: min(100%, 420px);
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .32);
+  background: rgba(16, 32, 29, .97);
+}
+
+.sf-auth-logo { display: block; width: 136px; max-height: 48px; object-fit: contain; object-position: left center; margin-bottom: 26px; }
+.sf-auth-eyebrow { margin: 0 0 8px; color: #f3ad4b; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.sf-auth-card h1 { margin: 0; font-size: 25px; line-height: 1.22; }
+.sf-auth-message { min-height: 24px; margin: 16px 0 22px; color: #d4dfdb; line-height: 1.45; }
+.sf-auth-actions { display: grid; gap: 14px; }
+.sf-auth-gate button { min-height: 46px; border: 0; border-radius: 8px; padding: 0 16px; cursor: pointer; font: inherit; font-weight: 800; }
+.sf-auth-google { background: #f7f5ef; color: #1d2926; }
+.sf-auth-form { display: grid; gap: 12px; }
+.sf-auth-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
+.sf-auth-form input { min-height: 42px; box-sizing: border-box; border: 1px solid #789087; border-radius: 7px; padding: 0 10px; background: #fff; color: #172126; font: inherit; }
+.sf-auth-form button { background: #f3ad4b; color: #172126; }
+.sf-auth-divider { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; color: #aac0b9; font-size: 12px; }
+.sf-auth-divider::before, .sf-auth-divider::after { content: ""; height: 1px; background: #587168; }
+.sf-auth-back { color: #d4dfdb; text-align: center; font-size: 13px; }

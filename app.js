@@ -1780,6 +1780,9 @@ const bundledPersistenceVersionsKey = "strucforge_bundled_persistence_versions_v
 let bundledStartupProject = null;
 
 async function installBundledPersistence() {
+  // Trial workspaces must not silently become browser-saved projects, including
+  // through the bundled-project installer.
+  if (!window.StrucForgePremium?.can("saveLocalProject")) return;
   try {
     const response = await fetch(bundledPersistenceManifestUrl, {cache: "no-store"});
     if (!response.ok) return;
@@ -1831,7 +1834,12 @@ function refreshRecords() {
   }
 }
 
+function requireProductionCapability(capability, message) {
+  return window.StrucForgePremium?.require(capability, message) ?? false;
+}
+
 function saveRecord() {
+  if (!requireProductionCapability("saveLocalProject", "Trial Workspace — saving is disabled. Saving projects is available with an active StrucForge Professional plan.")) return;
   const name = recordName.value.trim() || savedRecords.value || "Frame 1";
   recordName.value = name;
   // modelPackage is extended by the structural workspace to include the open
@@ -2155,6 +2163,7 @@ function preparePrintPages(target = "printer") {
 }
 
 function printReport(target) {
+  if (!requireProductionCapability(target === "pdf" ? "printPDF" : "print", target === "pdf" ? "Print to PDF is available with an active StrucForge Professional plan." : "Printing is available with an active StrucForge Professional plan.")) return;
   preparePrintPages(target);
   status(target === "pdf" ? "Print dialog opened. Choose Save as PDF." : "Print dialog opened. Choose a local printer.");
   setTimeout(() => window.print(), 60);
@@ -2456,7 +2465,7 @@ deleteRecordBtn.onclick = deleteRecord;
 if (toolbarSaveBtn) toolbarSaveBtn.onclick = saveRecord;
 if (toolbarSaveAsBtn) toolbarSaveAsBtn.onclick = () => saveProjectFile(true);
 if (toolbarExportBtn) toolbarExportBtn.onclick = () => saveProjectFile(true);
-if (toolbarOpenBtn) toolbarOpenBtn.onclick = () => importJsonFile.click();
+if (toolbarOpenBtn) toolbarOpenBtn.onclick = () => { if (requireProductionCapability("downloadProject", "Opening saved project files is available with an active StrucForge Professional plan.")) importJsonFile.click(); };
 if (toolbarPrintBtn) toolbarPrintBtn.onclick = () => printReport("printer");
 if (toolbarPrintPdfBtn) toolbarPrintPdfBtn.onclick = () => printReport("pdf");
 if (toolbarNewBtn) toolbarNewBtn.onclick = () => newDesign.click();
@@ -2467,8 +2476,8 @@ document.querySelectorAll("[data-theme-choice]").forEach(btn => {
   btn.onclick = () => setTheme(btn.dataset.themeChoice, true);
 });
 if (fontScaleSelect) fontScaleSelect.onchange = () => applyFontScale(fontScaleSelect.value);
-importJsonBtn.onclick = () => importJsonFile.click();
-importJsonFile.onchange = async () => { const file = importJsonFile.files && importJsonFile.files[0]; if (!file) return; try { const data = JSON.parse(await file.text()); currentFileHandle = null; loadProjectPackage(data, file.name); recordName.value = file.name.replace(/\.(?:stf|json)$/i, ""); } catch (err) { status("Could not load the project file. Select a valid StrucForge .stf file or legacy .json project."); } finally { importJsonFile.value = ""; } };
+importJsonBtn.onclick = () => { if (requireProductionCapability("downloadProject", "Opening saved project files is available with an active StrucForge Professional plan.")) importJsonFile.click(); };
+importJsonFile.onchange = async () => { const file = importJsonFile.files && importJsonFile.files[0]; if (!file) return; if (!requireProductionCapability("downloadProject", "Opening saved project files is available with an active StrucForge Professional plan.")) { importJsonFile.value = ""; return; } try { const data = JSON.parse(await file.text()); currentFileHandle = null; loadProjectPackage(data, file.name); recordName.value = file.name.replace(/\.(?:stf|json)$/i, ""); } catch (err) { status("Could not load the project file. Select a valid StrucForge .stf file or legacy .json project."); } finally { importJsonFile.value = ""; } };
 
 assignSelectedProps.onclick = () => {
   const members = selectedMembers();
@@ -2759,6 +2768,7 @@ function projectFileName() {
   return `${base}.stf`;
 }
 function downloadProjectFile(filename) {
+  if (!requireProductionCapability("downloadProject", "Project download is available with an active StrucForge Professional plan.")) return;
   const blob = new Blob([JSON.stringify(projectFilePayload(), null, 2)], {type:"application/x-strucforge+json"});
   const anchor = document.createElement("a");
   anchor.href = URL.createObjectURL(blob);
@@ -2767,6 +2777,7 @@ function downloadProjectFile(filename) {
   URL.revokeObjectURL(anchor.href);
 }
 async function saveProjectFile(forcePicker) {
+  if (!requireProductionCapability("saveLocalProject", "Trial Workspace — saving is disabled. Saving projects is available with an active StrucForge Professional plan.")) return;
   const filename = projectFileName();
   try {
     if (filePickerSupported) {
