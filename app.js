@@ -1866,7 +1866,12 @@ function saveRecord() {
   saveRecordNames(names);
   refreshRecords();
   savedRecords.value = name;
-  status(`Saved project "${name}" in the browser.`);
+  status(`Saved project "${name}" in this browser. It can be reopened from Saved Projects.`);
+  if (navigator.storage?.persist) {
+    navigator.storage.persist().then(granted => {
+      if (granted) status(`Saved project "${name}" in persistent browser storage.`);
+    }).catch(() => {});
+  }
 }
 
 function loadProjectPackage(data, sourceName, options = {}) {
@@ -2468,6 +2473,8 @@ resetView.onclick = () => { zoom = 1; pan = {x:0, y:0}; draw(); };
 
 saveBtn.onclick = saveRecord;
 saveAsBtn.onclick = () => saveProjectFile(true);
+const openRecordButton = document.getElementById("openRecordBtn");
+if (openRecordButton) openRecordButton.onclick = loadRecord;
 deleteRecordBtn.onclick = deleteRecord;
 if (toolbarSaveBtn) toolbarSaveBtn.onclick = saveRecord;
 if (toolbarSaveAsBtn) toolbarSaveAsBtn.onclick = () => saveProjectFile(true);

@@ -944,6 +944,22 @@
       gap: 5px;
       margin-left: auto;
     }
+    .mpr-auto-pass-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 22px;
+      padding: 0 7px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 2px;
+      background: rgba(0, 0, 0, 0.18);
+      color: #fff;
+      font: 800 9px/1 Arial, sans-serif;
+      cursor: pointer;
+      user-select: none;
+    }
+    .mpr-auto-pass-control input { margin: 0; accent-color: #20d979; }
+    .mpr-auto-pass-control:has(input:checked) { background: #08784f; border-color: #b9ffe1; }
     .results-subsection.is-collapsed table {
       display: none !important;
     }
@@ -1227,6 +1243,7 @@
     .girder-direction-dialog input { width: 100%; margin: 0 0 14px; box-sizing: border-box; }
     .girder-direction-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .girder-direction-actions button { min-height: 36px; font-weight: 800; }
+    .mpr-show-hide-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .girder-direction-cancel { grid-column: 1 / -1; background: #686262 !important; color: #fff !important; }
     .annotation-tool-row {
       display: grid;
@@ -2606,15 +2623,16 @@
         <label>Project name</label>
         <input id="recordName" value="Frame 1" />
         <div class="row">
-          <button id="saveBtn">Save</button>
-          <button id="saveAsBtn">Save As</button>
+          <button id="saveBtn">Save in Browser</button>
+          <button id="saveAsBtn">Save .STF File</button>
         </div>
 
         <label>Saved Projects</label>
         <select id="savedRecords"></select>
         <div class="row">
+          <button id="openRecordBtn" title="Open the selected project saved in this browser">Open Saved</button>
           <button id="deleteRecordBtn">Delete</button>
-          <button id="importJsonBtn" title="Open a StrucForge .stf file or a legacy .json project">Load File</button>
+          <button id="importJsonBtn" title="Open a StrucForge .stf file or a legacy .json project">Load .STF File</button>
         </div>
         <input id="importJsonFile" type="file" accept=".stf,.json,application/x-strucforge+json,application/json" hidden />
         </div>
@@ -3099,14 +3117,15 @@
 
       <dialog id="mprHideMembersDialog" class="girder-direction-dialog mpr-hide-members-dialog" aria-labelledby="mprHideMembersTitle">
         <div class="girder-direction-dialog-inner">
-          <h3 id="mprHideMembersTitle">HIDE Members</h3>
-          <p id="mprHideMembersScope">Select member item numbers from the current table.</p>
+          <h3 id="mprHideMembersTitle">SHOW / HIDE Members</h3>
+          <p id="mprHideMembersScope">Select member item numbers to show or hide in the current table.</p>
           <label for="mprHideMembersInput">Item Nos.</label>
           <input id="mprHideMembersInput" type="text" autocomplete="off" placeholder="Examples: 1-12; 3,4,5,7,12; all; odd; even">
           <p class="mpr-hide-members-hint">Enter a range, comma-separated numbers, or the word <strong>all</strong>, <strong>odd</strong>, or <strong>even</strong>.</p>
           <button id="mprHideOutsideFrames" class="mpr-hide-members-axis" type="button">HIDE MEMBERS OUTSIDE SELECTED X &amp; Y AXIS FRAMES</button>
           <p class="mpr-hide-members-axis-hint">Keeps only members found on either frame currently selected under Frame Selection. Hidden rows remain active in analysis and design.</p>
-          <div class="girder-direction-actions">
+          <div class="girder-direction-actions mpr-show-hide-actions">
+            <button id="mprShowMembersApply" type="button">SHOW MEMBERS</button>
             <button id="mprHideMembersApply" type="button">HIDE MEMBERS</button>
             <button id="mprHideMembersCancel" class="girder-direction-cancel" type="button">CANCEL</button>
           </div>
@@ -46420,7 +46439,7 @@
     })();
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=79"></script>
+  <script src="app.js?v=80"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -61758,6 +61777,7 @@
         const input = byId("mprHideMembersInput");
         const scope = byId("mprHideMembersScope");
         const applyButton = byId("mprHideMembersApply");
+        const showButton = byId("mprShowMembersApply");
         const hideOutsideFramesButton = byId("mprHideOutsideFrames");
         const cancelButton = byId("mprHideMembersCancel");
         if (!panel || !dialog || !input || !applyButton || panel.dataset.hideMembersDialogReady) return;
@@ -61777,7 +61797,7 @@
           if (!table?.id) return;
           const label = tableLabels[table.id] || "Member";
           dialog.dataset.tableId = table.id;
-          if (scope) scope.textContent = `Hide ${label} item numbers from this MPR table. The members remain active in structural analysis and design.`;
+          if (scope) scope.textContent = `Show or hide ${label} item numbers in this MPR table. The members remain active in structural analysis and design.`;
           input.value = "";
           input.setCustomValidity("");
           dialog.showModal?.();
@@ -61800,6 +61820,26 @@
           dialog.close();
           scheduleCoordinatedResults();
           if (typeof status === "function") status(`${selected.size} MPR member row${selected.size === 1 ? "" : "s"} hidden. The structural members remain active in analysis and design.`);
+        });
+        showButton?.addEventListener("click", () => {
+          const table = byId(dialog.dataset.tableId);
+          const rows = table ? Array.from(table.tBodies).flatMap(body => Array.from(body.rows)).filter(row => row.dataset.mprRowKey) : [];
+          const selected = parseMprHideMemberNumbers(input.value, rows.length);
+          if (!selected.size) {
+            input.setCustomValidity("Enter valid item numbers, a range, all, odd, or even.");
+            input.reportValidity();
+            return;
+          }
+          input.setCustomValidity("");
+          let restored = 0;
+          rows.forEach((row, index) => {
+            if (!selected.has(index + 1)) return;
+            if (mprVisibilityState.hiddenRows.delete(row.dataset.mprRowKey)) restored += 1;
+          });
+          if (!mprVisibilityState.hiddenRows.size) mprVisibilityState.revealHidden = false;
+          dialog.close();
+          scheduleCoordinatedResults();
+          if (typeof status === "function") status(`${restored} MPR member row${restored === 1 ? "" : "s"} shown in the table.`);
         });
         hideOutsideFramesButton?.addEventListener("click", () => {
           const table = byId(dialog.dataset.tableId);
@@ -64750,6 +64790,39 @@
         const resultAutoPass = byId("resultCalculationAutoPass");
         if (resultDefault) resultDefault.checked = !enabled;
         if (resultAutoPass) resultAutoPass.checked = Boolean(enabled);
+        document.querySelectorAll("[data-mpr-auto-pass]").forEach(input => {
+          input.checked = Boolean(enabled);
+          input.closest(".mpr-auto-pass-control")?.setAttribute("aria-pressed", enabled ? "true" : "false");
+        });
+      }
+
+      function installMprAutoPassControls() {
+        const tables = [
+          ["beamResultsSection", "Beams"],
+          ["columnResultsSection", "Columns"],
+          ["slabResultsSection", "Slabs"],
+          ["footingResultsSection", "Footings"]
+        ];
+        tables.forEach(([sectionId, label]) => {
+          const title = document.querySelector(`#${sectionId} .results-subsection-title`);
+          const actions = title?.querySelector(".results-subsection-actions");
+          if (!title || !actions || title.querySelector("[data-mpr-auto-pass]")) return;
+          const control = document.createElement("label");
+          control.className = "mpr-auto-pass-control";
+          control.title = `Automatically search for passing ${label.toLowerCase()} sizes and reinforcement, then recalculate`;
+          control.setAttribute("aria-pressed", "false");
+          control.innerHTML = `<input type="checkbox" data-mpr-auto-pass="${sectionId}" aria-label="AUTO-PASS ${label}"><span>AUTO-PASS</span>`;
+          actions.insertBefore(control, actions.firstChild);
+          control.querySelector("input")?.addEventListener("change", event => {
+            if (!event.target.checked) {
+              setEconomicalDesignEnabled(false, true);
+              return;
+            }
+            setEconomicalDesignEnabled(true, true);
+            window.setTimeout(() => byId("calculateBtn")?.click(), 0);
+          });
+        });
+        syncResultCalculationMode(byId("autoDesignEnabled")?.checked !== false);
       }
 
       function setEconomicalDesignEnabled(enabled, announce = false) {
@@ -66747,6 +66820,7 @@
         installDrawingMemberNameEditing();
         installMprHideMembersDialog();
         installMprVisibilityControls();
+        installMprAutoPassControls();
         installBeamMprSorting();
         installAdditionalMprSorting();
         installMprTableScrolling();
