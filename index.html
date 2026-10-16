@@ -3091,7 +3091,7 @@
           <div class="wall-tool-fields">
             <label for="wfToolWidth">Starting width, m<input id="wfToolWidth" type="number" min="0.30" max="5" step="0.05" value="0.40"></label>
             <label for="wfToolThickness">Starting thickness, m<input id="wfToolThickness" type="number" min="0.20" max="2" step="0.05" value="0.25"></label>
-            <label for="wfToolTopElevation">Top of footing from Level-1, m (+ above / − below)<input id="wfToolTopElevation" type="number" min="-10" max="10" step="0.05" value="-0.20"></label>
+            <label for="wfToolHeightAboveFooting">WF ht. from top of Footing, m<input id="wfToolHeightAboveFooting" type="number" min="0" max="10" step="0.05" value="0.60"></label>
           </div>
           <h4>WALL ABOVE WF OPTIONS</h4>
           <div class="wall-tool-fields">
@@ -53301,7 +53301,7 @@
         }
       }
 
-      function wallFootingDesign(properties, length) {
+      function wallFootingDesign(properties, length, supportElevations = {}) {
         const soilAllowable = Math.max(25, numericInput("soilAllowableBearing", 150));
         const concreteDensity = Math.max(1, numericInput("concreteDensity", 24));
         const fc = detailingValue("concreteStrength", 28, 1);
@@ -53340,7 +53340,13 @@
           const requiredSteel = Math.max(0.0018 * 1000 * thickness * 1000, moment * 1e6 / Math.max(1, 0.9 * fy * 0.9 * effectiveDepth));
           const reinforcement = economicalReinforcementSelection(requiredSteel, Math.min(3 * thickness * 1000, 450), MPR_SLAB_FOOTING_BAR_DIAMETERS);
           result = {
-            width, thickness, topElevation: properties.topElevation, soilAllowable,
+            width, thickness,
+            heightAboveFooting: properties.heightAboveFooting,
+            startFootingTopElevation: Number(supportElevations.start) || 0,
+            endFootingTopElevation: Number(supportElevations.end) || 0,
+            bottomElevationStart: (Number(supportElevations.start) || 0) + properties.heightAboveFooting,
+            bottomElevationEnd: (Number(supportElevations.end) || 0) + properties.heightAboveFooting,
+            soilAllowable,
             servicePressure, bearingRatio: servicePressure / soilAllowable,
             factoredPressure, moment, shearRatio, requiredSteel,
             barDiameter: reinforcement?.diameter || barDiameter,
@@ -53354,7 +53360,16 @@
           };
           break;
         }
-        return result || {width, thickness, topElevation: properties.topElevation, soilAllowable, netLineLoad, pass: false, bearingRatio: Infinity, shearRatio: Infinity, barDiameter, barSpacing: 0, longitudinalBarDiameter: barDiameter, longitudinalBarSpacing: 0};
+        return result || {
+          width, thickness,
+          heightAboveFooting: properties.heightAboveFooting,
+          startFootingTopElevation: Number(supportElevations.start) || 0,
+          endFootingTopElevation: Number(supportElevations.end) || 0,
+          bottomElevationStart: (Number(supportElevations.start) || 0) + properties.heightAboveFooting,
+          bottomElevationEnd: (Number(supportElevations.end) || 0) + properties.heightAboveFooting,
+          soilAllowable, netLineLoad, pass: false, bearingRatio: Infinity, shearRatio: Infinity,
+          barDiameter, barSpacing: 0, longitudinalBarDiameter: barDiameter, longitudinalBarSpacing: 0
+        };
       }
 
       function installWallFootingToolDialog() {
@@ -53376,18 +53391,18 @@
           const createWall = Boolean(byId("wfToolCreateWall")?.checked);
           const startingWidth = Number(byId("wfToolWidth")?.value);
           const startingThickness = Number(byId("wfToolThickness")?.value);
-          const topElevation = Number(byId("wfToolTopElevation")?.value);
+          const heightAboveFooting = Number(byId("wfToolHeightAboveFooting")?.value);
           const wallUnitWeight = Number(byId("wfToolWallUnitWeight")?.value);
           const wallHeight = Number(byId("wfToolWallHeight")?.value);
           const wallWidth = Number(byId("wfToolWallWidth")?.value);
           const openingCount = Math.max(0, Math.min(20, Math.round(Number(countInput?.value) || 0)));
           const openings = readWallFootingOpeningFields().slice(0, openingCount);
           const invalidOpening = openings.some(opening => !(opening.height > 0) || !(opening.width > 0) || !(opening.distanceFromLeft >= 0) || opening.height > wallHeight);
-          if ((!createFooting && !createWall) || !(startingWidth >= 0.30) || !(startingThickness >= 0.20) || !Number.isFinite(topElevation) || (createWall && (!(wallUnitWeight > 0) || !(wallHeight > 0) || !(wallWidth > 0) || invalidOpening || openings.length !== openingCount))) {
+          if ((!createFooting && !createWall) || !(startingWidth >= 0.30) || !(startingThickness >= 0.20) || !(heightAboveFooting >= 0) || (createWall && (!(wallUnitWeight > 0) || !(wallHeight > 0) || !(wallWidth > 0) || invalidOpening || openings.length !== openingCount))) {
             if (typeof status === "function") status("Select WF and/or Wall Above WF, then enter valid positive footing and wall dimensions. Openings must fit within the wall height.");
             return;
           }
-          planState.pendingWallFootingProperties = {createFooting, createWall, startingWidth, startingThickness, topElevation, wallUnitWeight, wallHeight, wallWidth, openings: deepCopy(openings)};
+          planState.pendingWallFootingProperties = {createFooting, createWall, startingWidth, startingThickness, heightAboveFooting, wallUnitWeight, wallHeight, wallWidth, openings: deepCopy(openings)};
           planState.wallFootingStart = null;
           dialog.close();
           planState.activeLevelIndex = -1;
@@ -55076,6 +55091,21 @@
         return nearest?.wall || null;
       }
 
+      function isolatedFootingTopAtEndpoint(endpoint, data = makePlanData()) {
+        let nearest = null;
+        Object.entries(planState.footings || {}).forEach(([key, footing]) => {
+          const [xLabel, yLabel] = String(footing?.key || key).split("|");
+          const xIndex = data.xLabels.indexOf(xLabel);
+          const yIndex = data.yLabels.indexOf(yLabel);
+          if (xIndex < 0 || yIndex < 0) return;
+          const distance = Math.hypot(Number(endpoint?.x) - Number(data.xPos[xIndex]), Number(endpoint?.y) - Number(data.yPos[yIndex]));
+          if (!nearest || distance < nearest.distance) nearest = {footing, distance};
+        });
+        if (!nearest || nearest.distance > 1e-6) return 0;
+        const explicitTop = Number(nearest.footing.topElevation ?? nearest.footing.designTopElevation);
+        return Number.isFinite(explicitTop) ? explicitTop : 0;
+      }
+
       function createPlanWallFootingAt(canvasPoint, data = makePlanData()) {
         if (planState.activeLevelIndex !== -1) {
           if (typeof status === "function") status("WF Tool creates wall footings only in the FOUNDATION plan.");
@@ -55104,7 +55134,11 @@
           if (typeof status === "function") status("WF not created: each wall opening must fit within the selected wall length.");
           return false;
         }
-        const design = wallFootingDesign(properties, length);
+        const supportElevations = {
+          start: isolatedFootingTopAtEndpoint(start, data),
+          end: isolatedFootingTopAtEndpoint(endpoint, data)
+        };
+        const design = wallFootingDesign(properties, length, supportElevations);
         const sequence = (planState.wallFootings || []).reduce((maximum, item) => Math.max(maximum, Number(item.sequence) || 0), 0) + 1;
         const id = `WF-${Date.now()}-${sequence}`;
         pushWorkspaceHistory();
@@ -55151,7 +55185,12 @@
         setCalculationDirty(true);
         drawPlan(data);
         updatePlanMemberTable();
-        if (typeof status === "function") status(`${properties.createFooting ? `WF-${sequence} created: ${design.width.toFixed(2)} m wide × ${design.thickness.toFixed(2)} m thick, top ${properties.topElevation >= 0 ? "+" : ""}${properties.topElevation.toFixed(2)} m from Level-1; soil pressure ${Number(design.servicePressure || 0).toFixed(2)}/${design.soilAllowable.toFixed(2)} kPa. ` : ""}${properties.createWall ? "The aligned wall above was created on Level-1. " : ""}${design.pass ? "Preliminary footing checks pass." : "Preliminary footing design requires engineer review."}`);
+        if (typeof status === "function") {
+          const bottomText = Math.abs(design.bottomElevationStart - design.bottomElevationEnd) < 1e-9
+            ? `${design.bottomElevationStart.toFixed(2)} m`
+            : `${design.bottomElevationStart.toFixed(2)} m to ${design.bottomElevationEnd.toFixed(2)} m`;
+          status(`${properties.createFooting ? `WF-${sequence} created: ${design.width.toFixed(2)} m wide × ${design.thickness.toFixed(2)} m thick; WF bottom elevation ${bottomText}, calculated ${properties.heightAboveFooting.toFixed(2)} m from the supporting footing top; soil pressure ${Number(design.servicePressure || 0).toFixed(2)}/${design.soilAllowable.toFixed(2)} kPa. ` : ""}${properties.createWall ? "The aligned wall above was created on Level-1. " : ""}${design.pass ? "Preliminary footing checks pass." : "Preliminary footing design requires engineer review."}`);
+        }
         return true;
       }
 
