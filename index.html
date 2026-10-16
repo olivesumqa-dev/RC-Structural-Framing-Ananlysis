@@ -3257,7 +3257,7 @@
           <div class="member-props-title">
             <button id="memberPropsToggle" class="member-props-toggle" type="button" title="Hide Member Properties / Results" aria-label="Hide Member Properties / Results">Hide</button>
             <span class="mpr-title-text">Member Properties / Results (MPR)</span>
-            <span id="mprMemberSummary" class="mpr-member-summary">0 Storey Bldg. | No. of Beams=0, Columns=0, Slabs=0, Footings=0</span>
+            <span id="mprMemberSummary" class="mpr-member-summary">0 Storey Bldg. | No. of Beams=0, Columns=0, Slabs=0, Footings=0, Wall Footings=0</span>
             <span class="member-props-actions" aria-label="Member Properties and Results output tools">
               <button id="mprPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT" aria-label="Print Member Properties / Results" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button>
               <button id="mprPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF" aria-label="Print Member Properties / Results to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
@@ -3315,6 +3315,14 @@
               <caption>FOOTINGS</caption>
               <thead><tr><th>Item No.</th><th>Footing ID</th><th>Type</th><th>B, m</th><th>L, m</th><th>h, mm</th><th class="mpr-load-heading">DL, kN</th><th class="mpr-load-heading">LL, kN</th><th class="mpr-load-heading">Point, kN</th><th class="mpr-load-heading">Wall, kN</th><th class="mpr-load-heading">WL frame, kN</th><th class="mpr-load-heading">EQ frame, kN</th><th>P service, kN</th><th>Pu, kN</th><th>q service, kPa</th><th>qu, kPa</th><th>Mux, kN-m/m</th><th>Muy, kN-m/m</th><th><button class="mpr-rebar-bulk-header" type="button" data-mpr-bulk-rebar-kind="footing-x" title="Right-click to change all X-direction footing rebar sizes.">X bar dia., mm</button></th><th>X spacing, mm</th><th><button class="mpr-rebar-bulk-header" type="button" data-mpr-bulk-rebar-kind="footing-y" title="Right-click to change all Y-direction footing rebar sizes.">Y bar dia., mm</button></th><th>Y spacing, mm</th><th>1-way ratio</th><th>Punch ratio</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
               <tbody id="footingResultsBody"><tr><td colspan="26">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="results-subsection" id="wallFootingResultsSection">
+            <div class="results-subsection-title"><button id="wallFootingResultsToggle" class="member-props-toggle" type="button">Hide</button><span>WALL FOOTING</span><span class="results-subsection-actions" aria-label="Wall Footing table output tools"><button id="wallFootingResultsPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT WALL FOOTING" aria-label="Print Wall Footing" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button><button id="wallFootingResultsPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF WALL FOOTING" aria-label="Print Wall Footing to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button></span></div>
+            <table class="footing-results-table" id="wallFootingResultsTable">
+              <caption>WALL FOOTING</caption>
+              <thead><tr><th>Item No.</th><th>WF ID</th><th>Level</th><th>L, m</th><th>B, m</th><th>h, mm</th><th>WF ht. from top of Footing, m</th><th>Wall b, m</th><th>Wall h, m</th><th>Wall load, kN/m</th><th>q service, kPa</th><th>q allowable, kPa</th><th>Bearing D/C</th><th>Mu, kN-m/m</th><th>1-way D/C</th><th>Transverse bar dia., mm</th><th>No. transverse bars</th><th>Transverse spacing, mm</th><th>Longitudinal bar dia., mm</th><th>No. longitudinal bars</th><th>Longitudinal spacing, mm</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
+              <tbody id="wallFootingResultsBody"><tr><td colspan="23">No wall footing data. Use WF Tool in the Foundation Plan.</td></tr></tbody>
             </table>
           </div>
           <div class="results-subsection structural-estimates-section" id="structuralEstimatesSection">
@@ -53351,6 +53359,7 @@
             factoredPressure, moment, shearRatio, requiredSteel,
             barDiameter: reinforcement?.diameter || barDiameter,
             barSpacing: reinforcement?.spacing || 0,
+            transverseBarCount: reinforcement?.spacing ? Math.ceil(length * 1000 / reinforcement.spacing) + 1 : 0,
             longitudinalBarDiameter: barDiameter,
             longitudinalBarSpacing: Math.min(300, Math.max(100, Math.floor((Math.PI * barDiameter * barDiameter / 4 * 1000 / Math.max(0.0018 * 1000 * thickness * 1000, 1)) / 25) * 25)),
             netLineLoad,
@@ -53360,6 +53369,7 @@
           };
           break;
         }
+        if (result) result.longitudinalBarCount = result.longitudinalBarSpacing ? Math.ceil(result.width * 1000 / result.longitudinalBarSpacing) + 1 : 0;
         return result || {
           width, thickness,
           heightAboveFooting: properties.heightAboveFooting,
@@ -53368,7 +53378,8 @@
           bottomElevationStart: (Number(supportElevations.start) || 0) + properties.heightAboveFooting,
           bottomElevationEnd: (Number(supportElevations.end) || 0) + properties.heightAboveFooting,
           soilAllowable, netLineLoad, pass: false, bearingRatio: Infinity, shearRatio: Infinity,
-          barDiameter, barSpacing: 0, longitudinalBarDiameter: barDiameter, longitudinalBarSpacing: 0
+          barDiameter, barSpacing: 0, transverseBarCount: 0,
+          longitudinalBarDiameter: barDiameter, longitudinalBarSpacing: 0, longitudinalBarCount: 0
         };
       }
 
@@ -64240,6 +64251,31 @@
         });
       }
 
+      function wallFootingResultRows() {
+        return (planState.wallFootings || []).map((footing, index) => {
+          const design = footing.design || wallFootingDesign(footing.properties || {}, Number(footing.length) || 0, {
+            start: Number(footing.design?.startFootingTopElevation) || 0,
+            end: Number(footing.design?.endFootingTopElevation) || 0
+          });
+          const properties = footing.properties || {};
+          const transverseSpacing = Math.max(0, Number(design.barSpacing) || 0);
+          const longitudinalSpacing = Math.max(0, Number(design.longitudinalBarSpacing) || 0);
+          const transverseCount = Math.max(0, Number(design.transverseBarCount) || (transverseSpacing ? Math.ceil(Number(footing.length) * 1000 / transverseSpacing) + 1 : 0));
+          const longitudinalCount = Math.max(0, Number(design.longitudinalBarCount) || (longitudinalSpacing ? Math.ceil(Number(design.width) * 1000 / longitudinalSpacing) + 1 : 0));
+          const visibilityKey = mprVisibilityKey("wall-footing", footing.id);
+          const statusText = design.pass ? "PASS - VERIFY SOIL REPORT" : "REVISE WF DESIGN";
+          const statusClass = design.pass ? "pass" : "fail";
+          return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="wall-footing-design" data-wall-footing-id="${escapeHtml(footing.id)}">` +
+            `<td>${mprItemNumber(index)}</td><td><strong class="member-id-input">${escapeHtml(footing.name || `WF-${index + 1}`)}</strong></td><td>FOUNDATION</td>` +
+            `<td>${valueCell(footing.length)}</td><td>${valueCell(design.width)}</td><td>${valueCell(Number(design.thickness) * 1000)}</td>` +
+            `<td>${valueCell(properties.heightAboveFooting)}</td><td>${valueCell(properties.wallWidth)}</td><td>${valueCell(properties.wallHeight)}</td><td>${valueCell(design.netLineLoad)}</td>` +
+            `<td>${valueCell(design.servicePressure)}</td><td>${valueCell(design.soilAllowable)}</td><td>${valueCell(design.bearingRatio)}</td><td>${valueCell(design.moment)}</td><td>${valueCell(design.shearRatio)}</td>` +
+            `<td>${valueCell(design.barDiameter)}</td><td>${transverseCount}</td><td>${valueCell(transverseSpacing)}</td>` +
+            `<td>${valueCell(design.longitudinalBarDiameter)}</td><td>${longitudinalCount}</td><td>${valueCell(longitudinalSpacing)}</td>` +
+            `<td class="design-status ${statusClass}" ${mprStatusAttributes("footing", statusText, `Wall line load ${valueCell(design.netLineLoad)} kN/m; service bearing ${valueCell(design.servicePressure)} / ${valueCell(design.soilAllowable)} kPa; one-way shear D/C ${valueCell(design.shearRatio)}. Verify soil conditions and final detailing.`)}>${statusText}</td>${mprVisibilityCell(visibilityKey, footing.name || `WF-${index + 1}`)}</tr>`;
+        });
+      }
+
       function slabPanelDesignLegacy(levelIndex, xIndex, yIndex) {
         const data = makePlanData();
         const levelLabel = frameLevelLabel(levelIndex + 1, data);
@@ -64823,7 +64859,8 @@
           beams: {label: "BEAMS", levels: new Map(), total: createStructuralEstimateQuantity()},
           columns: {label: "COLUMNS", levels: new Map(), total: createStructuralEstimateQuantity()},
           slabs: {label: "SLABS", levels: new Map(), total: createStructuralEstimateQuantity()},
-          footings: {label: "FOOTINGS", levels: new Map(), total: createStructuralEstimateQuantity()}
+          footings: {label: "FOOTINGS", levels: new Map(), total: createStructuralEstimateQuantity()},
+          wallFootings: {label: "WALL FOOTINGS", levels: new Map(), total: createStructuralEstimateQuantity()}
         };
 
         byId("memberPropsBody")?.querySelectorAll('tr[data-kind="member"]').forEach(row => {
@@ -64905,7 +64942,7 @@
           const thickness = Math.max(0, Number(design.thickness) || 0);
           const length = Math.max(0, Number(footing.length) || 0);
           if (!width || !thickness || !length) return;
-          const quantity = structuralEstimateLevelBucket(estimates.footings, "FOUNDATION");
+          const quantity = structuralEstimateLevelBucket(estimates.wallFootings, "FOUNDATION");
           addStructuralConcrete(quantity, width * thickness * length, 2 * thickness * length);
           const transverseSpacing = Math.max(0, Number(design.barSpacing) || 0);
           const longitudinalSpacing = Math.max(0, Number(design.longitudinalBarSpacing) || 0);
@@ -64967,7 +65004,7 @@
       }
 
       function structuralEstimateOverallMarkup(estimates) {
-        const categoryKeys = ["beams", "columns", "slabs", "footings"];
+        const categoryKeys = ["beams", "columns", "slabs", "footings", "wallFootings"];
         const grandTotal = createStructuralEstimateQuantity();
         categoryKeys.forEach(key => mergeStructuralEstimateQuantity(grandTotal, estimates[key].total));
         const diameters = Array.from(grandTotal.rebars.keys()).sort((a, b) => a - b);
@@ -65000,7 +65037,7 @@
         }).join("");
         saveStructuralEstimatePricing();
         const totalLabel = structuralEstimatePricingState.concreteMode === "ready" ? "READY-MIX CONCRETE TOTAL" : "SITE-MIX CONCRETE TOTAL";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Ready Mixed Concrete uses the concrete volume row instead, preventing double counting. Edit every unit price as required.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="8">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Ready Mixed Concrete uses the concrete volume row instead, preventing double counting. Edit every unit price as required.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
       }
 
       function refreshStructuralEstimateCosts() {
@@ -65060,7 +65097,7 @@
         const container = byId("structuralEstimatesTables");
         if (!container) return;
         const estimates = collectStructuralEstimates();
-        container.innerHTML = ["beams", "columns", "slabs", "footings"].map(key => structuralEstimateTableMarkup(estimates[key])).join("") + structuralEstimateOverallMarkup(estimates);
+        container.innerHTML = ["beams", "columns", "slabs", "footings", "wallFootings"].map(key => structuralEstimateTableMarkup(estimates[key])).join("") + structuralEstimateOverallMarkup(estimates);
         const note = byId("structuralEstimatesNote");
         if (note) note.textContent = "Preliminary material takeoff from the current MPR geometry and reinforcement. Concrete includes 5% allowance; planning factors per ordered cubic metre are 9 bags cement (40 kg), 0.50 cu.m. sand, 1.00 cu.m. gravel and 180 L water. Rebar lengths include 10% cutting/lap allowance and are rounded to whole 6 m commercial pieces after each level is aggregated; tie wire is 1.5% of estimated rebar weight. Verify the approved mix design, laps, anchorage, waste and final construction drawings before procurement.";
         installMprTableScrolling();
@@ -65074,9 +65111,14 @@
         const body = byId("memberPropsBody");
         const columnBody = byId("columnResultsBody");
         const footingBody = byId("footingResultsBody");
+        const wallFootingBody = byId("wallFootingResultsBody");
         const slabBody = byId("slabResultsBody");
-        if (!body || !columnBody || !footingBody || !slabBody || !yFrameState.model) {
-          updateMprMemberSummary();
+        const wallFootingRows = wallFootingResultRows();
+        if (wallFootingBody) {
+          wallFootingBody.innerHTML = wallFootingRows.join("") || '<tr><td colspan="23">No wall footing data. Use WF Tool in the Foundation Plan.</td></tr>';
+        }
+        if (!body || !columnBody || !footingBody || !wallFootingBody || !slabBody || !yFrameState.model) {
+          updateMprMemberSummary({wallFootings: wallFootingRows.length});
           updateStructuralEstimates();
           return;
         }
@@ -65095,7 +65137,7 @@
         footingBody.innerHTML = footingRows.join("") || '<tr><td colspan="26">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr>';
         const slabRows = slabResultRows();
         slabBody.innerHTML = slabRows.join("") || '<tr><td colspan="27">No supported slab panels evaluated. Place columns on at least two X and two Y grid lines, then Calculate.</td></tr>';
-        updateMprMemberSummary({beams: rows.length, columns: columnRows.length, slabs: slabRows.length, footings: footingRows.length});
+        updateMprMemberSummary({beams: rows.length, columns: columnRows.length, slabs: slabRows.length, footings: footingRows.length, wallFootings: wallFootingRows.length});
         byId("memberPropsTable")?.querySelectorAll("[data-member-rename]").forEach(input => {
           input.title = "Double-click to view the step-by-step academic design solution";
         });
@@ -65120,7 +65162,7 @@
         if (!summary) return;
         // Foundation is a support level, not an occupied building storey.
         const storeys = Math.max(0, makePlanData().levels.length - 1);
-        summary.textContent = `${storeys} Storey Bldg. | No. of Beams=${Number(counts.beams) || 0}, Columns=${Number(counts.columns) || 0}, Slabs=${Number(counts.slabs) || 0}, Footings=${Number(counts.footings) || 0}`;
+        summary.textContent = `${storeys} Storey Bldg. | No. of Beams=${Number(counts.beams) || 0}, Columns=${Number(counts.columns) || 0}, Slabs=${Number(counts.slabs) || 0}, Footings=${Number(counts.footings) || 0}, Wall Footings=${Number(counts.wallFootings) || 0}`;
       }
 
       function setYMemberTableValue(memberId, field, value) {
@@ -67057,7 +67099,9 @@
           ["slabResultsPrintBtn", "slabResultsTable", "Slabs", "printer"],
           ["slabResultsPrintPdfBtn", "slabResultsTable", "Slabs", "pdf"],
           ["footingResultsPrintBtn", "footingResultsTable", "Footings", "printer"],
-          ["footingResultsPrintPdfBtn", "footingResultsTable", "Footings", "pdf"]
+          ["footingResultsPrintPdfBtn", "footingResultsTable", "Footings", "pdf"],
+          ["wallFootingResultsPrintBtn", "wallFootingResultsTable", "Wall Footing", "printer"],
+          ["wallFootingResultsPrintPdfBtn", "wallFootingResultsTable", "Wall Footing", "pdf"]
         ].forEach(([buttonId, tableId, title, outputMode]) => {
           byId(buttonId)?.addEventListener("click", () => printStandaloneOutput(title, outputSingleTableMarkup(tableId), outputMode));
         });
@@ -67116,6 +67160,7 @@
           ["columnResultsSection", "columnResultsToggle", "Column results"],
           ["slabResultsSection", "slabResultsToggle", "Slab results"],
           ["footingResultsSection", "footingResultsToggle", "Footing results"],
+          ["wallFootingResultsSection", "wallFootingResultsToggle", "Wall Footing results"],
           ["structuralEstimatesSection", "structuralEstimatesToggle", "Structural estimates"]
         ].forEach(([sectionId, toggleId, label]) => {
           const section = byId(sectionId);

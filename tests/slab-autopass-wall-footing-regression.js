@@ -20,7 +20,12 @@ const checks = [
   ["table AUTO-PASS schedules recalculation", /function scheduleMprAutoPassCalculation[\s\S]*?requestCoordinatedAnalysis\(\)/],
   ["beam editing preserves AUTO-PASS", /function setCoordinatedBeamDimension[\s\S]*?scheduleMprAutoPassCalculation\("beams"\)/],
   ["extended convergence loop", /for \(let iteration = 0; iteration < 12; iteration \+= 1\)/],
-  ["WF included in estimates", /planState\.wallFootings[\s\S]*?structuralEstimateLevelBucket\(estimates\.footings, "FOUNDATION"\)/]
+  ["WF MPR table", /id="wallFootingResultsSection"[\s\S]*?id="wallFootingResultsTable"[\s\S]*?id="wallFootingResultsBody"/],
+  ["WF design result rows", /function wallFootingResultRows[\s\S]*?transverseBarCount[\s\S]*?longitudinalBarCount[\s\S]*?REVISE WF DESIGN/],
+  ["WF table before estimates", /id="wallFootingResultsSection"[\s\S]*?id="structuralEstimatesSection"/],
+  ["WF separate estimate category", /wallFootings:\s*\{label:\s*"WALL FOOTINGS"[\s\S]*?structuralEstimateLevelBucket\(estimates\.wallFootings, "FOUNDATION"\)/],
+  ["WF included in overall estimate", /categoryKeys\s*=\s*\["beams", "columns", "slabs", "footings", "wallFootings"\]/],
+  ["WF print controls", /wallFootingResultsPrintBtn[\s\S]*?wallFootingResultsPrintPdfBtn/]
 ];
 
 const failures = checks.filter(([, expression]) => !expression.test(source)).map(([label]) => label);
