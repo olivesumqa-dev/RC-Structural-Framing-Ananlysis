@@ -951,6 +951,80 @@
       color: transparent;
       font-size: 0;
     }
+    .structural-estimates-section {
+      overflow: hidden;
+    }
+    .results-subsection.is-collapsed .structural-estimates-content {
+      display: none !important;
+    }
+    .structural-estimates-content {
+      padding: 8px;
+      background: #f4f6f5;
+    }
+    .structural-estimates-note {
+      margin: 0 0 8px;
+      padding: 7px 9px;
+      border-left: 3px solid #d58019;
+      background: #fff8e9;
+      color: #3e3a32;
+      font: 600 10.5px/1.4 Arial, sans-serif;
+    }
+    .structural-estimate-block + .structural-estimate-block {
+      margin-top: 10px;
+    }
+    .structural-estimate-heading {
+      margin: 0;
+      padding: 6px 8px;
+      background: #334143;
+      color: #fff;
+      font: 800 11px/1.2 Arial, sans-serif;
+      letter-spacing: .04em;
+    }
+    .structural-estimates-scroll {
+      width: 100%;
+      overflow-x: auto;
+    }
+    .member-results-sheet .member-props-table .structural-estimates-table {
+      width: max-content;
+      min-width: 100%;
+      table-layout: auto;
+      font-size: 10.5px;
+    }
+    .structural-estimates-table th,
+    .structural-estimates-table td {
+      min-width: 74px;
+      text-align: center;
+      vertical-align: middle !important;
+      white-space: nowrap !important;
+    }
+    .structural-estimates-table th:first-child,
+    .structural-estimates-table td:first-child {
+      min-width: 105px;
+      text-align: left;
+      font-weight: 700;
+    }
+    .structural-estimates-table .structural-estimate-total td {
+      background: #dde7e4;
+      color: #152724;
+      font-weight: 800;
+      border-top: 2px solid #50625e;
+    }
+    .structural-estimates-table .structural-estimate-grand-total td {
+      background: #1c6252;
+      color: #fff;
+      font-weight: 800;
+    }
+    .structural-estimates-table.structural-estimates-overall th:last-child,
+    .structural-estimates-table.structural-estimates-overall td:last-child {
+      background: #1c6252;
+      color: #fff;
+      font-weight: 800;
+    }
+    .structural-estimates-empty {
+      padding: 12px !important;
+      color: #666;
+      text-align: center !important;
+    }
     .design-input {
       width: 100%;
       min-width: 0;
@@ -1683,6 +1757,27 @@
     }
     body[data-theme="green_teal"] .member-results-sheet .member-props-table tbody tr:nth-child(even) td {
       background: #151f21;
+    }
+    body[data-theme="green_teal"] .structural-estimates-content {
+      background: #0d1517;
+    }
+    body[data-theme="green_teal"] .structural-estimates-note {
+      background: #1b2425;
+      color: #dce6e3;
+      border-left-color: #f3ad4b;
+    }
+    body[data-theme="green_teal"] .structural-estimate-heading {
+      background: #26383a;
+      color: #f1f5f4;
+    }
+    body[data-theme="green_teal"] .structural-estimates-table .structural-estimate-total td {
+      background: #243638;
+      color: #f1f5f4;
+      border-top-color: #7b9690;
+    }
+    body[data-theme="green_teal"] .structural-estimates-table .structural-estimate-grand-total td {
+      background: #166c56;
+      color: #fff;
     }
     body:not([data-theme="green_teal"]) .member-results-sheet .member-props-table td.design-status.warn,
     body:not([data-theme="green_teal"]) .member-results-sheet .member-props-table td.design-status.fail,
@@ -2989,6 +3084,16 @@
               <thead><tr><th>Item No.</th><th>Footing ID</th><th>Type</th><th>B, m</th><th>L, m</th><th>h, mm</th><th class="mpr-load-heading">DL, kN</th><th class="mpr-load-heading">LL, kN</th><th class="mpr-load-heading">Point, kN</th><th class="mpr-load-heading">Wall, kN</th><th class="mpr-load-heading">WL frame, kN</th><th class="mpr-load-heading">EQ frame, kN</th><th>P service, kN</th><th>Pu, kN</th><th>q service, kPa</th><th>qu, kPa</th><th>Mux, kN-m/m</th><th>Muy, kN-m/m</th><th><button class="mpr-rebar-bulk-header" type="button" data-mpr-bulk-rebar-kind="footing-x" title="Right-click to change all X-direction footing rebar sizes.">X bar dia., mm</button></th><th>X spacing, mm</th><th><button class="mpr-rebar-bulk-header" type="button" data-mpr-bulk-rebar-kind="footing-y" title="Right-click to change all Y-direction footing rebar sizes.">Y bar dia., mm</button></th><th>Y spacing, mm</th><th>1-way ratio</th><th>Punch ratio</th><th>Status</th><th class="mpr-visibility-heading">Hide</th></tr></thead>
               <tbody id="footingResultsBody"><tr><td colspan="26">No footing data. Use the Foundation Plan to place footings at column intersections.</td></tr></tbody>
             </table>
+          </div>
+          <div class="results-subsection structural-estimates-section" id="structuralEstimatesSection">
+            <div class="results-subsection-title">
+              <button id="structuralEstimatesToggle" class="member-props-toggle" type="button">Hide</button>
+              <span>STRUCTURAL ESTIMATES</span>
+            </div>
+            <div class="structural-estimates-content">
+              <p class="structural-estimates-note" id="structuralEstimatesNote">Preliminary material takeoff from the current MPR geometry and reinforcement. Rebars are whole 6 m commercial pieces. Concrete materials use the stated planning factors and must be verified against the approved concrete mix design, laps, anchorage, waste, and final construction drawings.</p>
+              <div id="structuralEstimatesTables" aria-live="polite"></div>
+            </div>
           </div>
           <div id="coordinatedAnalysisSummary" class="analysis-audit warn">Calculate to audit the X and Y frame models.</div>
         </div>
@@ -62128,7 +62233,7 @@
                 `${stirrupSchedule}</td>` +
               `<td class="design-status ${reinforcement.pass ? "pass" : "fail"}" ${mprStatusAttributes("beam", reinforcement.pass ? "PASS" : reinforcement.reason, reinforcement.title)}>${reinforcement.pass ? "PASS" : escapeHtml(reinforcement.reason)}<br>F ${valueCell(reinforcement.flexureRatio)} / V ${valueCell(reinforcement.shearRatio)} / D ${valueCell(reinforcement.deflectionRatio)}</td>`
             : '<td class="not-applicable-cell">-</td>'.repeat(6);
-          return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-frame="${axis}" data-frame-line="${frameLineAttribute}" data-kind="member" data-sort-sequence="${startIndex + index}" data-sort-name="${escapeHtml(displayName)}" data-sort-level="${beamLevelIndex}" data-sort-type="${escapeHtml(beamType)}" data-sort-width="${Number(member.width) || 0}" data-sort-height="${Number(member.height) || 0}" data-sort-length="${Number(length) || 0}" data-sort-shear="${Number(displayedShear) || 0}" data-sort-moment="${Number(displayedMoment) || 0}" data-sort-rebar="${Number(reinforcement?.barDiameter) || 0}">` +
+          return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-frame="${axis}" data-frame-line="${frameLineAttribute}" data-kind="member" data-sort-sequence="${startIndex + index}" data-sort-name="${escapeHtml(displayName)}" data-sort-level="${beamLevelIndex}" data-sort-type="${escapeHtml(beamType)}" data-sort-width="${Number(member.width) || 0}" data-sort-height="${Number(member.height) || 0}" data-sort-length="${Number(length) || 0}" data-sort-shear="${Number(displayedShear) || 0}" data-sort-moment="${Number(displayedMoment) || 0}" data-sort-rebar="${Number(reinforcement?.barDiameter) || 0}" data-estimate-support-top="${Number(reinforcement?.supportTop) || 0}" data-estimate-support-bottom="${Number(reinforcement?.supportBottom) || 0}" data-estimate-midspan-top="${Number(reinforcement?.midspanTop) || 0}" data-estimate-midspan-bottom="${Number(reinforcement?.midspanBottom) || 0}" data-estimate-stirrup-support-spacing="${Number(reinforcement?.supportSpacing) || 0}" data-estimate-stirrup-field-spacing="${Number(reinforcement?.fieldSpacing) || 0}" data-estimate-stirrup-support-zone="${Number(reinforcement?.supportZone) || 0}">` +
             `<td>${mprItemNumber(startIndex + index)}</td>` +
             `<td title="${axis}-axis frame line ${frameLineAttribute}">${escapeHtml(beamLevel)}</td>` +
             `<td><input class="member-name-input member-id-input" ${nameAttribute}="${member.id}" data-member-rename="beam" data-name-axis="${axis}" data-frame-line="${frameLineAttribute}" data-name-key="${groupAttribute}" value="${escapeHtml(resultTableMemberName(axis, displayMember))}" /></td>` +
@@ -62983,7 +63088,7 @@
             const design = columnDesignResult(key, Math.min(...storyRun));
             const loadSources = connectedColumnLoadSources(key, design);
             const visibilityKey = mprVisibilityKey("column", design.overrideKey);
-            rows.push(`<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="column-design" data-column-key="${escapeHtml(key)}" data-story-index="${Math.min(...storyRun)}">` +
+            rows.push(`<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="column-design" data-column-key="${escapeHtml(key)}" data-story-index="${Math.min(...storyRun)}" data-estimate-tie-spacing="${Number(design.tieSpacing) || 0}">` +
               `<td>${mprItemNumber(itemIndex)}</td><td><input class="member-id-input" data-member-rename="column" data-name-key="${escapeHtml(design.overrideKey)}" value="${escapeHtml(design.name)}" aria-label="${escapeHtml(design.level)} column ID"></td><td>${escapeHtml(design.level)}</td>` +
               `<td><input class="design-input" type="number" min="250" step="25" data-column-design="${escapeHtml(design.overrideKey)}" data-field="width" value="${design.width}"></td>` +
               `<td><input class="design-input" type="number" min="250" step="25" data-column-design="${escapeHtml(design.overrideKey)}" data-field="height" value="${design.height}"></td>` +
@@ -63843,6 +63948,232 @@
         });
       }
 
+      const STRUCTURAL_ESTIMATE_FACTORS = Object.freeze({
+        concreteAllowance: 1.05,
+        cementBagsPerCubicMeter: 9,
+        sandPerCubicMeter: 0.50,
+        gravelPerCubicMeter: 1.00,
+        waterLitersPerCubicMeter: 180,
+        rebarAllowance: 1.10,
+        tieWireRatio: 0.015,
+        commercialBarLength: 6
+      });
+
+      function createStructuralEstimateQuantity() {
+        return {concrete: 0, cement: 0, sand: 0, gravel: 0, water: 0, formwork: 0, rebarWeight: 0, rebars: new Map()};
+      }
+
+      function structuralEstimateCellValue(row, index) {
+        const cell = row?.cells?.[index];
+        if (!cell) return 0;
+        const control = cell.querySelector("input, select");
+        const raw = control ? control.value : cell.textContent;
+        const match = String(raw || "").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+        return match ? Number(match[0]) : 0;
+      }
+
+      function structuralEstimateCellText(row, index) {
+        const cell = row?.cells?.[index];
+        if (!cell) return "";
+        const control = cell.querySelector("input, select");
+        return String(control ? (control.selectedOptions?.[0]?.textContent || control.value) : cell.textContent || "").trim();
+      }
+
+      function addStructuralConcrete(quantity, netVolume, formworkArea) {
+        const orderedVolume = Math.max(0, Number(netVolume) || 0) * STRUCTURAL_ESTIMATE_FACTORS.concreteAllowance;
+        quantity.concrete += orderedVolume;
+        quantity.cement += orderedVolume * STRUCTURAL_ESTIMATE_FACTORS.cementBagsPerCubicMeter;
+        quantity.sand += orderedVolume * STRUCTURAL_ESTIMATE_FACTORS.sandPerCubicMeter;
+        quantity.gravel += orderedVolume * STRUCTURAL_ESTIMATE_FACTORS.gravelPerCubicMeter;
+        quantity.water += orderedVolume * STRUCTURAL_ESTIMATE_FACTORS.waterLitersPerCubicMeter;
+        quantity.formwork += Math.max(0, Number(formworkArea) || 0);
+      }
+
+      function addStructuralRebar(quantity, diameter, rawLength) {
+        const dia = Math.round(Number(diameter) || 0);
+        const length = Math.max(0, Number(rawLength) || 0) * STRUCTURAL_ESTIMATE_FACTORS.rebarAllowance;
+        if (!dia || !length) return;
+        quantity.rebars.set(dia, (quantity.rebars.get(dia) || 0) + length);
+        quantity.rebarWeight += length * dia * dia / 162;
+      }
+
+      function mergeStructuralEstimateQuantity(target, source) {
+        ["concrete", "cement", "sand", "gravel", "water", "formwork", "rebarWeight"].forEach(key => {
+          target[key] += Number(source?.[key]) || 0;
+        });
+        source?.rebars?.forEach((length, diameter) => {
+          target.rebars.set(diameter, (target.rebars.get(diameter) || 0) + length);
+        });
+        return target;
+      }
+
+      function structuralEstimateLevelBucket(category, level) {
+        const label = String(level || "UNASSIGNED").trim() || "UNASSIGNED";
+        if (!category.levels.has(label)) category.levels.set(label, createStructuralEstimateQuantity());
+        return category.levels.get(label);
+      }
+
+      function collectStructuralEstimates() {
+        const estimates = {
+          beams: {label: "BEAMS", levels: new Map(), total: createStructuralEstimateQuantity()},
+          columns: {label: "COLUMNS", levels: new Map(), total: createStructuralEstimateQuantity()},
+          slabs: {label: "SLABS", levels: new Map(), total: createStructuralEstimateQuantity()},
+          footings: {label: "FOOTINGS", levels: new Map(), total: createStructuralEstimateQuantity()}
+        };
+
+        byId("memberPropsBody")?.querySelectorAll('tr[data-kind="member"]').forEach(row => {
+          const quantity = structuralEstimateLevelBucket(estimates.beams, structuralEstimateCellText(row, 1));
+          const width = structuralEstimateCellValue(row, 4) / 1000;
+          const height = structuralEstimateCellValue(row, 5) / 1000;
+          const length = structuralEstimateCellValue(row, 6);
+          addStructuralConcrete(quantity, width * height * length, (width + 2 * height) * length);
+          const longitudinalDiameter = structuralEstimateCellValue(row, 18);
+          const topCount = Math.max(Number(row.dataset.estimateSupportTop) || 0, Number(row.dataset.estimateMidspanTop) || 0);
+          const bottomCount = Math.max(Number(row.dataset.estimateSupportBottom) || 0, Number(row.dataset.estimateMidspanBottom) || 0);
+          addStructuralRebar(quantity, longitudinalDiameter, (topCount + bottomCount) * length);
+          const stirrupDiameter = structuralEstimateCellValue(row, 21);
+          const supportSpacing = Number(row.dataset.estimateStirrupSupportSpacing) || Number(row.dataset.estimateStirrupFieldSpacing) || 0;
+          const fieldSpacing = Number(row.dataset.estimateStirrupFieldSpacing) || supportSpacing;
+          const supportZone = Math.min(length / 2, (Number(row.dataset.estimateStirrupSupportZone) || 0) / 1000);
+          if (stirrupDiameter && supportSpacing && fieldSpacing) {
+            const supportCount = 2 * Math.ceil(supportZone * 1000 / supportSpacing);
+            const fieldCount = Math.ceil(Math.max(0, length - 2 * supportZone) * 1000 / fieldSpacing);
+            const stirrupLength = 2 * Math.max(0.05, width - 0.08) + 2 * Math.max(0.05, height - 0.08) + 0.20;
+            addStructuralRebar(quantity, stirrupDiameter, (supportCount + fieldCount + 1) * stirrupLength);
+          }
+        });
+
+        byId("columnResultsBody")?.querySelectorAll('tr[data-kind="column-design"]').forEach(row => {
+          const quantity = structuralEstimateLevelBucket(estimates.columns, structuralEstimateCellText(row, 2));
+          const width = structuralEstimateCellValue(row, 3) / 1000;
+          const height = structuralEstimateCellValue(row, 4) / 1000;
+          const length = structuralEstimateCellValue(row, 5);
+          addStructuralConcrete(quantity, width * height * length, 2 * (width + height) * length);
+          addStructuralRebar(quantity, structuralEstimateCellValue(row, 16), structuralEstimateCellValue(row, 17) * length);
+          const tieDiameter = structuralEstimateCellValue(row, 20);
+          const tieSpacing = Number(row.dataset.estimateTieSpacing) || 0;
+          if (tieDiameter && tieSpacing) {
+            const denseZoneLength = Math.min(length * 1000, 550);
+            const tieCount = 8 + Math.ceil(Math.max(0, length * 1000 - denseZoneLength) / tieSpacing);
+            const tieLength = 2 * Math.max(0.05, width - 0.08) + 2 * Math.max(0.05, height - 0.08) + 0.20;
+            addStructuralRebar(quantity, tieDiameter, tieCount * tieLength);
+          }
+        });
+
+        byId("slabResultsBody")?.querySelectorAll('tr[data-kind="slab-design"]').forEach(row => {
+          const slabType = structuralEstimateCellText(row, 3).toUpperCase();
+          if (slabType.includes("OPEN")) return;
+          const quantity = structuralEstimateLevelBucket(estimates.slabs, structuralEstimateCellText(row, 1));
+          const spanX = structuralEstimateCellValue(row, 4);
+          const spanY = structuralEstimateCellValue(row, 5);
+          const thickness = structuralEstimateCellValue(row, 6) / 1000;
+          const onFill = slabType.includes("FILL");
+          addStructuralConcrete(quantity, spanX * spanY * thickness, (onFill ? 0 : spanX * spanY) + 2 * (spanX + spanY) * thickness);
+          const diameter = structuralEstimateCellValue(row, 16);
+          const topSpacingX = structuralEstimateCellValue(row, 17);
+          const topSpacingY = structuralEstimateCellValue(row, 19);
+          const bottomSpacingX = structuralEstimateCellValue(row, 21);
+          const bottomSpacingY = structuralEstimateCellValue(row, 22);
+          if (topSpacingX) addStructuralRebar(quantity, diameter, (Math.ceil(spanY * 1000 / topSpacingX) + 1) * spanX * (onFill ? 1 : 0.5));
+          if (topSpacingY) addStructuralRebar(quantity, diameter, (Math.ceil(spanX * 1000 / topSpacingY) + 1) * spanY * (onFill ? 1 : 0.5));
+          if (bottomSpacingX) addStructuralRebar(quantity, diameter, (Math.ceil(spanY * 1000 / bottomSpacingX) + 1) * spanX);
+          if (bottomSpacingY) addStructuralRebar(quantity, diameter, (Math.ceil(spanX * 1000 / bottomSpacingY) + 1) * spanY);
+        });
+
+        byId("footingResultsBody")?.querySelectorAll('tr[data-kind="footing-design"]').forEach(row => {
+          const quantity = structuralEstimateLevelBucket(estimates.footings, "FOUNDATION");
+          const width = structuralEstimateCellValue(row, 3);
+          const length = structuralEstimateCellValue(row, 4);
+          const thickness = structuralEstimateCellValue(row, 5) / 1000;
+          addStructuralConcrete(quantity, width * length * thickness, 2 * (width + length) * thickness);
+          const xDiameter = structuralEstimateCellValue(row, 18);
+          const xSpacing = structuralEstimateCellValue(row, 19);
+          const yDiameter = structuralEstimateCellValue(row, 20);
+          const ySpacing = structuralEstimateCellValue(row, 21);
+          if (xSpacing) addStructuralRebar(quantity, xDiameter, (Math.ceil(length * 1000 / xSpacing) + 1) * width);
+          if (ySpacing) addStructuralRebar(quantity, yDiameter, (Math.ceil(width * 1000 / ySpacing) + 1) * length);
+        });
+
+        Object.values(estimates).forEach(category => {
+          category.levels.forEach(quantity => mergeStructuralEstimateQuantity(category.total, quantity));
+        });
+        return estimates;
+      }
+
+      function structuralEstimateDiameters(category) {
+        const diameters = new Set();
+        category.levels.forEach(quantity => quantity.rebars.forEach((length, diameter) => {
+          if (length > 0) diameters.add(Number(diameter));
+        }));
+        return Array.from(diameters).sort((a, b) => a - b);
+      }
+
+      function structuralEstimateValue(quantity, key) {
+        if (key.startsWith("D")) {
+          const diameter = Number(key.slice(1));
+          return Math.ceil((quantity.rebars.get(diameter) || 0) / STRUCTURAL_ESTIMATE_FACTORS.commercialBarLength);
+        }
+        if (key === "cement") return Math.ceil(quantity.cement);
+        if (key === "water") return quantity.water.toFixed(0);
+        if (key === "tieWire") return (quantity.rebarWeight * STRUCTURAL_ESTIMATE_FACTORS.tieWireRatio).toFixed(2);
+        if (key === "formwork") return quantity.formwork.toFixed(2);
+        return Number(quantity[key] || 0).toFixed(3);
+      }
+
+      function structuralEstimateLevelOrder(label) {
+        const normalized = String(label || "").toUpperCase();
+        if (normalized.includes("FOUNDATION")) return -1;
+        const matches = Array.from(normalized.matchAll(/LEVEL[-\s]*(\d+)/g)).map(match => Number(match[1]));
+        return matches.length ? Math.min(...matches) : Number.MAX_SAFE_INTEGER;
+      }
+
+      function structuralEstimateTableMarkup(category) {
+        const diameters = structuralEstimateDiameters(category);
+        const columns = [
+          ["concrete", "Concrete<br>(cu.m.)"], ["cement", "Cement<br>(40 kg bags)"],
+          ["sand", "Sand<br>(cu.m.)"], ["gravel", "Gravel<br>(cu.m.)"],
+          ["water", "Water<br>(L)"], ["formwork", "Formwork<br>(sq.m.)"],
+          ["tieWire", "Tie wire<br>(kg)"],
+          ...diameters.map(diameter => [`D${diameter}`, `D${diameter} rebar<br>(6 m pcs)`])
+        ];
+        const header = `<tr><th>Level</th>${columns.map(([, label]) => `<th>${label}</th>`).join("")}</tr>`;
+        const entries = Array.from(category.levels.entries()).sort((a, b) => structuralEstimateLevelOrder(a[0]) - structuralEstimateLevelOrder(b[0]) || a[0].localeCompare(b[0], undefined, {numeric: true}));
+        const body = entries.length
+          ? entries.map(([level, quantity]) => `<tr><td>${escapeHtml(level)}</td>${columns.map(([key]) => `<td>${structuralEstimateValue(quantity, key)}</td>`).join("")}</tr>`).join("")
+          : `<tr><td class="structural-estimates-empty" colspan="${columns.length + 1}">No calculated ${escapeHtml(category.label.toLowerCase())} are available.</td></tr>`;
+        const total = entries.length
+          ? `<tr class="structural-estimate-total"><td>TOTAL — ${escapeHtml(category.label)}</td>${columns.map(([key]) => `<td>${structuralEstimateValue(category.total, key)}</td>`).join("")}</tr>`
+          : "";
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">${escapeHtml(category.label)} — BY LEVEL</h4><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>${escapeHtml(category.label)} Structural Estimates</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></section>`;
+      }
+
+      function structuralEstimateOverallMarkup(estimates) {
+        const categoryKeys = ["beams", "columns", "slabs", "footings"];
+        const grandTotal = createStructuralEstimateQuantity();
+        categoryKeys.forEach(key => mergeStructuralEstimateQuantity(grandTotal, estimates[key].total));
+        const diameters = Array.from(grandTotal.rebars.keys()).sort((a, b) => a - b);
+        const rows = [
+          ["Concrete", "cu.m.", "concrete"], ["Cement", "40 kg bags", "cement"],
+          ["Sand", "cu.m.", "sand"], ["Gravel", "cu.m.", "gravel"],
+          ["Water", "L", "water"], ["Formwork", "sq.m.", "formwork"],
+          ["Tie wire", "kg", "tieWire"],
+          ...diameters.map(diameter => [`D${diameter} rebar`, "6 m pcs", `D${diameter}`])
+        ];
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY</h4><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th></tr></thead><tbody>${rows.map(([material, unit, key]) => `<tr><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${structuralEstimateValue(estimates[categoryKey].total, key)}</td>`).join("")}<td><strong>${structuralEstimateValue(grandTotal, key)}</strong></td></tr>`).join("")}</tbody></table></div></section>`;
+      }
+
+      function updateStructuralEstimates() {
+        const container = byId("structuralEstimatesTables");
+        if (!container) return;
+        const estimates = collectStructuralEstimates();
+        container.innerHTML = ["beams", "columns", "slabs", "footings"].map(key => structuralEstimateTableMarkup(estimates[key])).join("") + structuralEstimateOverallMarkup(estimates);
+        const note = byId("structuralEstimatesNote");
+        if (note) note.textContent = "Preliminary material takeoff from the current MPR geometry and reinforcement. Concrete includes 5% allowance; planning factors per ordered cubic metre are 9 bags cement (40 kg), 0.50 cu.m. sand, 1.00 cu.m. gravel and 180 L water. Rebar lengths include 10% cutting/lap allowance and are rounded to whole 6 m commercial pieces after each level is aggregated; tie wire is 1.5% of estimated rebar weight. Verify the approved mix design, laps, anchorage, waste and final construction drawings before procurement.";
+        installMprTableScrolling();
+        installMprTableHeightResizing();
+        installMprColumnResizing();
+      }
+
       function appendCoordinatedResults() {
         coordinatedResultsPending = false;
         const body = byId("memberPropsBody");
@@ -63851,6 +64182,7 @@
         const slabBody = byId("slabResultsBody");
         if (!body || !columnBody || !footingBody || !slabBody || !yFrameState.model) {
           updateMprMemberSummary();
+          updateStructuralEstimates();
           return;
         }
         const rows = [];
@@ -63874,6 +64206,7 @@
         });
         applyAllAdditionalMprSorts();
         updateMprVisibilityControls();
+        updateStructuralEstimates();
       }
 
       function scheduleCoordinatedResults() {
@@ -65820,7 +66153,8 @@
           ["beamResultsSection", "beamResultsToggle", "Beam results"],
           ["columnResultsSection", "columnResultsToggle", "Column results"],
           ["slabResultsSection", "slabResultsToggle", "Slab results"],
-          ["footingResultsSection", "footingResultsToggle", "Footing results"]
+          ["footingResultsSection", "footingResultsToggle", "Footing results"],
+          ["structuralEstimatesSection", "structuralEstimatesToggle", "Structural estimates"]
         ].forEach(([sectionId, toggleId, label]) => {
           const section = byId(sectionId);
           const toggle = byId(toggleId);
