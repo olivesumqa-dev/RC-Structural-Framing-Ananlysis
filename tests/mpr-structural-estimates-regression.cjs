@@ -21,5 +21,13 @@ assert(html.includes('Water<br>(L)') && html.includes('Formwork<br>(sq.m.)') && 
 assert(html.includes('data-estimate-support-top=') && html.includes('data-estimate-tie-spacing='), "Designed beam and column reinforcement data is not exposed to the takeoff");
 assert(html.includes('["structuralEstimatesSection", "structuralEstimatesToggle", "Structural estimates"]'), "Structural Estimates collapse control is not installed");
 assert(html.includes("installMprTableScrolling();") && html.includes("installMprTableHeightResizing();") && html.includes("installMprColumnResizing();"), "Generated estimate tables must receive the standard MPR scrolling and resize interactions");
+assert(html.includes("STRUCTURAL_ESTIMATE_PRICE_PRESETS") && html.includes("structuralEstimatePricingState"), "Location-aware editable estimate prices are missing");
+assert(html.includes('id="structuralEstimateCurrency"') && html.includes('id="structuralEstimateExchangeRate"'), "Currency and editable exchange-rate selectors are missing");
+assert(html.includes("data-estimate-unit-price") && html.includes("data-estimate-item-cost"), "Overall estimate rows need editable unit prices and calculated item costs");
+assert(html.includes("SITE-MIX MATERIAL TOTAL") && html.includes("READY-MIX ALTERNATIVE TOTAL"), "Concrete pricing alternatives must avoid double counting");
+assert(html.includes('id="structuralEstimatesPrintBtn"') && html.includes('id="structuralEstimatesPrintPdfBtn"'), "Structural Estimates needs aligned Print and Print PDF controls");
+assert(html.includes("outputStructuralEstimatesMarkup()") && html.includes('printStandaloneOutput("Structural Estimates"'), "Structural Estimates print controls must be functional");
+assert(/@media \(max-width: 1180px\)[\s\S]*?\.member-results-sheet \.mpr-table-scroll[\s\S]*?touch-action: pan-x pan-y/.test(html), "Phone and tablet MPR tables must pan horizontally with fixed-width columns");
+assert(/@media \(max-width: 900px\)[\s\S]*?\.topbar[\s\S]*?overflow-x: auto/.test(html), "The mobile application header must pan horizontally");
 
 console.log("MPR structural estimates regression tests: passed");

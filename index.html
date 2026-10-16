@@ -984,6 +984,8 @@
     .structural-estimates-scroll {
       width: 100%;
       overflow-x: auto;
+      overscroll-behavior-inline: contain;
+      -webkit-overflow-scrolling: touch;
     }
     .member-results-sheet .member-props-table .structural-estimates-table {
       width: max-content;
@@ -1025,6 +1027,53 @@
       padding: 12px !important;
       color: #666;
       text-align: center !important;
+    }
+    .structural-estimate-pricing-controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 7px;
+      margin: 0 0 8px;
+      padding: 8px;
+      border: 1px solid #86918e;
+      background: #eef3f1;
+    }
+    .structural-estimate-pricing-controls label {
+      display: grid;
+      gap: 3px;
+      color: #243532;
+      font: 800 9px/1.2 Arial, sans-serif;
+      text-transform: uppercase;
+    }
+    .structural-estimate-pricing-controls input,
+    .structural-estimate-pricing-controls select {
+      width: 100%;
+      min-width: 0;
+      height: 28px;
+      box-sizing: border-box;
+      padding: 3px 6px;
+      border: 1px solid #778783;
+      background: #fff;
+      color: #17211f;
+      font: 700 10.5px/1 Arial, sans-serif;
+    }
+    .structural-estimate-price-input {
+      width: 92px !important;
+      min-width: 92px !important;
+      padding: 3px 5px !important;
+      text-align: right !important;
+    }
+    .structural-estimate-price-editor { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 800; }
+    .structural-estimate-source {
+      max-width: 240px;
+      white-space: normal !important;
+      text-align: left !important;
+      font-size: 9px;
+      line-height: 1.25;
+    }
+    .structural-estimate-cost-total td {
+      background: #123f35 !important;
+      color: #fff !important;
+      font-weight: 800;
     }
     .design-input {
       width: 100%;
@@ -1767,6 +1816,17 @@
       color: #dce6e3;
       border-left-color: #f3ad4b;
     }
+    body[data-theme="green_teal"] .structural-estimate-pricing-controls {
+      border-color: #465558;
+      background: #162123;
+    }
+    body[data-theme="green_teal"] .structural-estimate-pricing-controls label { color: #dce6e3; }
+    body[data-theme="green_teal"] .structural-estimate-pricing-controls input,
+    body[data-theme="green_teal"] .structural-estimate-pricing-controls select {
+      border-color: #59696c;
+      background: #0f181a;
+      color: #f0f5f4;
+    }
     body[data-theme="green_teal"] .structural-estimate-heading {
       background: #26383a;
       color: #f1f5f4;
@@ -1796,7 +1856,59 @@
         grid-template-columns: 1fr;
       }
     }
-    @media (max-width: 900px) {
+    @media (max-width: 1180px) {
+      .topbar {
+        grid-template-columns: 210px 520px 520px 430px 40px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
+      }
+      .structural-plan-title-row,
+      .drawing-control-row {
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
+      }
+      .structural-plan-title-row > *,
+      .drawing-control-row > *,
+      .drawing-toolbar,
+      .topbar-icon-dock,
+      .tool-icon-group {
+        flex: 0 0 auto;
+      }
+      .drawing-toolbar,
+      .tool-icon-group {
+        width: max-content;
+        min-width: max-content;
+        flex-wrap: nowrap;
+      }
+      .member-results-sheet .mpr-table-scroll,
+      .structural-estimates-scroll {
+        width: 100%;
+        overflow-x: auto !important;
+        overflow-y: auto;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x pan-y;
+        -webkit-overflow-scrolling: touch;
+      }
+      .member-results-sheet .mpr-table-scroll > table {
+        width: max-content !important;
+        min-width: max-content !important;
+        table-layout: fixed !important;
+      }
+      .member-results-sheet .mpr-table-scroll > table th,
+      .member-results-sheet .mpr-table-scroll > table td {
+        width: 92px;
+        min-width: 92px;
+        max-width: 92px;
+      }
+      .member-results-sheet .mpr-table-scroll > table th:first-child,
+      .member-results-sheet .mpr-table-scroll > table td:first-child { width: 76px; min-width: 76px; max-width: 76px; }
+      .structural-estimate-pricing-controls { grid-template-columns: repeat(2, minmax(165px, 1fr)); min-width: 360px; }
       #structuralPlanCanvas,
       #yAxisCanvas {
         width: max(100%, 1000px);
@@ -2144,39 +2256,74 @@
 
     @media (max-width: 900px) {
       .topbar {
-        height: 238px;
-        flex-basis: 238px;
-        grid-template-columns: 132px minmax(160px, 1fr) 26px;
-        grid-template-rows: 58px 98px 66px;
-        gap: 5px 8px;
+        height: 76px;
+        flex-basis: 76px;
+        grid-template-columns: 210px 520px 520px 430px 40px;
+        grid-template-rows: 64px;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
       }
-      .topbar-logo-wrap { grid-column: 1; grid-row: 1; height: 56px; }
-      .topbar-logo { height: 54px; }
-      .topbar-brand { grid-column: 2; grid-row: 1; border-right: 0; }
-      .topbar-title { font-size: 12px; white-space: normal; }
-      .topbar-subtitle { font-size: 9px; white-space: normal; }
+      .topbar-logo-wrap { grid-column: 1; grid-row: 1; height: 58px; }
+      .topbar-logo { height: 56px; }
+      .topbar-brand { grid-column: 3; grid-row: 1; border-right: 2px solid rgba(255, 255, 255, 0.72); }
+      .topbar-title { font-size: 17px; }
+      .topbar-subtitle { font-size: 11px; white-space: nowrap; }
       .topbar-project {
-        grid-column: 1 / 4;
-        grid-row: 2;
-        grid-template-columns: 1fr;
-        grid-template-areas: "title" "owner" "location" "designer";
-        border-right: 0;
+        grid-column: 2;
+        grid-row: 1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas: "title owner" "location designer";
+        border-right: 2px solid rgba(255, 255, 255, 0.72);
       }
       .topbar-project label { grid-template-columns: 125px minmax(0, 1fr); }
-      .topbar-right { grid-column: 1 / 4; grid-row: 3; }
-      .topbar-theme-toggle { grid-column: 3; grid-row: 1; }
+      .topbar-right { grid-column: 4; grid-row: 1; }
+      .topbar-theme-toggle { grid-column: 5; grid-row: 1; }
       .tutorial-drawer,
       .tutorial-drawer:hover,
-      .tutorial-drawer:focus-within { top: 238px; }
+      .tutorial-drawer:focus-within { top: 76px; }
       .structural-plan-title-row {
-        grid-template-columns: 42px minmax(120px, 1fr);
+        grid-template-columns: 42px 220px max-content;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
       }
       .structural-plan-title-row .topbar-icon-dock {
-        grid-column: 1 / 3;
-        grid-row: 2;
-        width: 100%;
+        grid-column: 3;
+        grid-row: 1;
+        width: max-content;
         margin-left: 0;
       }
+    }
+    @media (min-width: 901px) and (max-width: 1180px) {
+      .topbar {
+        height: 76px;
+        flex-basis: 76px;
+        grid-template-columns: 210px 520px 520px 430px 40px;
+        grid-template-rows: 64px;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
+      }
+      .topbar-logo-wrap { grid-column: 1; grid-row: 1; height: 58px; }
+      .topbar-logo { height: 56px; }
+      .topbar-project { grid-column: 2; grid-row: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "title owner" "location designer"; }
+      .topbar-brand { grid-column: 3; grid-row: 1; }
+      .topbar-right { grid-column: 4; grid-row: 1; }
+      .topbar-theme-toggle { grid-column: 5; grid-row: 1; }
+      .tutorial-drawer,
+      .tutorial-drawer:hover,
+      .tutorial-drawer:focus-within { top: 76px; }
+      .structural-plan-title-row { grid-template-columns: 42px 220px max-content; }
+      .structural-plan-title-row .topbar-icon-dock { grid-column: 3; grid-row: 1; width: max-content; margin-left: 0; }
     }
   </style>
 </head>
@@ -3110,6 +3257,7 @@
             <div class="results-subsection-title">
               <button id="structuralEstimatesToggle" class="member-props-toggle" type="button">Hide</button>
               <span>STRUCTURAL ESTIMATES</span>
+              <span class="results-subsection-actions" aria-label="Structural estimates output tools"><button id="structuralEstimatesPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT STRUCTURAL ESTIMATES" aria-label="Print Structural Estimates" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button><button id="structuralEstimatesPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT PDF STRUCTURAL ESTIMATES" aria-label="Print Structural Estimates to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button></span>
             </div>
             <div class="structural-estimates-content">
               <p class="structural-estimates-note" id="structuralEstimatesNote">Preliminary material takeoff from the current MPR geometry and reinforcement. Rebars are whole 6 m commercial pieces. Concrete materials use the stated planning factors and must be verified against the approved concrete mix design, laps, anchorage, waste, and final construction drawings.</p>
@@ -64007,6 +64155,103 @@
         commercialBarLength: 6
       });
 
+      const STRUCTURAL_ESTIMATE_CURRENCIES = Object.freeze({
+        PHP: {label: "Philippine Peso", phpPerUnit: 1},
+        USD: {label: "US Dollar", phpPerUnit: 62.826},
+        EUR: {label: "Euro", phpPerUnit: 73.2},
+        GBP: {label: "British Pound", phpPerUnit: 84.1},
+        AUD: {label: "Australian Dollar", phpPerUnit: 44.2},
+        CAD: {label: "Canadian Dollar", phpPerUnit: 45.1},
+        SGD: {label: "Singapore Dollar", phpPerUnit: 48.9},
+        JPY: {label: "Japanese Yen", phpPerUnit: 0.414},
+        AED: {label: "UAE Dirham", phpPerUnit: 17.1},
+        SAR: {label: "Saudi Riyal", phpPerUnit: 16.73},
+        INR: {label: "Indian Rupee", phpPerUnit: 0.706}
+      });
+
+      const STRUCTURAL_ESTIMATE_PRICE_PRESETS = Object.freeze({
+        "dpwh-batangas": {
+          label: "Batangas / DPWH CMPD reference",
+          location: "Batangas / CALABARZON",
+          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, rebarKg: 34.73},
+          source: "DPWH CMPD Q3 2025; DPWH Quezon formwork DUPA; MWSS 2026 water tariff"
+        },
+        "metro-manila": {
+          label: "Metro Manila 2026 indicative retail",
+          location: "Metro Manila",
+          prices: {concrete: 6200, cement: 260, sand: 1000, gravel: 1250, water: 67.20, formwork: 837.05, tieWire: 90, rebarKg: 49},
+          source: "Q1 2026 indicative supplier ranges; MWSS 2026 water tariff; verify local quotations"
+        },
+        "general-santos": {
+          label: "General Santos 2026 procurement",
+          location: "General Santos City",
+          prices: {concrete: 8000, cement: 382.50, sand: 651.66, gravel: 1643.34, water: 70, formwork: 837.05, tieWire: 144.50, rebarKg: 77.93},
+          source: "General Santos City procurement reference 2026; verify supplier and delivery scope"
+        },
+        custom: {
+          label: "Custom / International location",
+          location: "Enter country, region, province, city or municipality",
+          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, rebarKg: 34.73},
+          source: "User-adjusted local supplier quotation"
+        }
+      });
+
+      const structuralEstimatePricingState = (() => {
+        const fallback = {preset: "dpwh-batangas", location: "Batangas / CALABARZON", currency: "PHP", phpPerCurrency: 1, prices: {}};
+        try {
+          const saved = JSON.parse(localStorage.getItem("strucforgeStructuralEstimatePricing") || "null");
+          return saved && typeof saved === "object" ? {...fallback, ...saved, prices: {...(saved.prices || {})}} : fallback;
+        } catch (_) {
+          return fallback;
+        }
+      })();
+
+      function structuralEstimateRebarPrice(diameter, rebarKgPrice) {
+        return (Number(diameter) ** 2 / 162) * STRUCTURAL_ESTIMATE_FACTORS.commercialBarLength * rebarKgPrice;
+      }
+
+      function structuralEstimatePresetPrices(presetKey, currency = structuralEstimatePricingState.currency, phpPerCurrency = structuralEstimatePricingState.phpPerCurrency) {
+        const preset = STRUCTURAL_ESTIMATE_PRICE_PRESETS[presetKey] || STRUCTURAL_ESTIMATE_PRICE_PRESETS.custom;
+        const divisor = Math.max(0.000001, Number(phpPerCurrency) || STRUCTURAL_ESTIMATE_CURRENCIES[currency]?.phpPerUnit || 1);
+        const prices = {};
+        Object.entries(preset.prices).forEach(([key, value]) => {
+          if (key !== "rebarKg") prices[key] = Number(value) / divisor;
+        });
+        [10, 12, 16, 20, 25, 30].forEach(diameter => {
+          prices[`D${diameter}`] = structuralEstimateRebarPrice(diameter, preset.prices.rebarKg) / divisor;
+        });
+        return prices;
+      }
+
+      function ensureStructuralEstimatePricing() {
+        const currency = STRUCTURAL_ESTIMATE_CURRENCIES[structuralEstimatePricingState.currency] ? structuralEstimatePricingState.currency : "PHP";
+        structuralEstimatePricingState.currency = currency;
+        structuralEstimatePricingState.phpPerCurrency = Math.max(0.000001, Number(structuralEstimatePricingState.phpPerCurrency) || STRUCTURAL_ESTIMATE_CURRENCIES[currency].phpPerUnit);
+        if (!Object.keys(structuralEstimatePricingState.prices).length) {
+          structuralEstimatePricingState.prices = structuralEstimatePresetPrices(structuralEstimatePricingState.preset, currency, structuralEstimatePricingState.phpPerCurrency);
+        }
+      }
+
+      function saveStructuralEstimatePricing() {
+        try { localStorage.setItem("strucforgeStructuralEstimatePricing", JSON.stringify(structuralEstimatePricingState)); } catch (_) {}
+      }
+
+      function structuralEstimateMoney(value) {
+        try {
+          return new Intl.NumberFormat(undefined, {style: "currency", currency: structuralEstimatePricingState.currency, minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Number(value) || 0);
+        } catch (_) {
+          return `${structuralEstimatePricingState.currency} ${(Number(value) || 0).toFixed(2)}`;
+        }
+      }
+
+      function structuralEstimateCurrencySymbol() {
+        try {
+          return new Intl.NumberFormat(undefined, {style: "currency", currency: structuralEstimatePricingState.currency, currencyDisplay: "narrowSymbol"}).formatToParts(0).find(part => part.type === "currency")?.value || structuralEstimatePricingState.currency;
+        } catch (_) {
+          return structuralEstimatePricingState.currency;
+        }
+      }
+
       function createStructuralEstimateQuantity() {
         return {concrete: 0, cement: 0, sand: 0, gravel: 0, water: 0, formwork: 0, rebarWeight: 0, rebars: new Map()};
       }
@@ -64200,14 +64445,106 @@
         const grandTotal = createStructuralEstimateQuantity();
         categoryKeys.forEach(key => mergeStructuralEstimateQuantity(grandTotal, estimates[key].total));
         const diameters = Array.from(grandTotal.rebars.keys()).sort((a, b) => a - b);
+        ensureStructuralEstimatePricing();
         const rows = [
           ["Concrete", "cu.m.", "concrete"], ["Cement", "40 kg bags", "cement"],
           ["Sand", "cu.m.", "sand"], ["Gravel", "cu.m.", "gravel"],
-          ["Water", "L", "water"], ["Formwork", "sq.m.", "formwork"],
+          ["Water", "cu.m.", "water"], ["Formwork", "sq.m.", "formwork"],
           ["Tie wire", "kg", "tieWire"],
           ...diameters.map(diameter => [`D${diameter} rebar`, "6 m pcs", `D${diameter}`])
         ];
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY</h4><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th></tr></thead><tbody>${rows.map(([material, unit, key]) => `<tr><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${structuralEstimateValue(estimates[categoryKey].total, key)}</td>`).join("")}<td><strong>${structuralEstimateValue(grandTotal, key)}</strong></td></tr>`).join("")}</tbody></table></div></section>`;
+        const quantityValue = (quantity, key) => key === "water"
+          ? ((Number(quantity.water) || 0) / 1000).toFixed(3)
+          : structuralEstimateValue(quantity, key);
+        const preset = STRUCTURAL_ESTIMATE_PRICE_PRESETS[structuralEstimatePricingState.preset] || STRUCTURAL_ESTIMATE_PRICE_PRESETS.custom;
+        const currencySymbol = structuralEstimateCurrencySymbol();
+        const currencyOptions = Object.entries(STRUCTURAL_ESTIMATE_CURRENCIES).map(([code, detail]) => `<option value="${code}"${code === structuralEstimatePricingState.currency ? " selected" : ""}>${code} — ${escapeHtml(detail.label)}</option>`).join("");
+        const locationOptions = Object.entries(STRUCTURAL_ESTIMATE_PRICE_PRESETS).map(([key, detail]) => `<option value="${key}"${key === structuralEstimatePricingState.preset ? " selected" : ""}>${escapeHtml(detail.label)}</option>`).join("");
+        const pricingControls = `<div class="structural-estimate-pricing-controls" aria-label="Structural estimate location and currency"><label>Price location preset<select id="structuralEstimateLocationPreset">${locationOptions}</select></label><label>Country / Province / City / Municipality<input id="structuralEstimateLocation" type="text" value="${escapeHtml(structuralEstimatePricingState.location)}" autocomplete="off"></label><label>Currency<select id="structuralEstimateCurrency">${currencyOptions}</select></label><label>Exchange rate: 1 ${escapeHtml(structuralEstimatePricingState.currency)} = PHP<input id="structuralEstimateExchangeRate" type="number" min="0.000001" step="any" value="${Number(structuralEstimatePricingState.phpPerCurrency).toFixed(6)}"></label></div>`;
+        const sourceFor = key => key === "water"
+          ? "MWSS 2026 tariff reference; enter the local utility rate"
+          : key === "formwork"
+            ? "DPWH Quezon DUPA 2025; replace with the local contractor quotation"
+            : preset.source;
+        const rowMarkup = rows.map(([material, unit, key]) => {
+          if (!Number.isFinite(Number(structuralEstimatePricingState.prices[key]))) {
+            const defaults = structuralEstimatePresetPrices(structuralEstimatePricingState.preset);
+            structuralEstimatePricingState.prices[key] = Number(defaults[key]) || 0;
+          }
+          const quantity = Number(quantityValue(grandTotal, key)) || 0;
+          const unitPrice = Number(structuralEstimatePricingState.prices[key]) || 0;
+          return `<tr data-estimate-price-row data-price-key="${key}" data-quantity="${quantity}"><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${quantityValue(estimates[categoryKey].total, key)}</td>`).join("")}<td><strong>${quantityValue(grandTotal, key)}</strong></td><td><span class="structural-estimate-price-editor"><span aria-hidden="true">${escapeHtml(currencySymbol)}</span><input class="structural-estimate-price-input" data-estimate-unit-price type="number" min="0" step="0.01" inputmode="decimal" value="${unitPrice.toFixed(2)}" aria-label="${escapeHtml(material)} unit price in ${escapeHtml(structuralEstimatePricingState.currency)}"></span></td><td data-estimate-item-cost>${structuralEstimateMoney(quantity * unitPrice)}</td><td class="structural-estimate-source">${escapeHtml(sourceFor(key))}</td></tr>`;
+        }).join("");
+        saveStructuralEstimatePricing();
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Reference prices are planning allowances dated 2025–2026, not supplier quotations. Change the location, currency, exchange rate and every unit price as required. The site-mix total excludes the ready-mix Concrete row; the ready-mix alternative excludes Cement, Sand, Gravel and Water to prevent double counting.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th><th>PRICE REFERENCE</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="8">SITE-MIX MATERIAL TOTAL</td><td colspan="2" data-estimate-site-mix-total>${structuralEstimateMoney(0)}</td></tr><tr class="structural-estimate-cost-total"><td colspan="8">READY-MIX ALTERNATIVE TOTAL</td><td colspan="2" data-estimate-ready-mix-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
+      }
+
+      function refreshStructuralEstimateCosts() {
+        const container = byId("structuralEstimatesTables");
+        if (!container) return;
+        let siteMixTotal = 0;
+        let readyMixTotal = 0;
+        container.querySelectorAll("[data-estimate-price-row]").forEach(row => {
+          const key = row.dataset.priceKey;
+          const quantity = Number(row.dataset.quantity) || 0;
+          const input = row.querySelector("[data-estimate-unit-price]");
+          const unitPrice = Math.max(0, Number(input?.value) || 0);
+          structuralEstimatePricingState.prices[key] = unitPrice;
+          const cost = quantity * unitPrice;
+          const costCell = row.querySelector("[data-estimate-item-cost]");
+          if (costCell) costCell.textContent = structuralEstimateMoney(cost);
+          if (key !== "concrete") siteMixTotal += cost;
+          if (!["cement", "sand", "gravel", "water"].includes(key)) readyMixTotal += cost;
+        });
+        const siteMixCell = container.querySelector("[data-estimate-site-mix-total]");
+        const readyMixCell = container.querySelector("[data-estimate-ready-mix-total]");
+        if (siteMixCell) siteMixCell.textContent = structuralEstimateMoney(siteMixTotal);
+        if (readyMixCell) readyMixCell.textContent = structuralEstimateMoney(readyMixTotal);
+        saveStructuralEstimatePricing();
+      }
+
+      function installStructuralEstimatePricingControls() {
+        const container = byId("structuralEstimatesTables");
+        if (!container) return;
+        if (!container.dataset.pricingReady) {
+          container.dataset.pricingReady = "true";
+          container.addEventListener("input", event => {
+            if (event.target.matches("[data-estimate-unit-price]")) refreshStructuralEstimateCosts();
+            if (event.target.id === "structuralEstimateLocation") {
+              structuralEstimatePricingState.location = event.target.value;
+              saveStructuralEstimatePricing();
+            }
+          });
+          container.addEventListener("change", event => {
+            if (event.target.id === "structuralEstimateLocationPreset") {
+              const presetKey = event.target.value;
+              const preset = STRUCTURAL_ESTIMATE_PRICE_PRESETS[presetKey] || STRUCTURAL_ESTIMATE_PRICE_PRESETS.custom;
+              structuralEstimatePricingState.preset = presetKey;
+              structuralEstimatePricingState.location = preset.location;
+              structuralEstimatePricingState.prices = structuralEstimatePresetPrices(presetKey);
+              saveStructuralEstimatePricing();
+              updateStructuralEstimates();
+            } else if (event.target.id === "structuralEstimateCurrency") {
+              const oldRate = Math.max(0.000001, Number(structuralEstimatePricingState.phpPerCurrency) || 1);
+              const phpPrices = Object.fromEntries(Object.entries(structuralEstimatePricingState.prices).map(([key, value]) => [key, (Number(value) || 0) * oldRate]));
+              const currency = event.target.value;
+              const newRate = STRUCTURAL_ESTIMATE_CURRENCIES[currency]?.phpPerUnit || 1;
+              structuralEstimatePricingState.currency = currency;
+              structuralEstimatePricingState.phpPerCurrency = newRate;
+              structuralEstimatePricingState.prices = Object.fromEntries(Object.entries(phpPrices).map(([key, value]) => [key, value / newRate]));
+              saveStructuralEstimatePricing();
+              updateStructuralEstimates();
+            } else if (event.target.id === "structuralEstimateExchangeRate") {
+              const oldRate = Math.max(0.000001, Number(structuralEstimatePricingState.phpPerCurrency) || 1);
+              const newRate = Math.max(0.000001, Number(event.target.value) || oldRate);
+              structuralEstimatePricingState.prices = Object.fromEntries(Object.entries(structuralEstimatePricingState.prices).map(([key, value]) => [key, (Number(value) || 0) * oldRate / newRate]));
+              structuralEstimatePricingState.phpPerCurrency = newRate;
+              saveStructuralEstimatePricing();
+              updateStructuralEstimates();
+            }
+          });
+        }
+        refreshStructuralEstimateCosts();
       }
 
       function updateStructuralEstimates() {
@@ -64220,6 +64557,7 @@
         installMprTableScrolling();
         installMprTableHeightResizing();
         installMprColumnResizing();
+        installStructuralEstimatePricingControls();
       }
 
       function appendCoordinatedResults() {
@@ -66055,6 +66393,23 @@
         return cloneResultTableForOutput(source).outerHTML;
       }
 
+      function outputStructuralEstimatesMarkup() {
+        const source = byId("structuralEstimatesTables");
+        if (!source) return "<p>No Structural Estimates data is available.</p>";
+        const clone = source.cloneNode(true);
+        const sourceControls = source.querySelectorAll("input, select");
+        clone.querySelectorAll("input, select").forEach((control, index) => {
+          const original = sourceControls[index];
+          const value = original?.tagName === "SELECT"
+            ? original.selectedOptions?.[0]?.textContent || original.value
+            : original?.value ?? control.value ?? "";
+          const text = document.createElement("span");
+          text.textContent = value;
+          control.replaceWith(text);
+        });
+        return clone.innerHTML;
+      }
+
       function excelResultsMarkup() {
         const sources = Array.from(byId("memberPropsTable")?.querySelectorAll("table") || []);
         return sources.map(source => {
@@ -66151,6 +66506,8 @@
         ].forEach(([buttonId, tableId, title, outputMode]) => {
           byId(buttonId)?.addEventListener("click", () => printStandaloneOutput(title, outputSingleTableMarkup(tableId), outputMode));
         });
+        byId("structuralEstimatesPrintBtn")?.addEventListener("click", () => printStandaloneOutput("Structural Estimates", outputStructuralEstimatesMarkup(), "printer"));
+        byId("structuralEstimatesPrintPdfBtn")?.addEventListener("click", () => printStandaloneOutput("Structural Estimates", outputStructuralEstimatesMarkup(), "pdf"));
         byId("mprExcelBtn")?.addEventListener("click", exportMprToExcel);
       }
 
