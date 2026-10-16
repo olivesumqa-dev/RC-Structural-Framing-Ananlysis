@@ -1050,7 +1050,7 @@
     }
     .structural-estimate-pricing-controls {
       display: grid;
-      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      grid-template-columns: minmax(230px, 1fr) minmax(180px, 0.65fr);
       gap: 7px;
       margin: 0 0 8px;
       padding: 8px;
@@ -1076,6 +1076,9 @@
       color: #17211f;
       font: 700 10.5px/1 Arial, sans-serif;
     }
+    .structural-estimate-mix-options { display: flex; align-items: center; gap: 14px; min-height: 28px; }
+    .structural-estimate-mix-options label { display: inline-flex; align-items: center; gap: 6px; text-transform: none; white-space: nowrap; cursor: pointer; }
+    .structural-estimate-mix-options input { width: 16px; height: 16px; margin: 0; accent-color: #13845f; }
     .structural-estimate-price-input {
       width: 92px !important;
       min-width: 92px !important;
@@ -60990,6 +60993,37 @@
       const BEAM_LONG_SPAN_MAX_STEEL_RESERVE_PERCENT = 25;
       const BEAM_LONG_SPAN_STEEL_RESERVE_STORAGE_KEY = "strucforge_beam_long_span_steel_reserve_percent";
       const REBAR_ELASTIC_MODULUS = 200000;
+      const MPR_AUTO_PASS_STORAGE_KEY = "strucforge_mpr_auto_pass_by_table";
+      const mprAutoPassState = (() => {
+        const fallback = {beams: true, columns: true, slabs: true, footings: true};
+        try {
+          const saved = JSON.parse(window.localStorage?.getItem(MPR_AUTO_PASS_STORAGE_KEY) || "null");
+          return saved && typeof saved === "object" ? {...fallback, ...saved} : fallback;
+        } catch (error) {
+          return fallback;
+        }
+      })();
+
+      function mprAutoPassEnabled(tableKey) {
+        return mprAutoPassState[tableKey] !== false;
+      }
+
+      function saveMprAutoPassState() {
+        try { window.localStorage?.setItem(MPR_AUTO_PASS_STORAGE_KEY, JSON.stringify(mprAutoPassState)); } catch (error) {}
+      }
+
+      function setMprAutoPassEnabled(tableKey, enabled, announce = false) {
+        if (!Object.prototype.hasOwnProperty.call(mprAutoPassState, tableKey)) return;
+        mprAutoPassState[tableKey] = Boolean(enabled);
+        saveMprAutoPassState();
+        const input = document.querySelector(`[data-mpr-auto-pass="${tableKey}"]`);
+        if (input) input.checked = Boolean(enabled);
+        input?.closest(".mpr-auto-pass-control")?.setAttribute("aria-pressed", enabled ? "true" : "false");
+        setCalculationDirty(true);
+        if (announce && typeof status === "function") {
+          status(`${tableKey.charAt(0).toUpperCase() + tableKey.slice(1)} AUTO-PASS is ${enabled ? "ON" : "OFF"}. Other MPR tables are unchanged.`);
+        }
+      }
 
       function normalizedBeamLongSpanSteelReservePercent(value) {
         const numeric = Number(value);
@@ -61013,7 +61047,7 @@
 
       function beamLongSpanSteelFactor(length, economicalDesignEnabled = null) {
         const economicalOn = economicalDesignEnabled == null
-          ? (typeof byId !== "function" || byId("autoDesignEnabled")?.checked !== false)
+          ? mprAutoPassEnabled("beams")
           : Boolean(economicalDesignEnabled);
         return economicalOn && Number(length) + 1e-9 >= BEAM_LONG_SPAN_THRESHOLD_M
           ? 1 + beamLongSpanSteelReservePercent() / 100
@@ -61397,7 +61431,7 @@
         const fy = Math.min(550, detailingValue("rebarYieldStrength", 415, 200));
         const clearCover = detailingValue("beamClearCover", 40, 20);
         const forces = demand || beamDemandEnvelope(axis, frameModel, member);
-        const steelAreaFactor = beamLongSpanSteelFactor(length, byId("autoDesignEnabled")?.checked !== false);
+        const steelAreaFactor = beamLongSpanSteelFactor(length, mprAutoPassEnabled("beams"));
         const positiveLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, forces.positiveMoment, fc, fy, steelAreaFactor);
         const negativeLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, forces.negativeMoment, fc, fy, steelAreaFactor);
         const minimumLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, 0, fc, fy, steelAreaFactor);
@@ -63160,7 +63194,7 @@
         const designStoryIndex = Math.min(...storyRun);
         const overrideKey = columnOverrideKey(key, designStoryIndex);
         const override = engineeringState.columnDesignOverrides[overrideKey] || {};
-        const autoDesign = byId("autoDesignEnabled")?.checked !== false;
+        const autoDesign = mprAutoPassEnabled("columns");
         const width = Math.max(columnMinimumDimension(), Number(override.width) || numericInput("columnWidth", 400));
         const height = Math.max(columnMinimumDimension(), Number(override.height) || numericInput("columnHeight", 400));
         const barDiameter = Math.max(10, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10));
@@ -63448,7 +63482,7 @@
         const concreteDensity = Math.max(0, numericInput("concreteDensity", 24));
         const allowable = Math.max(25, numericInput("soilAllowableBearing", 150));
         const cover = detailingValue("footingClearCover", 75, 50);
-        const autoDesign = byId("autoDesignEnabled")?.checked !== false;
+        const autoDesign = mprAutoPassEnabled("footings");
         let barDiameterX = Math.max(10, Number(footing.barDiameterX) || detailingValue("footingBarDiameter", 12, 10));
         let barDiameterY = Math.max(10, Number(footing.barDiameterY) || detailingValue("footingBarDiameter", 12, 10));
         const userSized = !autoDesign && (Number(footing.width) > 0 || Number(footing.length) > 0);
@@ -63590,7 +63624,7 @@
         const concreteDensity = Math.max(0, numericInput("concreteDensity", 24));
         const allowable = Math.max(25, numericInput("soilAllowableBearing", 150));
         const cover = detailingValue("footingClearCover", 75, 50);
-        const autoDesign = byId("autoDesignEnabled")?.checked !== false;
+        const autoDesign = mprAutoPassEnabled("footings");
         const manualDesign = footing.manualDesign === true;
         const baseBarDiameterX = Math.max(10, Number(footing.barDiameterX) || detailingValue("footingBarDiameter", 12, 10));
         const baseBarDiameterY = Math.max(10, Number(footing.barDiameterY) || detailingValue("footingBarDiameter", 12, 10));
@@ -64009,7 +64043,7 @@
         const minimumThickness = isSlabOnFill
           ? 100
           : Math.ceil(shortSpan * 1000 / (isTwoWay ? 30 : 20) / 5) * 5;
-        const autoDesign = byId("autoDesignEnabled")?.checked !== false;
+        const autoDesign = mprAutoPassEnabled("slabs");
         const requestedThickness = Math.max(100, Number(override.thickness) || numericInput("slabThickness", 150));
         const thickness = isSlabOnFill ? 100 : requestedThickness;
         const cover = detailingValue("slabClearCover", 20, 15);
@@ -64167,7 +64201,7 @@
       }
 
       function optimizeGlobalSlabThickness() {
-        if (byId("autoDesignEnabled")?.checked === false) return Number(byId("slabThickness")?.value) || 150;
+        if (!mprAutoPassEnabled("slabs")) return Number(byId("slabThickness")?.value) || 150;
         const data = makePlanData();
         if (!data.levels.some((level, levelIndex) => hasCoordinatedSlabSupport(levelIndex))) return Number(byId("slabThickness")?.value) || 150;
         let required = 100;
@@ -64300,7 +64334,7 @@
       });
 
       const structuralEstimatePricingState = (() => {
-        const fallback = {preset: "dpwh-batangas", location: "Batangas / CALABARZON", currency: "PHP", phpPerCurrency: 1, prices: {}};
+        const fallback = {preset: "dpwh-batangas", location: "Batangas / CALABARZON", currency: "PHP", phpPerCurrency: 1, concreteMode: "site", prices: {}};
         try {
           const saved = JSON.parse(localStorage.getItem("strucforgeStructuralEstimatePricing") || "null");
           return saved && typeof saved === "object" ? {...fallback, ...saved, prices: {...(saved.prices || {})}} : fallback;
@@ -64330,6 +64364,7 @@
         const currency = STRUCTURAL_ESTIMATE_CURRENCIES[structuralEstimatePricingState.currency] ? structuralEstimatePricingState.currency : "PHP";
         structuralEstimatePricingState.currency = currency;
         structuralEstimatePricingState.phpPerCurrency = Math.max(0.000001, Number(structuralEstimatePricingState.phpPerCurrency) || STRUCTURAL_ESTIMATE_CURRENCIES[currency].phpPerUnit);
+        structuralEstimatePricingState.concreteMode = structuralEstimatePricingState.concreteMode === "ready" ? "ready" : "site";
         if (!Object.keys(structuralEstimatePricingState.prices).length) {
           structuralEstimatePricingState.prices = structuralEstimatePresetPrices(structuralEstimatePricingState.preset, currency, structuralEstimatePricingState.phpPerCurrency);
         }
@@ -64549,26 +64584,23 @@
         categoryKeys.forEach(key => mergeStructuralEstimateQuantity(grandTotal, estimates[key].total));
         const diameters = Array.from(grandTotal.rebars.keys()).sort((a, b) => a - b);
         ensureStructuralEstimatePricing();
-        const rows = [
+        const allRows = [
           ["Concrete", "cu.m.", "concrete"], ["Cement", "40 kg bags", "cement"],
           ["Sand", "cu.m.", "sand"], ["Gravel", "cu.m.", "gravel"],
           ["Water", "cu.m.", "water"], ["Formwork", "sq.m.", "formwork"],
           ["Tie wire", "kg", "tieWire"],
           ...diameters.map(diameter => [`D${diameter} rebar`, "6 m pcs", `D${diameter}`])
         ];
+        const siteMixKeys = new Set(["cement", "sand", "gravel", "water"]);
+        const rows = allRows.filter(([, , key]) => structuralEstimatePricingState.concreteMode === "ready"
+          ? !siteMixKeys.has(key)
+          : key !== "concrete");
         const quantityValue = (quantity, key) => key === "water"
           ? ((Number(quantity.water) || 0) / 1000).toFixed(3)
           : structuralEstimateValue(quantity, key);
-        const preset = STRUCTURAL_ESTIMATE_PRICE_PRESETS[structuralEstimatePricingState.preset] || STRUCTURAL_ESTIMATE_PRICE_PRESETS.custom;
         const currencySymbol = structuralEstimateCurrencySymbol();
         const currencyOptions = Object.entries(STRUCTURAL_ESTIMATE_CURRENCIES).map(([code, detail]) => `<option value="${code}"${code === structuralEstimatePricingState.currency ? " selected" : ""}>${code} — ${escapeHtml(detail.label)}</option>`).join("");
-        const locationOptions = Object.entries(STRUCTURAL_ESTIMATE_PRICE_PRESETS).map(([key, detail]) => `<option value="${key}"${key === structuralEstimatePricingState.preset ? " selected" : ""}>${escapeHtml(detail.label)}</option>`).join("");
-        const pricingControls = `<div class="structural-estimate-pricing-controls" aria-label="Structural estimate location and currency"><label>Price location preset<select id="structuralEstimateLocationPreset">${locationOptions}</select></label><label>Country / Province / City / Municipality<input id="structuralEstimateLocation" type="text" value="${escapeHtml(structuralEstimatePricingState.location)}" autocomplete="off"></label><label>Currency<select id="structuralEstimateCurrency">${currencyOptions}</select></label><label>Exchange rate: 1 ${escapeHtml(structuralEstimatePricingState.currency)} = PHP<input id="structuralEstimateExchangeRate" type="number" min="0.000001" step="any" value="${Number(structuralEstimatePricingState.phpPerCurrency).toFixed(6)}"></label></div>`;
-        const sourceFor = key => key === "water"
-          ? "MWSS 2026 tariff reference; enter the local utility rate"
-          : key === "formwork"
-            ? "DPWH Quezon DUPA 2025; replace with the local contractor quotation"
-            : preset.source;
+        const pricingControls = `<div class="structural-estimate-pricing-controls" aria-label="Concrete supply and currency"><div><span class="structural-estimate-control-label">Concrete supply</span><div class="structural-estimate-mix-options"><label><input type="checkbox" data-estimate-concrete-mode="site"${structuralEstimatePricingState.concreteMode === "site" ? " checked" : ""}>Site Mixing</label><label><input type="checkbox" data-estimate-concrete-mode="ready"${structuralEstimatePricingState.concreteMode === "ready" ? " checked" : ""}>Ready Mixed Concrete</label></div></div><label>Currency<select id="structuralEstimateCurrency">${currencyOptions}</select></label></div>`;
         const rowMarkup = rows.map(([material, unit, key]) => {
           if (!Number.isFinite(Number(structuralEstimatePricingState.prices[key]))) {
             const defaults = structuralEstimatePresetPrices(structuralEstimatePricingState.preset);
@@ -64576,17 +64608,17 @@
           }
           const quantity = Number(quantityValue(grandTotal, key)) || 0;
           const unitPrice = Number(structuralEstimatePricingState.prices[key]) || 0;
-          return `<tr data-estimate-price-row data-price-key="${key}" data-quantity="${quantity}"><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${quantityValue(estimates[categoryKey].total, key)}</td>`).join("")}<td><strong>${quantityValue(grandTotal, key)}</strong></td><td><span class="structural-estimate-price-editor"><span aria-hidden="true">${escapeHtml(currencySymbol)}</span><input class="structural-estimate-price-input" data-estimate-unit-price type="number" min="0" step="0.01" inputmode="decimal" value="${unitPrice.toFixed(2)}" aria-label="${escapeHtml(material)} unit price in ${escapeHtml(structuralEstimatePricingState.currency)}"></span></td><td data-estimate-item-cost>${structuralEstimateMoney(quantity * unitPrice)}</td><td class="structural-estimate-source">${escapeHtml(sourceFor(key))}</td></tr>`;
+          return `<tr data-estimate-price-row data-price-key="${key}" data-quantity="${quantity}"><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${quantityValue(estimates[categoryKey].total, key)}</td>`).join("")}<td><strong>${quantityValue(grandTotal, key)}</strong></td><td><span class="structural-estimate-price-editor"><span aria-hidden="true">${escapeHtml(currencySymbol)}</span><input class="structural-estimate-price-input" data-estimate-unit-price type="number" min="0" step="0.01" inputmode="decimal" value="${unitPrice.toFixed(2)}" aria-label="${escapeHtml(material)} unit price in ${escapeHtml(structuralEstimatePricingState.currency)}"></span></td><td data-estimate-item-cost>${structuralEstimateMoney(quantity * unitPrice)}</td></tr>`;
         }).join("");
         saveStructuralEstimatePricing();
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Reference prices are planning allowances dated 2025–2026, not supplier quotations. Change the location, currency, exchange rate and every unit price as required. The site-mix total excludes the ready-mix Concrete row; the ready-mix alternative excludes Cement, Sand, Gravel and Water to prevent double counting.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th><th>PRICE REFERENCE</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="8">SITE-MIX MATERIAL TOTAL</td><td colspan="2" data-estimate-site-mix-total>${structuralEstimateMoney(0)}</td></tr><tr class="structural-estimate-cost-total"><td colspan="8">READY-MIX ALTERNATIVE TOTAL</td><td colspan="2" data-estimate-ready-mix-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
+        const totalLabel = structuralEstimatePricingState.concreteMode === "ready" ? "READY-MIX CONCRETE TOTAL" : "SITE-MIX CONCRETE TOTAL";
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Ready Mixed Concrete uses the concrete volume row instead, preventing double counting. Edit every unit price as required.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="8">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
       }
 
       function refreshStructuralEstimateCosts() {
         const container = byId("structuralEstimatesTables");
         if (!container) return;
-        let siteMixTotal = 0;
-        let readyMixTotal = 0;
+        let selectedTotal = 0;
         container.querySelectorAll("[data-estimate-price-row]").forEach(row => {
           const key = row.dataset.priceKey;
           const quantity = Number(row.dataset.quantity) || 0;
@@ -64596,13 +64628,10 @@
           const cost = quantity * unitPrice;
           const costCell = row.querySelector("[data-estimate-item-cost]");
           if (costCell) costCell.textContent = structuralEstimateMoney(cost);
-          if (key !== "concrete") siteMixTotal += cost;
-          if (!["cement", "sand", "gravel", "water"].includes(key)) readyMixTotal += cost;
+          selectedTotal += cost;
         });
-        const siteMixCell = container.querySelector("[data-estimate-site-mix-total]");
-        const readyMixCell = container.querySelector("[data-estimate-ready-mix-total]");
-        if (siteMixCell) siteMixCell.textContent = structuralEstimateMoney(siteMixTotal);
-        if (readyMixCell) readyMixCell.textContent = structuralEstimateMoney(readyMixTotal);
+        const selectedTotalCell = container.querySelector("[data-estimate-selected-total]");
+        if (selectedTotalCell) selectedTotalCell.textContent = structuralEstimateMoney(selectedTotal);
         saveStructuralEstimatePricing();
       }
 
@@ -64613,18 +64642,14 @@
           container.dataset.pricingReady = "true";
           container.addEventListener("input", event => {
             if (event.target.matches("[data-estimate-unit-price]")) refreshStructuralEstimateCosts();
-            if (event.target.id === "structuralEstimateLocation") {
-              structuralEstimatePricingState.location = event.target.value;
-              saveStructuralEstimatePricing();
-            }
           });
           container.addEventListener("change", event => {
-            if (event.target.id === "structuralEstimateLocationPreset") {
-              const presetKey = event.target.value;
-              const preset = STRUCTURAL_ESTIMATE_PRICE_PRESETS[presetKey] || STRUCTURAL_ESTIMATE_PRICE_PRESETS.custom;
-              structuralEstimatePricingState.preset = presetKey;
-              structuralEstimatePricingState.location = preset.location;
-              structuralEstimatePricingState.prices = structuralEstimatePresetPrices(presetKey);
+            if (event.target.matches("[data-estimate-concrete-mode]")) {
+              if (!event.target.checked) {
+                event.target.checked = true;
+                return;
+              }
+              structuralEstimatePricingState.concreteMode = event.target.dataset.estimateConcreteMode === "ready" ? "ready" : "site";
               saveStructuralEstimatePricing();
               updateStructuralEstimates();
             } else if (event.target.id === "structuralEstimateCurrency") {
@@ -64635,13 +64660,6 @@
               structuralEstimatePricingState.currency = currency;
               structuralEstimatePricingState.phpPerCurrency = newRate;
               structuralEstimatePricingState.prices = Object.fromEntries(Object.entries(phpPrices).map(([key, value]) => [key, value / newRate]));
-              saveStructuralEstimatePricing();
-              updateStructuralEstimates();
-            } else if (event.target.id === "structuralEstimateExchangeRate") {
-              const oldRate = Math.max(0.000001, Number(structuralEstimatePricingState.phpPerCurrency) || 1);
-              const newRate = Math.max(0.000001, Number(event.target.value) || oldRate);
-              structuralEstimatePricingState.prices = Object.fromEntries(Object.entries(structuralEstimatePricingState.prices).map(([key, value]) => [key, (Number(value) || 0) * oldRate / newRate]));
-              structuralEstimatePricingState.phpPerCurrency = newRate;
               saveStructuralEstimatePricing();
               updateStructuralEstimates();
             }
@@ -64791,19 +64809,20 @@
         if (resultDefault) resultDefault.checked = !enabled;
         if (resultAutoPass) resultAutoPass.checked = Boolean(enabled);
         document.querySelectorAll("[data-mpr-auto-pass]").forEach(input => {
-          input.checked = Boolean(enabled);
-          input.closest(".mpr-auto-pass-control")?.setAttribute("aria-pressed", enabled ? "true" : "false");
+          const tableEnabled = mprAutoPassEnabled(input.dataset.mprAutoPass);
+          input.checked = tableEnabled;
+          input.closest(".mpr-auto-pass-control")?.setAttribute("aria-pressed", tableEnabled ? "true" : "false");
         });
       }
 
       function installMprAutoPassControls() {
         const tables = [
-          ["beamResultsSection", "Beams"],
-          ["columnResultsSection", "Columns"],
-          ["slabResultsSection", "Slabs"],
-          ["footingResultsSection", "Footings"]
+          ["beamResultsSection", "Beams", "beams"],
+          ["columnResultsSection", "Columns", "columns"],
+          ["slabResultsSection", "Slabs", "slabs"],
+          ["footingResultsSection", "Footings", "footings"]
         ];
-        tables.forEach(([sectionId, label]) => {
+        tables.forEach(([sectionId, label, tableKey]) => {
           const title = document.querySelector(`#${sectionId} .results-subsection-title`);
           const actions = title?.querySelector(".results-subsection-actions");
           if (!title || !actions || title.querySelector("[data-mpr-auto-pass]")) return;
@@ -64811,15 +64830,11 @@
           control.className = "mpr-auto-pass-control";
           control.title = `Automatically search for passing ${label.toLowerCase()} sizes and reinforcement, then recalculate`;
           control.setAttribute("aria-pressed", "false");
-          control.innerHTML = `<input type="checkbox" data-mpr-auto-pass="${sectionId}" aria-label="AUTO-PASS ${label}"><span>AUTO-PASS</span>`;
+          control.innerHTML = `<input type="checkbox" data-mpr-auto-pass="${tableKey}" aria-label="AUTO-PASS ${label}"${mprAutoPassEnabled(tableKey) ? " checked" : ""}><span>AUTO-PASS</span>`;
           actions.insertBefore(control, actions.firstChild);
           control.querySelector("input")?.addEventListener("change", event => {
-            if (!event.target.checked) {
-              setEconomicalDesignEnabled(false, true);
-              return;
-            }
-            setEconomicalDesignEnabled(true, true);
-            window.setTimeout(() => byId("calculateBtn")?.click(), 0);
+            setMprAutoPassEnabled(tableKey, event.target.checked, true);
+            if (event.target.checked) window.setTimeout(() => byId("calculateBtn")?.click(), 0);
           });
         });
         syncResultCalculationMode(byId("autoDesignEnabled")?.checked !== false);
@@ -64830,6 +64845,8 @@
         const off = byId("autoDesignDisabled");
         if (on) on.checked = Boolean(enabled);
         if (off) off.checked = !enabled;
+        Object.keys(mprAutoPassState).forEach(tableKey => { mprAutoPassState[tableKey] = Boolean(enabled); });
+        saveMprAutoPassState();
         syncResultCalculationMode(enabled);
         setCalculationDirty(true);
         if (announce && typeof status === "function") {
@@ -65702,7 +65719,7 @@
             ...mprAcademicLoadSteps(row, 3),
             academicStep(9, "Analyze the factored load combinations and retain the governing absolute effects", "Vu = max |V(x)|; Mu = max |M(x)|", `Vu = ${academicNumber(shear)} kN; Mu = ${academicNumber(moment)} kN·m`)
           ]});
-          const longSpanReserveApplies = byId("autoDesignEnabled")?.checked !== false && length + 1e-9 >= BEAM_LONG_SPAN_THRESHOLD_M;
+          const longSpanReserveApplies = mprAutoPassEnabled("beams") && length + 1e-9 >= BEAM_LONG_SPAN_THRESHOLD_M;
           sections.push({title: "3. Main-rebar calculation and selection", steps: [
             academicStep(10, "Area of one selected main bar", `Ab = πdb² / 4 = π × ${academicNumber(bar, 0)}² / 4`, `Ab = ${academicNumber(barArea, 1)} mm² for each D${academicNumber(bar, 0)} bar.`),
             academicStep(11, "Solve each critical flexural steel requirement", "φMn = φ As fy (d − a/2) ≥ Mu; a = As fy / (0.85 f′c b)", positiveFlexure || negativeFlexure ? `Midspan target As = ${academicNumber(positiveFlexure?.requiredAreaSteel, 1)} mm²; support target As = ${academicNumber(negativeFlexure?.requiredAreaSteel, 1)} mm². These targets include the current minimum-steel and long-span reserve rules when applicable.` : `The solver obtains the required flexural steel from the governing factored moment and rounds it to a constructible layout.`),
@@ -66153,11 +66170,13 @@
         try {
         let activeXModel;
         try { activeXModel = model; } catch (error) { return; }
-        const autoDesign = byId("autoDesignEnabled")?.checked !== false;
+        const autoPassBeams = mprAutoPassEnabled("beams");
+        const autoPassColumns = mprAutoPassEnabled("columns");
+        const autoDesign = autoPassBeams || autoPassColumns || mprAutoPassEnabled("slabs") || mprAutoPassEnabled("footings");
         if (autoDesign) pushWorkspaceHistory();
         optimizeGlobalSlabThickness();
         const data = makePlanData();
-        if (!autoDesign) applyUserDefaultSections();
+        if (!autoPassBeams && !autoPassColumns) applyUserDefaultSections();
         let {catalog} = buildFrameCatalog(data);
         applyColumnOverridesToCatalog(catalog);
         let analysis = analyzeFrameCatalog(catalog);
@@ -66169,10 +66188,10 @@
         };
         let beamOptimization = {optimized: 0, failed: 0};
         let columnOptimization = {optimized: 0, failed: 0};
-        if (autoDesign) {
+        if (autoPassBeams || autoPassColumns) {
           for (let iteration = 0; iteration < 6; iteration += 1) {
             const iterationBeamOptimization = {optimized: 0, failed: 0};
-            ["X", "Y"].forEach(axis => {
+            if (autoPassBeams) ["X", "Y"].forEach(axis => {
               Object.entries(catalog[axis] || {}).forEach(([frameLine, entry]) => {
                 if (!analysis.results?.[axis]?.[frameLine]?.stable) {
                   iterationBeamOptimization.failed += (entry.model?.members || []).filter(member => member.type !== "Column").length;
@@ -66192,20 +66211,20 @@
             };
             const coordinatedStable = Object.keys(catalog.X || {}).length > 0 && Object.keys(catalog.Y || {}).length > 0 &&
               ["X", "Y"].every(axis => Object.entries(catalog[axis] || {}).every(([frameLine]) => analysis.results?.[axis]?.[frameLine]?.stable));
-            columnOptimization = coordinatedStable
+            columnOptimization = autoPassColumns && coordinatedStable
               ? optimizeColumnSections(iteration > 0)
-              : {optimized: 0, failed: activePlanColumnStoryCount(data)};
-            if (coordinatedStable) applyColumnOverridesToCatalog(catalog);
+              : {optimized: 0, failed: autoPassColumns ? activePlanColumnStoryCount(data) : 0};
+            if (autoPassColumns && coordinatedStable) applyColumnOverridesToCatalog(catalog);
             refreshCatalogAutomaticLoads(catalog, data);
             analysis = analyzeFrameCatalog(catalog);
             engineeringState.designEnvelopes = {
               X: analysis.envelopes.X[activeXLine] || {stable: false, members: {}},
               Y: analysis.envelopes.Y[activeYLine] || {stable: false, members: {}}
             };
-            const coupledBeamPass = ["X", "Y"].every(axis => Object.values(catalog[axis] || {}).every(entry =>
+            const coupledBeamPass = !autoPassBeams || ["X", "Y"].every(axis => Object.values(catalog[axis] || {}).every(entry =>
               (entry.model?.members || []).filter(member => member.type !== "Column").every(member => beamReinforcementSchedule(axis, entry.model, member)?.pass)
             ));
-            const coupledColumnPass = sortedPlanColumnKeys().every(key => {
+            const coupledColumnPass = !autoPassColumns || sortedPlanColumnKeys().every(key => {
               for (let storyIndex = 0; storyIndex < data.levels.length; storyIndex += 1) {
                 if (!isPlanColumnStoryActive(key, storyIndex)) continue;
                 const override = engineeringState.columnDesignOverrides[columnOverrideKey(key, storyIndex)];
@@ -66249,7 +66268,7 @@
         const summary = byId("coordinatedAnalysisSummary");
         if (summary) {
           const allFramesPass = allAudits.length > 0 && allAudits.every(audit => audit.pass);
-          const optimizationPass = !autoDesign || (beamOptimization.failed === 0 && columnOptimization.failed === 0);
+          const optimizationPass = (!autoPassBeams || beamOptimization.failed === 0) && (!autoPassColumns || columnOptimization.failed === 0);
           const beamChecks = [];
           ["X", "Y"].forEach(axis => Object.values(catalog[axis] || {}).forEach(entry => {
             (entry.model?.members || []).filter(member => member.type !== "Column").forEach(member => beamChecks.push(beamReinforcementSchedule(axis, entry.model, member)));
