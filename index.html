@@ -709,6 +709,10 @@
       cursor: default;
       touch-action: none;
     }
+    #canvas,
+    #isometricCanvas {
+      touch-action: none;
+    }
     body:not(.delete-mode) #structuralPlanCanvas:not(.column-creation-active):not(.node-creation-active):not(.member-creation-active):not(.wall-creation-active):not(.annotation-creation-active) {
       cursor: default;
     }
@@ -1856,6 +1860,35 @@
         grid-template-columns: 1fr;
       }
     }
+    /* Keep MPR columns deterministic whenever the workspace is narrower than a
+       normal full desktop. Horizontal scrolling avoids expensive full-table
+       reflow while a desktop window is compressed. */
+    @media (max-width: 1800px) {
+      .member-results-sheet .mpr-table-scroll,
+      .structural-estimates-scroll {
+        width: 100%;
+        overflow-x: auto !important;
+        overflow-y: auto;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x pan-y;
+        -webkit-overflow-scrolling: touch;
+        contain: layout paint;
+        scrollbar-gutter: stable;
+      }
+      .member-results-sheet .mpr-table-scroll > table {
+        width: max-content !important;
+        min-width: max-content !important;
+        table-layout: fixed !important;
+      }
+      .member-results-sheet .mpr-table-scroll > table th,
+      .member-results-sheet .mpr-table-scroll > table td {
+        width: 92px;
+        min-width: 92px;
+        max-width: 92px;
+      }
+      .member-results-sheet .mpr-table-scroll > table th:first-child,
+      .member-results-sheet .mpr-table-scroll > table td:first-child { width: 76px; min-width: 76px; max-width: 76px; }
+    }
     @media (max-width: 1180px) {
       .topbar {
         grid-template-columns: 210px 520px 520px 430px 40px;
@@ -1886,28 +1919,6 @@
         min-width: max-content;
         flex-wrap: nowrap;
       }
-      .member-results-sheet .mpr-table-scroll,
-      .structural-estimates-scroll {
-        width: 100%;
-        overflow-x: auto !important;
-        overflow-y: auto;
-        overscroll-behavior-inline: contain;
-        touch-action: pan-x pan-y;
-        -webkit-overflow-scrolling: touch;
-      }
-      .member-results-sheet .mpr-table-scroll > table {
-        width: max-content !important;
-        min-width: max-content !important;
-        table-layout: fixed !important;
-      }
-      .member-results-sheet .mpr-table-scroll > table th,
-      .member-results-sheet .mpr-table-scroll > table td {
-        width: 92px;
-        min-width: 92px;
-        max-width: 92px;
-      }
-      .member-results-sheet .mpr-table-scroll > table th:first-child,
-      .member-results-sheet .mpr-table-scroll > table td:first-child { width: 76px; min-width: 76px; max-width: 76px; }
       .structural-estimate-pricing-controls { grid-template-columns: repeat(2, minmax(165px, 1fr)); min-width: 360px; }
       #structuralPlanCanvas,
       #yAxisCanvas {
@@ -46409,7 +46420,7 @@
     })();
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=78"></script>
+  <script src="app.js?v=79"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -57533,16 +57544,17 @@
           queueRedraw();
         }, {passive: false});
 
-        canvas.addEventListener("mousedown", event => {
+        canvas.addEventListener("pointerdown", event => {
           if (event.button !== 0) return;
           event.preventDefault();
           view.dragging = true;
           view.last = yCanvasPoint(event, canvas);
           view.start = view.last;
           view.moved = false;
+          canvas.setPointerCapture?.(event.pointerId);
           if (!isDrawingViewLocked(config.viewKey) && !isDrawingSelectionActive(config.viewKey)) canvas.classList.add("is-panning");
         });
-        window.addEventListener("mousemove", event => {
+        canvas.addEventListener("pointermove", event => {
           if (!view.dragging) return;
           event.preventDefault();
           const point = yCanvasPoint(event, canvas);
@@ -57553,15 +57565,18 @@
           view.last = point;
           queueRedraw();
         });
-        window.addEventListener("mouseup", event => {
+        const stopPointerInteraction = (event, cancelled = false) => {
           if (!view.dragging) return;
-          const wasClick = !view.moved;
+          const wasClick = !cancelled && !view.moved;
           view.dragging = false;
+          canvas.releasePointerCapture?.(event.pointerId);
           canvas.classList.remove("is-panning");
           if (wasClick && typeof config.onClick === "function") {
             config.onClick(yCanvasPoint(event, canvas));
           }
-        });
+        };
+        canvas.addEventListener("pointerup", stopPointerInteraction);
+        canvas.addEventListener("pointercancel", event => stopPointerInteraction(event, true));
       }
 
       function setupIsometricControls() {
@@ -57844,6 +57859,50 @@
            isPanning = false;
           xCanvas.classList.remove("is-panning");
         }, true);
+
+        /* Touch/pen input does not reliably synthesize the legacy mouse stream
+           used by the X-frame renderer. Use pointer capture so a drag remains
+           attached to the canvas and coalesce redraws through queuePanDraw. */
+        xCanvas.addEventListener("pointerdown", event => {
+          if (event.pointerType === "mouse" || event.button !== 0 || isDrawingViewLocked("X") || isDrawingSelectionActive("X")) return;
+          event.preventDefault();
+          xAxisView.dragging = true;
+          xAxisView.moved = false;
+          xAxisView.travel = 0;
+          xAxisView.start = {x: event.clientX, y: event.clientY};
+          xAxisView.last = {x: event.clientX, y: event.clientY};
+          lastPan = {...xAxisView.last};
+          xCanvas.setPointerCapture?.(event.pointerId);
+          xCanvas.classList.add("is-panning");
+        });
+        xCanvas.addEventListener("pointermove", event => {
+          if (event.pointerType === "mouse" || !xAxisView.dragging || !xAxisView.start) return;
+          event.preventDefault();
+          const current = {x: event.clientX, y: event.clientY};
+          xAxisView.travel = Math.max(xAxisView.travel, Math.hypot(current.x - xAxisView.start.x, current.y - xAxisView.start.y));
+          if (xAxisView.travel > 5) xAxisView.moved = true;
+          const previous = xAxisView.last || current;
+          xAxisView.last = current;
+          if (isDrawingViewLocked("X") || isDrawingSelectionActive("X")) return;
+          const dx = current.x - previous.x;
+          const dy = current.y - previous.y;
+          if (!dx && !dy) return;
+          pan.x += dx;
+          pan.y += dy;
+          lastPan = current;
+          didPan = true;
+          queuePanDraw();
+        });
+        const stopXPointerInteraction = event => {
+          if (event.pointerType === "mouse" || !xAxisView.dragging) return;
+          xAxisView.dragging = false;
+          xAxisView.start = null;
+          isPanning = false;
+          xCanvas.releasePointerCapture?.(event.pointerId);
+          xCanvas.classList.remove("is-panning");
+        };
+        xCanvas.addEventListener("pointerup", stopXPointerInteraction);
+        xCanvas.addEventListener("pointercancel", stopXPointerInteraction);
       }
 
       function installXAxisLevelLabels() {
@@ -61988,6 +62047,10 @@
       function installMprColumnResizing() {
         const panel = byId("memberPropsTable");
         if (!panel) return;
+        /* Coarse-pointer devices use fixed columns and native horizontal pan.
+           Do not attach dozens of narrow drag targets that compete with touch
+           scrolling and add pointer listeners to every rendered table. */
+        if (window.matchMedia?.("(pointer: coarse)")?.matches) return;
         panel.querySelectorAll("table").forEach(table => {
           const headingRow = table.tHead?.rows?.[table.tHead.rows.length - 1];
           if (!headingRow || table.dataset.columnResizeReady) return;

@@ -29,6 +29,7 @@ let isPanning = false;
 let didPan = false;
 let lastPan = null;
 let panDrawQueued = false;
+let lastPanDrawAt = 0;
 let mprUpdateQueued = false;
 let currentFileHandle = null;
 let viewLocked = false;
@@ -1133,10 +1134,16 @@ function drawMembers() {
 function queuePanDraw() {
   if (panDrawQueued) return;
   panDrawQueued = true;
-  window.requestAnimationFrame(() => {
-    panDrawQueued = false;
-    draw({skipMpr: true});
-  });
+  const mobileInteraction = /Android/i.test(navigator.userAgent || "")
+    || Boolean(window.matchMedia?.("(pointer: coarse)")?.matches);
+  const delay = mobileInteraction ? Math.max(0, 32 - (performance.now() - lastPanDrawAt)) : 0;
+  window.setTimeout(() => {
+    window.requestAnimationFrame(() => {
+      panDrawQueued = false;
+      lastPanDrawAt = performance.now();
+      draw({skipMpr: true});
+    });
+  }, delay);
 }
 
 function drawMemberLabel(m, A, B) {
@@ -2206,7 +2213,7 @@ canvas.addEventListener("wheel", e => {
   const after = toCanvas(before.x, before.y);
   pan.x += pt.x - after.x;
   pan.y += pt.y - after.y;
-  draw({skipMpr: true});
+  queuePanDraw();
 }, {passive:false});
 
 canvas.addEventListener("mousedown", e => {

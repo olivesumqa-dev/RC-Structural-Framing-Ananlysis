@@ -27,7 +27,7 @@ assert(html.includes("data-estimate-unit-price") && html.includes("data-estimate
 assert(html.includes("SITE-MIX MATERIAL TOTAL") && html.includes("READY-MIX ALTERNATIVE TOTAL"), "Concrete pricing alternatives must avoid double counting");
 assert(html.includes('id="structuralEstimatesPrintBtn"') && html.includes('id="structuralEstimatesPrintPdfBtn"'), "Structural Estimates needs aligned Print and Print PDF controls");
 assert(html.includes("outputStructuralEstimatesMarkup()") && html.includes('printStandaloneOutput("Structural Estimates"'), "Structural Estimates print controls must be functional");
-assert(/@media \(max-width: 1180px\)[\s\S]*?\.member-results-sheet \.mpr-table-scroll[\s\S]*?touch-action: pan-x pan-y/.test(html), "Phone and tablet MPR tables must pan horizontally with fixed-width columns");
+assert(/@media \(max-width: 1800px\)[\s\S]*?\.member-results-sheet \.mpr-table-scroll[\s\S]*?touch-action: pan-x pan-y/.test(html), "Compressed desktop, phone, and tablet MPR tables must pan horizontally with fixed-width columns");
 assert(/@media \(max-width: 900px\)[\s\S]*?\.topbar[\s\S]*?overflow-x: auto/.test(html), "The mobile application header must pan horizontally");
 
 console.log("MPR structural estimates regression tests: passed");
