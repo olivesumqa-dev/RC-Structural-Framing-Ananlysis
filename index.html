@@ -2885,6 +2885,7 @@
                 <button id="planEditTextToolBtn" class="drawing-tool-btn" type="button" title="Edit Text" aria-label="Edit Text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h12M10 5v14M6 19h8"></path><path d="m15 18 4-4 2 2-4 4-3 1z"></path></svg></button>
                 <button id="planDimensionToolBtn" class="drawing-tool-btn" type="button" title="Dimension" aria-label="Create Dimension"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6v12M19 6v12M5 12h14"></path><path d="m9 9-4 3 4 3M15 9l4 3-4 3"></path></svg></button>
                 <button id="planWallToolBtn" class="drawing-tool-btn" type="button" title="Structural Wall Tool" aria-label="Create Structural Wall"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18" stroke="#ff3131" stroke-width="3" stroke-dasharray="3 2"></path><path d="M3 12h18" stroke="#ffffff" stroke-width="1"></path><path d="M3 17h18" stroke="#ff3131" stroke-width="3" stroke-dasharray="3 2"></path></svg></button>
+                <button id="planWallFootingToolBtn" class="drawing-tool-btn" type="button" title="WF Tool" aria-label="Create Wall Footing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18" stroke="#00c853" stroke-width="3" stroke-dasharray="3 2"></path><path d="M3 17h18" stroke="#00c853" stroke-width="3" stroke-dasharray="3 2"></path></svg></button>
                 <button id="planAuxGridToolBtn" class="drawing-tool-btn" type="button" title="Aux. Grid Tool" aria-label="Aux. Grid Tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"></path><path d="M2 2h4v4H2z"></path></svg></button>
                 <button id="buildingGridToolBtn" class="drawing-tool-btn" type="button" title="Bldg. Grid Tool" aria-label="Bldg. Grid Tool" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zM7.5 3v18M12 3v18M16.5 3v18M3 7.5h18M3 12h18M3 16.5h18"></path><path d="M1.5 1.5h5v5h-5z" fill="#154f32"></path></svg></button>
                 <button id="planMatchPropertiesToolBtn" class="drawing-tool-btn" type="button" title="Match Properties" aria-label="Match Properties"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 15 8-8 4 4-8 8H5z"></path><path d="m14 6 2-2 4 4-2 2M4 21h8"></path></svg></button>
@@ -3074,6 +3075,36 @@
           <div class="girder-direction-actions">
             <button id="wallToolApply" type="button">APPLY</button>
             <button id="wallToolCancel" class="girder-direction-cancel" type="button">CANCEL</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="wallFootingToolDialog" class="girder-direction-dialog wall-tool-dialog" aria-labelledby="wallFootingToolTitle">
+        <div class="girder-direction-dialog-inner">
+          <h3 id="wallFootingToolTitle">WF TOOL</h3>
+          <p>Create a continuous wall footing on the FOUNDATION plan. The app checks soil bearing, footing self-weight, one-way shear and transverse reinforcement using the current Member Properties and allowable soil-bearing pressure.</p>
+          <div class="wall-tool-fields">
+            <label><span><input id="wfToolCreateFooting" type="checkbox" checked> Wall Footing (WF)</span></label>
+            <label><span><input id="wfToolCreateWall" type="checkbox" checked> Wall Above WF</span></label>
+          </div>
+          <h4>WALL FOOTING SETTINGS</h4>
+          <div class="wall-tool-fields">
+            <label for="wfToolWidth">Starting width, m<input id="wfToolWidth" type="number" min="0.30" max="5" step="0.05" value="0.40"></label>
+            <label for="wfToolThickness">Starting thickness, m<input id="wfToolThickness" type="number" min="0.20" max="2" step="0.05" value="0.25"></label>
+            <label for="wfToolTopElevation">Top of footing from Level-1, m (+ above / − below)<input id="wfToolTopElevation" type="number" min="-10" max="10" step="0.05" value="-0.20"></label>
+          </div>
+          <h4>WALL ABOVE WF OPTIONS</h4>
+          <div class="wall-tool-fields">
+            <label for="wfToolWallUnitWeight">Wall unit weight, kN/m³<input id="wfToolWallUnitWeight" type="number" min="0.10" max="100" step="0.10" value="19.60"></label>
+            <label for="wfToolWallHeight">Wall height, m<input id="wfToolWallHeight" type="number" min="0.10" max="20" step="0.01" value="3.00"></label>
+            <label for="wfToolWallWidth">Wall width, m<input id="wfToolWallWidth" type="number" min="0.05" max="2" step="0.01" value="0.15"></label>
+          </div>
+          <h4>WALL OPENING DEDUCTIONS</h4>
+          <label class="wall-opening-count" for="wfToolOpeningCount">Number of openings<input id="wfToolOpeningCount" type="number" min="0" max="20" step="1" value="0"></label>
+          <div id="wfToolOpenings" class="wall-tool-openings" aria-live="polite"></div>
+          <div class="girder-direction-actions">
+            <button id="wfToolApply" type="button">APPLY</button>
+            <button id="wfToolCancel" class="girder-direction-cancel" type="button">CANCEL</button>
           </div>
         </div>
       </dialog>
@@ -46464,6 +46495,9 @@
         levelWalls: {},
         wallStart: null,
         pendingWallProperties: null,
+        wallFootings: [],
+        wallFootingStart: null,
+        pendingWallFootingProperties: null,
         wallBeamLoads: [],
         pointLoads: [],
         mode: "pan",
@@ -46655,6 +46689,7 @@
           planAuxiliaryGrids: deepCopy(planState.auxiliaryGrids),
           planBuildingGrid: deepCopy(planState.buildingGrid),
           planLevelWalls: deepCopy(planState.levelWalls),
+          planWallFootings: deepCopy(planState.wallFootings),
           planWallBeamLoads: deepCopy(planState.wallBeamLoads),
           planPointLoads: deepCopy(planState.pointLoads),
           planActiveView: planState.activeView,
@@ -46732,10 +46767,13 @@
           syncBuildingGridControls();
           planState.pendingAuxiliaryGrid = null;
           planState.levelWalls = deepCopy(snapshot.planLevelWalls) || {};
+          planState.wallFootings = deepCopy(snapshot.planWallFootings) || [];
           planState.wallBeamLoads = deepCopy(snapshot.planWallBeamLoads) || [];
           planState.pointLoads = deepCopy(snapshot.planPointLoads) || [];
           planState.wallStart = null;
           planState.pendingWallProperties = null;
+          planState.wallFootingStart = null;
+          planState.pendingWallFootingProperties = null;
           planState.activeView = ["PLAN", "X", "Y", "ISO", "TEMPLATES"].includes(snapshot.planActiveView) ? snapshot.planActiveView : "PLAN";
           planState.isBlankNewDesign = Boolean(snapshot.planIsBlankNewDesign);
           planState.activeLevelIndex = Math.max(-1, Number(snapshot.planActiveLevelIndex) || 0);
@@ -46819,10 +46857,13 @@
         planState.buildingGrid = {enabled: false, spacingX: 0.20, spacingY: 0.20, color: "#154f32"};
         planState.pendingAuxiliaryGrid = null;
         planState.levelWalls = {};
+        planState.wallFootings = [];
         planState.wallBeamLoads = [];
         planState.pointLoads = [];
         planState.wallStart = null;
         planState.pendingWallProperties = null;
+        planState.wallFootingStart = null;
+        planState.pendingWallFootingProperties = null;
         planState.levelMembers = {};
         planState.memberNameOverrides = {};
         planState.annotations = [];
@@ -49534,8 +49575,11 @@
         planState.buildingGrid = {enabled: false, spacingX: 0.20, spacingY: 0.20, color: "#154f32"};
         planState.pendingAuxiliaryGrid = null;
         planState.levelWalls = {};
+        planState.wallFootings = [];
         planState.wallStart = null;
         planState.pendingWallProperties = null;
+        planState.wallFootingStart = null;
+        planState.pendingWallFootingProperties = null;
         planState.wallBeamLoads = [];
         planState.pointLoads = [];
         planState.levelMembers = {};
@@ -50727,6 +50771,7 @@
         if (planState.mode === "annotation_dimension") return "Dimension";
         if (planState.mode === "aux_grid_insert") return "Place Auxiliary Grid";
         if (planState.mode === "wall") return "Create Structural Wall";
+        if (planState.mode === "wall_footing") return "Create Wall Footing";
         if (planState.mode === "annotation_edit_line") return "Edit Line";
         if (planState.mode === "annotation_text") return "Text";
         if (planState.mode === "annotation_edit_text") return "Edit Text";
@@ -50783,6 +50828,11 @@
         if (region?.open) return "OPEN";
         if (region?.earthFilled) return "EARTH_FILLED";
         return "CONCRETE";
+      }
+
+      function slabRegionStateKeys(region) {
+        return Array.from(new Set((region?.cells || []).map(cell =>
+          slabPanelKey(Number(region.levelIndex), Number(cell.xIndex), Number(cell.yIndex)))));
       }
 
       function nextSlabRegionUsage(currentState) {
@@ -51214,6 +51264,7 @@
         byId("planEditTextToolBtn")?.classList.remove("is-active");
         byId("planDimensionToolBtn")?.classList.remove("is-active");
         byId("planWallToolBtn")?.classList.remove("is-active");
+        byId("planWallFootingToolBtn")?.classList.remove("is-active");
         byId("planAuxGridToolBtn")?.classList.remove("is-active");
         byId("planMatchPropertiesToolBtn")?.classList.remove("is-active");
         byId("structuralPlanCanvas")?.classList.remove("column-creation-active", "member-creation-active", "wall-creation-active", "node-creation-active");
@@ -52239,6 +52290,7 @@
         });
 
         drawAuxiliaryGrids(ctx, data, point);
+        drawPlanWallFootings(ctx, data, point, t);
         drawPlanWalls(ctx, data, point, t);
         drawPlanPointLoads(ctx, point);
         drawAnnotationsForView("PLAN", ctx, annotation => ({x: t.x(annotation.x), y: t.y(annotation.y)}));
@@ -53223,6 +53275,126 @@
           dialog.close();
           setPlanCreationMode("wall");
           if (typeof status === "function") status("Structural Wall Tool active. Click the first slab-supported node, then continue clicking nodes to create connected walls.");
+        });
+      }
+
+      function readWallFootingOpeningFields() {
+        return Array.from(document.querySelectorAll("#wfToolOpenings .wall-opening-group")).map((group, index) => ({
+          id: index + 1,
+          height: Number(group.querySelector('[data-wf-opening-field="height"]')?.value),
+          width: Number(group.querySelector('[data-wf-opening-field="width"]')?.value),
+          distanceFromLeft: Number(group.querySelector('[data-wf-opening-field="distanceFromLeft"]')?.value)
+        }));
+      }
+
+      function renderWallFootingOpeningFields(count, existing = readWallFootingOpeningFields()) {
+        const host = byId("wfToolOpenings");
+        if (!host) return;
+        const safeCount = Math.max(0, Math.min(20, Math.round(Number(count) || 0)));
+        host.replaceChildren();
+        for (let index = 0; index < safeCount; index += 1) {
+          const values = existing[index] || {height: 1.20, width: 0.90, distanceFromLeft: (index + 1) * 3};
+          const group = document.createElement("div");
+          group.className = "wall-opening-group";
+          group.innerHTML = `<strong>Opening ${index + 1}</strong><div class="wall-opening-row"><label>Height, m<input type="number" min="0.10" max="20" step="0.01" value="${Number(values.height || 1.20).toFixed(2)}" data-wf-opening-field="height"></label><label>Width, m<input type="number" min="0.10" max="20" step="0.01" value="${Number(values.width || 0.90).toFixed(2)}" data-wf-opening-field="width"></label><label>Distance from left, m<input type="number" min="0" max="1000" step="0.01" value="${Number(values.distanceFromLeft || 0).toFixed(2)}" data-wf-opening-field="distanceFromLeft"></label></div>`;
+          host.appendChild(group);
+        }
+      }
+
+      function wallFootingDesign(properties, length) {
+        const soilAllowable = Math.max(25, numericInput("soilAllowableBearing", 150));
+        const concreteDensity = Math.max(1, numericInput("concreteDensity", 24));
+        const fc = detailingValue("concreteStrength", 28, 1);
+        const fy = Math.min(550, detailingValue("rebarYieldStrength", 415, 200));
+        const cover = detailingValue("footingClearCover", 75, 50);
+        const barDiameter = Math.max(10, detailingValue("footingBarDiameter", 12, 10));
+        const grossWallArea = length * properties.wallHeight;
+        const openingArea = properties.openings.reduce((sum, opening) => sum + opening.width * opening.height, 0);
+        const netLineLoad = properties.createWall
+          ? properties.wallUnitWeight * properties.wallWidth * Math.max(0, grossWallArea - openingArea) / Math.max(length, 1e-6)
+          : 0;
+        const effectiveSoilCapacity = Math.max(1, soilAllowable - concreteDensity * properties.startingThickness);
+        const bearingWidth = netLineLoad / effectiveSoilCapacity;
+        let width = Math.ceil(Math.max(0.30, properties.startingWidth, bearingWidth) / 0.05) * 0.05;
+        let thickness = Math.ceil(Math.max(0.20, properties.startingThickness) / 0.025) * 0.025;
+        let result = null;
+        for (let iteration = 0; iteration < 50; iteration += 1) {
+          const selfWeight = width * thickness * concreteDensity;
+          const serviceLineLoad = netLineLoad + selfWeight;
+          const servicePressure = serviceLineLoad / Math.max(width, 1e-6);
+          if (servicePressure > soilAllowable + 1e-6) {
+            width = Math.ceil((width + 0.05) / 0.05) * 0.05;
+            continue;
+          }
+          const projection = Math.max(0, (width - properties.wallWidth) / 2);
+          const factoredPressure = 1.4 * servicePressure;
+          const moment = factoredPressure * projection * projection / 2;
+          const effectiveDepth = Math.max(50, thickness * 1000 - cover - barDiameter / 2);
+          const shear = factoredPressure * Math.max(0, projection - effectiveDepth / 1000);
+          const shearCapacity = 0.75 * 0.17 * Math.sqrt(fc) * 1000 * effectiveDepth / 1000;
+          const shearRatio = shear / Math.max(shearCapacity, 1e-9);
+          if (shearRatio > 1 && thickness < 1.50) {
+            thickness = Math.ceil((thickness + 0.025) / 0.025) * 0.025;
+            continue;
+          }
+          const requiredSteel = Math.max(0.0018 * 1000 * thickness * 1000, moment * 1e6 / Math.max(1, 0.9 * fy * 0.9 * effectiveDepth));
+          const reinforcement = economicalReinforcementSelection(requiredSteel, Math.min(3 * thickness * 1000, 450), MPR_SLAB_FOOTING_BAR_DIAMETERS);
+          result = {
+            width, thickness, topElevation: properties.topElevation, soilAllowable,
+            servicePressure, bearingRatio: servicePressure / soilAllowable,
+            factoredPressure, moment, shearRatio, requiredSteel,
+            barDiameter: reinforcement?.diameter || barDiameter,
+            barSpacing: reinforcement?.spacing || 0,
+            longitudinalBarDiameter: barDiameter,
+            longitudinalBarSpacing: Math.min(300, Math.max(100, Math.floor((Math.PI * barDiameter * barDiameter / 4 * 1000 / Math.max(0.0018 * 1000 * thickness * 1000, 1)) / 25) * 25)),
+            netLineLoad,
+            grossWallArea,
+            openingArea,
+            pass: servicePressure <= soilAllowable + 1e-6 && shearRatio <= 1 && Boolean(reinforcement)
+          };
+          break;
+        }
+        return result || {width, thickness, topElevation: properties.topElevation, soilAllowable, netLineLoad, pass: false, bearingRatio: Infinity, shearRatio: Infinity, barDiameter, barSpacing: 0, longitudinalBarDiameter: barDiameter, longitudinalBarSpacing: 0};
+      }
+
+      function installWallFootingToolDialog() {
+        const dialog = byId("wallFootingToolDialog");
+        if (!dialog || dialog.dataset.ready) return;
+        dialog.dataset.ready = "true";
+        const countInput = byId("wfToolOpeningCount");
+        renderWallFootingOpeningFields(countInput?.value || 0, []);
+        countInput?.addEventListener("input", () => renderWallFootingOpeningFields(countInput.value));
+        const close = () => {
+          planState.pendingWallFootingProperties = null;
+          dialog.close();
+          if (planState.mode === "wall_footing") setPlanCreationMode("pan");
+        };
+        byId("wfToolCancel")?.addEventListener("click", close);
+        dialog.addEventListener("cancel", event => { event.preventDefault(); close(); });
+        byId("wfToolApply")?.addEventListener("click", () => {
+          const createFooting = Boolean(byId("wfToolCreateFooting")?.checked);
+          const createWall = Boolean(byId("wfToolCreateWall")?.checked);
+          const startingWidth = Number(byId("wfToolWidth")?.value);
+          const startingThickness = Number(byId("wfToolThickness")?.value);
+          const topElevation = Number(byId("wfToolTopElevation")?.value);
+          const wallUnitWeight = Number(byId("wfToolWallUnitWeight")?.value);
+          const wallHeight = Number(byId("wfToolWallHeight")?.value);
+          const wallWidth = Number(byId("wfToolWallWidth")?.value);
+          const openingCount = Math.max(0, Math.min(20, Math.round(Number(countInput?.value) || 0)));
+          const openings = readWallFootingOpeningFields().slice(0, openingCount);
+          const invalidOpening = openings.some(opening => !(opening.height > 0) || !(opening.width > 0) || !(opening.distanceFromLeft >= 0) || opening.height > wallHeight);
+          if ((!createFooting && !createWall) || !(startingWidth >= 0.30) || !(startingThickness >= 0.20) || !Number.isFinite(topElevation) || (createWall && (!(wallUnitWeight > 0) || !(wallHeight > 0) || !(wallWidth > 0) || invalidOpening || openings.length !== openingCount))) {
+            if (typeof status === "function") status("Select WF and/or Wall Above WF, then enter valid positive footing and wall dimensions. Openings must fit within the wall height.");
+            return;
+          }
+          planState.pendingWallFootingProperties = {createFooting, createWall, startingWidth, startingThickness, topElevation, wallUnitWeight, wallHeight, wallWidth, openings: deepCopy(openings)};
+          planState.wallFootingStart = null;
+          dialog.close();
+          planState.activeLevelIndex = -1;
+          setPlanCreationMode("wall_footing");
+          renderPlanLevelTabs(makePlanData());
+          drawPlan(makePlanData());
+          if (typeof status === "function") status("WF Tool active on FOUNDATION. Click the first node, then click the second node to create the designed wall footing and optional wall above it.");
         });
       }
 
@@ -54559,7 +54731,7 @@
           return sum + width * height;
         }, 0);
         const receivingRegions = slabRegions(region.levelIndex, data).filter(candidate => !candidate.open);
-        const walls = planLevelWalls(region.levelIndex).map(wall => {
+        const walls = planLevelWalls(region.levelIndex).filter(wall => !wall.supportedByWallFooting).map(wall => {
           const lengthInside = wallLengthInsideSlabRegion(wall, region, data);
           const support = wallSupportingBeamCoverage(wall, data);
           const wallLength = Math.max(0, Number(wall.length) || Math.hypot(
@@ -54693,6 +54865,7 @@
 
       function slabWallSupportFailures(region, data = makePlanData()) {
         return planLevelWalls(region.levelIndex)
+          .filter(wall => !wall.supportedByWallFooting)
           .filter(wall => wallTouchesSlabRegion(wall, region, data))
           .map(wall => ({wall, support: wallSupportingBeamCoverage(wall, data)}))
           .filter(check => !check.support.supported)
@@ -54795,6 +54968,60 @@
         }
       }
 
+      function drawPlanWallFootings(ctx, data, point, transform) {
+        if (planState.activeLevelIndex !== -1) return;
+        (planState.wallFootings || []).forEach(footing => {
+          const start = point(Number(footing.startPoint?.x), Number(footing.startPoint?.y));
+          const end = point(Number(footing.endPoint?.x), Number(footing.endPoint?.y));
+          const dx = end.x - start.x;
+          const dy = end.y - start.y;
+          const length = Math.max(1e-6, Math.hypot(dx, dy));
+          const normalX = -dy / length;
+          const normalY = dx / length;
+          const width = Math.max(0.30, Number(footing.design?.width) || Number(footing.properties?.startingWidth) || 0.40);
+          const offset = Math.max(3, Math.min(24, width * transform.scale / 2));
+          ctx.save();
+          ctx.lineCap = "butt";
+          ctx.strokeStyle = "#00c853";
+          ctx.lineWidth = 3.2;
+          ctx.setLineDash([7, 5]);
+          [-offset, offset].forEach(side => {
+            ctx.beginPath();
+            ctx.moveTo(start.x + normalX * side, start.y + normalY * side);
+            ctx.lineTo(end.x + normalX * side, end.y + normalY * side);
+            ctx.stroke();
+          });
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 0.9;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+          let angle = Math.atan2(dy, dx);
+          while (angle > Math.PI / 2) angle -= Math.PI;
+          while (angle < -Math.PI / 2) angle += Math.PI;
+          drawNonOverlappingText(ctx, `${footing.name} ${width.toFixed(2)}×${Number(footing.design?.thickness || 0).toFixed(2)} m`, (start.x + end.x) / 2, (start.y + end.y) / 2 - offset - 9, {
+            font: `300 9px ${DRAWING_FONT_FAMILY}`,
+            color: "#00e676",
+            rotate: angle
+          });
+          ctx.restore();
+        });
+        if (planState.mode === "wall_footing" && planState.wallFootingStart) {
+          const selected = point(Number(planState.wallFootingStart.x), Number(planState.wallFootingStart.y));
+          ctx.save();
+          ctx.fillStyle = "#ff7a00";
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(selected.x, selected.y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
       function drawPlanPointLoads(ctx, point) {
         if (planState.activeLevelIndex < 0) return;
         (planState.pointLoads || [])
@@ -54847,6 +55074,85 @@
           if (distance <= tolerance && (!nearest || distance < nearest.distance)) nearest = {wall, distance};
         });
         return nearest?.wall || null;
+      }
+
+      function createPlanWallFootingAt(canvasPoint, data = makePlanData()) {
+        if (planState.activeLevelIndex !== -1) {
+          if (typeof status === "function") status("WF Tool creates wall footings only in the FOUNDATION plan.");
+          return false;
+        }
+        const endpoint = wallEndpointAt(canvasPoint, data);
+        if (!endpoint) {
+          if (typeof status === "function") status("Click directly on a structural, building-grid, or auxiliary-grid node to place the wall-footing endpoint.");
+          return false;
+        }
+        if (!planState.wallFootingStart) {
+          planState.wallFootingStart = endpoint;
+          drawPlan(data);
+          if (typeof status === "function") status(`WF start node ${endpoint.label} selected. Click the second node.`);
+          return true;
+        }
+        const start = planState.wallFootingStart;
+        const length = Math.hypot(Number(endpoint.x) - Number(start.x), Number(endpoint.y) - Number(start.y));
+        const properties = planState.pendingWallFootingProperties;
+        if (length < 1e-6 || !properties) {
+          if (typeof status === "function") status(length < 1e-6 ? "Select a different second node for the wall footing." : "Open WF Tool and apply its properties first.");
+          return false;
+        }
+        const openingOutOfBounds = properties.openings.some(opening => Number(opening.distanceFromLeft) + Number(opening.width) > length + 1e-6);
+        if (openingOutOfBounds) {
+          if (typeof status === "function") status("WF not created: each wall opening must fit within the selected wall length.");
+          return false;
+        }
+        const design = wallFootingDesign(properties, length);
+        const sequence = (planState.wallFootings || []).reduce((maximum, item) => Math.max(maximum, Number(item.sequence) || 0), 0) + 1;
+        const id = `WF-${Date.now()}-${sequence}`;
+        pushWorkspaceHistory();
+        if (properties.createFooting) {
+          planState.wallFootings.push({
+            id,
+            name: `WF-${sequence}`,
+            sequence,
+            levelIndex: -1,
+            startPoint: deepCopy(start),
+            endPoint: deepCopy(endpoint),
+            length,
+            properties: deepCopy(properties),
+            design: deepCopy(design)
+          });
+        }
+        if (properties.createWall) {
+          const wallSequence = planLevelWalls(0).reduce((maximum, wall) => Math.max(maximum, Number(wall.sequence) || 0), 0) + 1;
+          planLevelWalls(0).push({
+            id: `WALL-ABOVE-${id}`,
+            name: `W1-${wallSequence}`,
+            sequence: wallSequence,
+            levelIndex: 0,
+            startPoint: deepCopy(start),
+            endPoint: deepCopy(endpoint),
+            length,
+            unitWeight: Number(properties.wallUnitWeight),
+            height: Number(properties.wallHeight),
+            width: Number(properties.wallWidth),
+            openings: deepCopy(properties.openings),
+            grossWallArea: design.grossWallArea,
+            openingArea: design.openingArea,
+            openingDeductionRatio: design.grossWallArea > 0 ? design.openingArea / design.grossWallArea : 0,
+            netLineLoad: design.netLineLoad,
+            supportedByWallFooting: true,
+            wallFootingId: properties.createFooting ? id : null
+          });
+        }
+        planState.wallFootingStart = endpoint;
+        engineeringState.designEnvelopes = null;
+        engineeringState.frameCatalog = {X: {}, Y: {}};
+        frameModelCache.X.clear();
+        frameModelCache.Y.clear();
+        setCalculationDirty(true);
+        drawPlan(data);
+        updatePlanMemberTable();
+        if (typeof status === "function") status(`${properties.createFooting ? `WF-${sequence} created: ${design.width.toFixed(2)} m wide × ${design.thickness.toFixed(2)} m thick, top ${properties.topElevation >= 0 ? "+" : ""}${properties.topElevation.toFixed(2)} m from Level-1; soil pressure ${Number(design.servicePressure || 0).toFixed(2)}/${design.soilAllowable.toFixed(2)} kPa. ` : ""}${properties.createWall ? "The aligned wall above was created on Level-1. " : ""}${design.pass ? "Preliminary footing checks pass." : "Preliminary footing design requires engineer review."}`);
+        return true;
       }
 
       function createPlanWallAt(canvasPoint, data = makePlanData()) {
@@ -55281,11 +55587,11 @@
           else delete override.type;
           delete override.typeBeforeEarthFill;
         }
-        region.cells.forEach(cell => {
-          if (nextState === "OPEN") planState.deletedSlabs.add(cell.key);
-          else planState.deletedSlabs.delete(cell.key);
-          if (nextState === "EARTH_FILLED") planState.earthFilledSlabs.add(cell.key);
-          else planState.earthFilledSlabs.delete(cell.key);
+        slabRegionStateKeys(region).forEach(cellKey => {
+          if (nextState === "OPEN") planState.deletedSlabs.add(cellKey);
+          else planState.deletedSlabs.delete(cellKey);
+          if (nextState === "EARTH_FILLED") planState.earthFilledSlabs.add(cellKey);
+          else planState.earthFilledSlabs.delete(cellKey);
         });
         engineeringState.designEnvelopes = null;
         engineeringState.frameCatalog = {X: {}, Y: {}};
@@ -55814,6 +56120,10 @@
           createPlanWallAt(canvasPoint, data);
           return;
         }
+        if (planState.mode === "wall_footing") {
+          createPlanWallFootingAt(canvasPoint, data);
+          return;
+        }
         if (planState.mode === "annotation_edit_line") {
           selectAnnotationForEditAt("PLAN", canvasPoint, canvas.getContext("2d"), projectPoint, "LINE");
           return;
@@ -56023,7 +56333,7 @@
       }
 
       function setPlanCreationMode(mode) {
-        const allowed = ["column", "node", "member", "wall", "delete", "rename", "aux_grid_insert", "annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text", "annotation_match"];
+        const allowed = ["column", "node", "member", "wall", "wall_footing", "delete", "rename", "aux_grid_insert", "annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text", "annotation_match"];
         const cadAllowed = ["annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text"];
         if (mode !== "pan") activateExclusiveDrawingTool(mode === "delete" ? "delete" : "plan");
         planState.mode = cadImportState.active && !cadAllowed.includes(mode)
@@ -56034,6 +56344,10 @@
         if (planState.mode !== "wall") {
           planState.wallStart = null;
           planState.pendingWallProperties = null;
+        }
+        if (planState.mode !== "wall_footing") {
+          planState.wallFootingStart = null;
+          planState.pendingWallFootingProperties = null;
         }
         if (planState.mode !== "delete") planState.pendingGirderNode = null;
         if (planState.mode !== "delete") planState.pendingColumnNodeDeletion = null;
@@ -56047,6 +56361,7 @@
         if (byId("activeFrameEditor")?.value === "PLAN") byId("modeMember")?.classList.toggle("is-active", planState.mode === "member");
         byId("modeWall")?.classList.toggle("is-active", planState.mode === "wall");
         byId("planWallToolBtn")?.classList.toggle("is-active", planState.mode === "wall");
+        byId("planWallFootingToolBtn")?.classList.toggle("is-active", planState.mode === "wall_footing");
         byId("modeAnnotationLine")?.classList.toggle("is-active", planState.mode === "annotation_line");
         byId("modeAnnotationEditLine")?.classList.toggle("is-active", planState.mode === "annotation_edit_line");
         byId("modeAnnotationText")?.classList.toggle("is-active", planState.mode === "annotation_text");
@@ -56068,13 +56383,14 @@
           ["planEditTextToolBtn", "annotation_edit_text"],
           ["planDimensionToolBtn", "annotation_dimension"],
           ["planWallToolBtn", "wall"],
+          ["planWallFootingToolBtn", "wall_footing"],
           ["planAuxGridToolBtn", "aux_grid_insert"],
           ["planMatchPropertiesToolBtn", "annotation_match"]
         ].forEach(([id, toolMode]) => byId(id)?.setAttribute("aria-pressed", planState.mode === toolMode ? "true" : "false"));
         byId("structuralPlanCanvas")?.classList.toggle("column-creation-active", planState.mode === "column");
         byId("structuralPlanCanvas")?.classList.toggle("node-creation-active", planState.mode === "node");
         byId("structuralPlanCanvas")?.classList.toggle("member-creation-active", planState.mode === "member");
-        byId("structuralPlanCanvas")?.classList.toggle("wall-creation-active", planState.mode === "wall");
+        byId("structuralPlanCanvas")?.classList.toggle("wall-creation-active", ["wall", "wall_footing"].includes(planState.mode));
         ["canvas", "yAxisCanvas", "structuralPlanCanvas"].forEach(id => byId(id)?.classList.toggle("name-editing-active", planState.mode === "rename"));
         ["canvas", "yAxisCanvas", "structuralPlanCanvas"].forEach(id => byId(id)?.classList.toggle("annotation-creation-active", planState.mode.startsWith("annotation_")));
         redrawAnnotationView(planState.activeView);
@@ -59474,6 +59790,7 @@
       function applyStructuralWallToolLoadsToFrame(frameModel, axis, frameLine, data = makePlanData()) {
         const totalY = data.yPos[data.yPos.length - 1] || 0;
         Object.values(planState.levelWalls || {}).flat().forEach(wall => {
+          if (wall.supportedByWallFooting) return;
           const support = wallSupportingBeamCoverage(wall, data);
           if (!support.supported) return;
           const wallCoordinates = structuralWallCoordinatesInFrame(wall, frameModel, axis, totalY);
@@ -61003,6 +61320,7 @@
           return fallback;
         }
       })();
+      let mprAutoPassRecalculationTimer = null;
 
       function mprAutoPassEnabled(tableKey) {
         return mprAutoPassState[tableKey] !== false;
@@ -61023,6 +61341,20 @@
         if (announce && typeof status === "function") {
           status(`${tableKey.charAt(0).toUpperCase() + tableKey.slice(1)} AUTO-PASS is ${enabled ? "ON" : "OFF"}. Other MPR tables are unchanged.`);
         }
+      }
+
+      function scheduleMprAutoPassCalculation(tableKey) {
+        if (!mprAutoPassEnabled(tableKey)) return false;
+        setCalculationDirty(true);
+        window.clearTimeout(mprAutoPassRecalculationTimer);
+        mprAutoPassRecalculationTimer = window.setTimeout(() => {
+          if (coordinatedAnalysisRunning || coordinatedAnalysisQueued) {
+            scheduleMprAutoPassCalculation(tableKey);
+            return;
+          }
+          requestCoordinatedAnalysis();
+        }, 180);
+        return true;
       }
 
       function normalizedBeamLongSpanSteelReservePercent(value) {
@@ -61621,10 +61953,13 @@
               Math.max(6, Number(member.stirrupDiameter) || detailingValue("beamStirrupDiameter", 10, 6)),
               demand
             );
-            member.designStatus = current.pass ? "USER-SIZED PASS" : "USER-SIZED FAIL";
-            if (current.pass) optimized += 1;
-            else failed += 1;
-            return;
+            if (current.pass) {
+              member.designStatus = "AUTO PASS — USER START";
+              optimized += 1;
+              return;
+            }
+            member.userSectionOverride = false;
+            member.manualReinforcement = false;
           }
           if (preservePassing && member.designStatus === "AUTO PASS") {
             const current = evaluateBeamCandidate(
@@ -61643,13 +61978,13 @@
             }
           }
           const tieBeam = isTieBeamMember(member);
-          const minimumDepth = Math.max(defaultBeamHeight, tieBeam ? 400 : 300, Math.ceil(length * 1000 / 16 / 25) * 25);
+          const minimumDepth = Math.max(defaultBeamHeight, Number(member.height) || 0, tieBeam ? 400 : 300, Math.ceil(length * 1000 / 16 / 25) * 25);
           let best = null;
-          for (let height = minimumDepth; height <= Math.max(1000, minimumDepth + 300); height += 25) {
-            const minimumWidth = Math.ceil(Math.max(defaultBeamWidth, columnMinimumDimension(), 0.30 * height) / 25) * 25;
-            for (let width = minimumWidth; width <= Math.min(600, Math.max(minimumWidth, height)); width += 25) {
-              for (const barDiameter of [defaultLongitudinalBar]) {
-                for (const stirrupDiameter of [defaultStirrupBar]) {
+          for (let height = minimumDepth; height <= Math.max(1500, minimumDepth + 600); height += 25) {
+            const minimumWidth = Math.ceil(Math.max(defaultBeamWidth, Number(member.width) || 0, columnMinimumDimension(), 0.30 * height) / 25) * 25;
+            for (let width = minimumWidth; width <= Math.min(900, Math.max(minimumWidth, height)); width += 25) {
+              for (const barDiameter of Array.from(new Set([defaultLongitudinalBar, ...MPR_COLUMN_BEAM_BAR_DIAMETERS]))) {
+                for (const stirrupDiameter of Array.from(new Set([defaultStirrupBar, ...MPR_TIE_STIRRUP_BAR_DIAMETERS]))) {
                   const candidate = evaluateBeamCandidate(axis, frameModel, member, width, height, barDiameter, stirrupDiameter, demand);
                   if (!candidate.pass) continue;
                   if (!best || candidate.cost < best.cost - 1e-9 || (Math.abs(candidate.cost - best.cost) < 1e-9 && width * height < best.width * best.height)) best = candidate;
@@ -64525,6 +64860,20 @@
           if (ySpacing) addStructuralRebar(quantity, yDiameter, (Math.ceil(width * 1000 / ySpacing) + 1) * length);
         });
 
+        (planState.wallFootings || []).forEach(footing => {
+          const design = footing.design || {};
+          const width = Math.max(0, Number(design.width) || 0);
+          const thickness = Math.max(0, Number(design.thickness) || 0);
+          const length = Math.max(0, Number(footing.length) || 0);
+          if (!width || !thickness || !length) return;
+          const quantity = structuralEstimateLevelBucket(estimates.footings, "FOUNDATION");
+          addStructuralConcrete(quantity, width * thickness * length, 2 * thickness * length);
+          const transverseSpacing = Math.max(0, Number(design.barSpacing) || 0);
+          const longitudinalSpacing = Math.max(0, Number(design.longitudinalBarSpacing) || 0);
+          if (transverseSpacing) addStructuralRebar(quantity, Number(design.barDiameter) || 12, (Math.ceil(length * 1000 / transverseSpacing) + 1) * width);
+          if (longitudinalSpacing) addStructuralRebar(quantity, Number(design.longitudinalBarDiameter) || 12, (Math.ceil(width * 1000 / longitudinalSpacing) + 1) * length);
+        });
+
         Object.values(estimates).forEach(category => {
           category.levels.forEach(quantity => mergeStructuralEstimateQuantity(category.total, quantity));
         });
@@ -64922,11 +65271,11 @@
         engineeringState.lastAudit = null;
         try { lastAnalysisResult = null; } catch (error) {}
         yFrameState.lastResult = null;
-        setEconomicalDesignEnabled(false);
         scheduleCoordinatedResults();
+        const autoPassActive = scheduleMprAutoPassCalculation("beams");
         try { draw(); } catch (error) {}
         drawYAxisCanvas(makePlanData());
-        if (typeof status === "function") status(`${axis}-axis beam ${input.dataset.field === "width" ? "width" : "height"} set to ${value} mm. Economical Design is OFF; Calculate will check this exact section.`);
+        if (typeof status === "function") status(`${axis}-axis beam ${input.dataset.field === "width" ? "width" : "height"} set to ${value} mm.${autoPassActive ? " Beam AUTO-PASS is recalculating from this entered size." : " Recalculate to check this exact section."}`);
         return true;
       }
 
@@ -65976,20 +66325,22 @@
           const region = slabRegions(levelIndex, makePlanData()).find(item => item.key === key);
           const override = engineeringState.slabDesignOverrides[key] ||= {};
           override.type = select.value;
-          region?.cells.forEach(cell => {
+          slabRegionStateKeys(region).forEach(cellKey => {
             if (select.value === "OPEN_SPACE") {
-              planState.deletedSlabs.add(cell.key);
-              planState.earthFilledSlabs.delete(cell.key);
+              planState.deletedSlabs.add(cellKey);
+              planState.earthFilledSlabs.delete(cellKey);
             } else {
-              planState.deletedSlabs.delete(cell.key);
-              if (select.value === "SLAB_ON_FILL") planState.earthFilledSlabs.add(cell.key);
-              else planState.earthFilledSlabs.delete(cell.key);
+              planState.deletedSlabs.delete(cellKey);
+              if (select.value === "SLAB_ON_FILL") planState.earthFilledSlabs.add(cellKey);
+              else planState.earthFilledSlabs.delete(cellKey);
             }
           });
           if (select.value !== "SLAB_ON_FILL") delete override.typeBeforeEarthFill;
           engineeringState.designEnvelopes = null;
           setCalculationDirty(true);
           scheduleCoordinatedResults();
+          scheduleMprAutoPassCalculation("slabs");
+          renderStructuralSequence({resetViews: false});
           drawPlan(makePlanData());
           if (typeof status === "function") status(select.value === "OPEN_SPACE"
             ? "OPEN SPACE selected. The panel is removed from slab self-weight, live-load, seismic-weight, and reinforcement design calculations."
@@ -66072,7 +66423,10 @@
             return;
           }
           pushWorkspaceHistory();
-          setEconomicalDesignEnabled(false);
+          const editedTableKey = input.dataset.beamRebarMember ? "beams"
+            : input.dataset.columnDesign ? "columns"
+            : input.dataset.footingDesign ? "footings"
+            : "slabs";
           if (input.dataset.beamRebarMember) {
             const groupId = input.dataset.beamGroup;
             const axis = input.dataset.beamRebarFrame;
@@ -66112,6 +66466,10 @@
               } else {
                 engineeringState.columnDesignOverrides[targetKey].manualReinforcement = true;
               }
+              if (mprAutoPassEnabled("columns")) {
+                engineeringState.columnDesignOverrides[targetKey].manualSection = false;
+                engineeringState.columnDesignOverrides[targetKey].manualReinforcement = false;
+              }
             });
           } else if (input.dataset.footingDesign) {
             const footing = planState.footings[input.dataset.footingDesign];
@@ -66122,6 +66480,7 @@
               });
               footing[input.dataset.field] = value;
               footing.manualDesign = true;
+              if (mprAutoPassEnabled("footings")) footing.manualDesign = false;
             }
           } else if (input.dataset.slabDesign) {
             const key = input.dataset.slabDesign;
@@ -66132,17 +66491,19 @@
             });
             engineeringState.slabDesignOverrides[key][input.dataset.field] = value;
             engineeringState.slabDesignOverrides[key].manualDesign = true;
+            if (mprAutoPassEnabled("slabs")) engineeringState.slabDesignOverrides[key].manualDesign = false;
           }
           engineeringState.designEnvelopes = null;
           try { lastAnalysisResult = null; } catch (error) {}
           yFrameState.lastResult = null;
           scheduleCoordinatedResults();
+          const autoPassActive = scheduleMprAutoPassCalculation(editedTableKey);
           drawPlan(makePlanData());
           if (typeof draw === "function") draw();
           drawYAxisCanvas(makePlanData());
           if (typeof status === "function") status(slabOnFillThicknessCapped
             ? "Slab on fill thickness is capped at the economical 100 mm maximum because it is continuously supported by earth fill."
-            : "Design value updated. Economical Design is OFF; recalculate to check the entered section and reinforcement without automatic resizing.");
+            : `Design value updated.${autoPassActive ? ` ${editedTableKey.toUpperCase()} AUTO-PASS is recalculating and will continue from user edits.` : " Recalculate to check the entered section and reinforcement."}`);
         };
         table.addEventListener("change", commitDesignInput);
         table.addEventListener("focusout", commitDesignInput);
@@ -66189,7 +66550,7 @@
         let beamOptimization = {optimized: 0, failed: 0};
         let columnOptimization = {optimized: 0, failed: 0};
         if (autoPassBeams || autoPassColumns) {
-          for (let iteration = 0; iteration < 6; iteration += 1) {
+          for (let iteration = 0; iteration < 12; iteration += 1) {
             const iterationBeamOptimization = {optimized: 0, failed: 0};
             if (autoPassBeams) ["X", "Y"].forEach(axis => {
               Object.entries(catalog[axis] || {}).forEach(([frameLine, entry]) => {
@@ -66806,6 +67167,7 @@
         installBuildingGridDialog();
         syncBuildingGridControls();
         installWallToolDialog();
+        installWallFootingToolDialog();
         installDraggableDialogs();
         installAnnotationEditDialog();
         installAnnotationCanvasControls();
@@ -67117,6 +67479,17 @@
           if (dialog && !dialog.open) dialog.showModal();
         };
         byId("planWallToolBtn")?.addEventListener("click", openWallTool);
+        byId("planWallFootingToolBtn")?.addEventListener("click", () => {
+          if (workspaceDeleteMode) setWorkspaceDeleteMode(false);
+          if (byId("activeFrameEditor")) byId("activeFrameEditor").value = "PLAN";
+          planState.activeLevelIndex = -1;
+          showUnifiedDrawingView("PLAN");
+          renderPlanLevelTabs(makePlanData());
+          setPlanCreationMode("pan");
+          drawPlan(makePlanData());
+          const dialog = byId("wallFootingToolDialog");
+          if (dialog && !dialog.open) dialog.showModal();
+        });
         byId("planAuxGridToolBtn")?.addEventListener("click", () => {
           activateExclusiveDrawingTool("plan");
           if (planState.activeLevelIndex < 0) planState.activeLevelIndex = 0;
@@ -67282,11 +67655,14 @@
           planState.buildingGrid = {enabled: false, spacingX: 0.20, spacingY: 0.20, color: "#154f32"};
           planState.pendingAuxiliaryGrid = null;
           planState.levelWalls = {};
+          planState.wallFootings = [];
           planState.wallBeamLoads = [];
           planState.pointLoads = [];
           setPlanPointLoadPlacementActive(false);
           planState.wallStart = null;
           planState.pendingWallProperties = null;
+          planState.wallFootingStart = null;
+          planState.pendingWallFootingProperties = null;
           engineeringState.columnDesignOverrides = {};
           engineeringState.slabDesignOverrides = {};
           engineeringState.designEnvelopes = null;
