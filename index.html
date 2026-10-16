@@ -15,8 +15,7 @@
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
   <link rel="stylesheet" href="styles.css?v=66" />
-  <link rel="stylesheet" href="auth-gate.css?v=1" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Authentication and premium gating are retained in the repository but paused during development. -->
   <style>
     .structural-sequence {
       display: grid;
@@ -2181,8 +2180,8 @@
     }
   </style>
 </head>
-<body data-theme="green_teal" class="sf-auth-pending">
-  <section id="sf-auth-gate" class="sf-auth-gate" role="dialog" aria-modal="true" aria-labelledby="sf-auth-gate-title">
+<body data-theme="green_teal">
+  <section id="sf-auth-gate" class="sf-auth-gate" role="dialog" aria-modal="true" aria-labelledby="sf-auth-gate-title" hidden aria-hidden="true">
     <div class="sf-auth-card">
       <img src="assets/LOGO-STRUCF.png?v=4" alt="StrucForge" class="sf-auth-logo" />
       <p class="sf-auth-eyebrow">MEMBER ACCESS</p>
@@ -46236,9 +46235,31 @@
   }
 }
   </script>
-  <script src="auth-gate.js?v=1"></script>
-  <script src="premium-access.js?v=1"></script>
-  <script src="https://www.strucforge.com/assets/mascot-cursor.js?v=production-3"></script>
+  <script id="strucforgeDevelopmentAccess">
+    (() => {
+      "use strict";
+      // Temporary development mode: keep the production auth/billing files
+      // available for later reactivation while allowing the complete app now.
+      const entitlement = Object.freeze({
+        feature: "FULL_RC_STRUCTURAL_DESIGNER",
+        state: "DEVELOPMENT_FREE_ACCESS",
+        capabilities: Object.freeze({
+          saveLocalProject: true,
+          downloadProject: true,
+          print: true,
+          printPDF: true,
+          excelExport: true
+        })
+      });
+      window.StrucForgePremium = Object.freeze({
+        can: () => true,
+        require: () => true,
+        refresh: () => Promise.resolve(entitlement),
+        get entitlement() { return entitlement; }
+      });
+      document.documentElement.dataset.accessMode = "development-free";
+    })();
+  </script>
   <script src="solver.js?v=16"></script>
   <script src="app.js?v=78"></script>
   <script src="column-tool.js?v=11"></script>
@@ -66862,6 +66883,8 @@
   <script id="strucforgeCursorPrototypeScript">
     (() => {
       "use strict";
+      const CURSOR_PROTOTYPE_PAUSED = true;
+      if (CURSOR_PROTOTYPE_PAUSED) return;
       // This is deliberately an opt-in local prototype. Normal app sessions keep
       // their established system/tool cursors; append ?cursorTest=1 to test it.
       const testQuery = new URLSearchParams(window.location.search);

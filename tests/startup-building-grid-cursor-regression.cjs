@@ -22,7 +22,8 @@ assert(html.includes('id="buildingGridToolBtn"') && html.includes('id="buildingG
 assert(html.includes('buildingGridNodeEndpoint(nearestBuildingGridNode'), "Building-grid intersections must participate in magnetic snapping");
 assert(html.includes('planBuildingGrid: deepCopy(planState.buildingGrid)'), "Building-grid settings must persist in project snapshots");
 assert(html.includes('ctx.lineWidth = 5.1;') && html.includes('ctx.strokeStyle = "#ff3131";'), "Wall boundaries must be bright red and exactly three times thicker");
-assert(html.includes('https://www.strucforge.com/assets/mascot-cursor.js?v=production-3'), "The deployed RC app must load the current production mascot cursor");
+assert(!html.includes('<script src="https://www.strucforge.com/assets/mascot-cursor.js'), "The deployed RC app must leave the mascot cursor paused");
+assert(html.includes("const CURSOR_PROTOTYPE_PAUSED = true"), "The local cursor prototype must remain paused during development");
 assert(/\.header-disclaimer\s*\{[^}]*font-size:\s*10px;[^}]*text-align:\s*center;[^}]*align-items:\s*center;/.test(html), "The upper-right disclaimer must use the corrected readable size and centered header alignment");
 assert(/\.header-disclaimer\s*\{[^}]*border-right:\s*0;/.test(html), "The disclaimer must not add a divider line to the header");
 assert(html.includes('title="Aux. Grid Tool"') && html.includes('>AUX. GRID TOOL</h3>'), "The auxiliary grid tool must use its short requested name");
