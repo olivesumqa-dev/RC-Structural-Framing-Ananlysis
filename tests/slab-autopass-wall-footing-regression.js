@@ -24,13 +24,16 @@ const checks = [
   ["WF design result rows", /function wallFootingResultRows[\s\S]*?transverseBarCount[\s\S]*?longitudinalBarCount[\s\S]*?REVISE WF DESIGN/],
   ["WF table before estimates", /id="wallFootingResultsSection"[\s\S]*?id="structuralEstimatesSection"/],
   ["WF separate estimate category", /wallFootings:\s*\{label:\s*"WALL FOOTINGS"[\s\S]*?structuralEstimateLevelBucket\(estimates\.wallFootings, "FOUNDATION"\)/],
-  ["WF included in overall estimate", /categoryKeys\s*=\s*\["beams", "columns", "slabs", "footings", "wallFootings"\]/],
+  ["WF included in overall estimate", /structuralCategoryKeys\s*=\s*\["beams", "columns", "slabs", "footings", "wallFootings"\]/],
   ["WF print controls", /wallFootingResultsPrintBtn[\s\S]*?wallFootingResultsPrintPdfBtn/],
   ["wall estimate category", /walls:\s*\{label:\s*"WALLS"[\s\S]*?function wallEstimateTableMarkup/],
   ["wall exterior perimeter classification", /function wallIsOnExteriorFootprint[\s\S]*?bothNear\(startX, endX, totalX\)[\s\S]*?bothNear\(startY, endY, totalY\)/],
   ["wall openings deducted", /const openingArea = Math\.min\(grossArea[\s\S]*?const netArea = Math\.max\(0, grossArea - openingArea\)/],
   ["CHB sizes and allowance", /4&quot; interior CHB[\s\S]*?6&quot; exterior CHB[\s\S]*?5% allowance at 12\.5 blocks per square metre/],
-  ["walls table before wall footings estimate", /wallEstimateTableMarkup\(estimates\.walls\) \+ structuralEstimateTableMarkup\(estimates\.wallFootings\)/]
+  ["walls table before wall footings estimate", /wallEstimateTableMarkup\(estimates\.walls\) \+ structuralEstimateTableMarkup\(estimates\.wallFootings\)/],
+  ["wall reinforcement spacing", /chbRebarDiameter:\s*10[\s\S]*?chbRebarSpacing:\s*0\.60[\s\S]*?verticalBarCount[\s\S]*?horizontalBarCount/],
+  ["wall reinforcement table columns", /D10 vertical wall rebar[\s\S]*?D10 horizontal wall rebar[\s\S]*?0\.60 m/],
+  ["wall materials in overall total", /categoryKeys\s*=\s*\["beams", "columns", "slabs", "footings", "walls", "wallFootings"\][\s\S]*?4" CHB — interior walls[\s\S]*?6" CHB — exterior walls[\s\S]*?D10 CHB wall rebar/]
 ];
 
 const failures = checks.filter(([, expression]) => !expression.test(source)).map(([label]) => label);

@@ -64701,7 +64701,9 @@
         tieWireRatio: 0.015,
         commercialBarLength: 6,
         chbPiecesPerSquareMeter: 12.5,
-        chbAllowance: 1.05
+        chbAllowance: 1.05,
+        chbRebarDiameter: 10,
+        chbRebarSpacing: 0.60
       });
 
       const STRUCTURAL_ESTIMATE_CURRENCIES = Object.freeze({
@@ -64722,25 +64724,25 @@
         "dpwh-batangas": {
           label: "Batangas / DPWH CMPD reference",
           location: "Batangas / CALABARZON",
-          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, rebarKg: 34.73},
+          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, chb4: 0, chb6: 0, rebarKg: 34.73},
           source: "DPWH CMPD Q3 2025; DPWH Quezon formwork DUPA; MWSS 2026 water tariff"
         },
         "metro-manila": {
           label: "Metro Manila 2026 indicative retail",
           location: "Metro Manila",
-          prices: {concrete: 6200, cement: 260, sand: 1000, gravel: 1250, water: 67.20, formwork: 837.05, tieWire: 90, rebarKg: 49},
+          prices: {concrete: 6200, cement: 260, sand: 1000, gravel: 1250, water: 67.20, formwork: 837.05, tieWire: 90, chb4: 0, chb6: 0, rebarKg: 49},
           source: "Q1 2026 indicative supplier ranges; MWSS 2026 water tariff; verify local quotations"
         },
         "general-santos": {
           label: "General Santos 2026 procurement",
           location: "General Santos City",
-          prices: {concrete: 8000, cement: 382.50, sand: 651.66, gravel: 1643.34, water: 70, formwork: 837.05, tieWire: 144.50, rebarKg: 77.93},
+          prices: {concrete: 8000, cement: 382.50, sand: 651.66, gravel: 1643.34, water: 70, formwork: 837.05, tieWire: 144.50, chb4: 0, chb6: 0, rebarKg: 77.93},
           source: "General Santos City procurement reference 2026; verify supplier and delivery scope"
         },
         custom: {
           label: "Custom / International location",
           location: "Enter country, region, province, city or municipality",
-          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, rebarKg: 34.73},
+          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, chb4: 0, chb6: 0, rebarKg: 34.73},
           source: "User-adjusted local supplier quotation"
         }
       });
@@ -64769,6 +64771,7 @@
         [10, 12, 16, 20, 25, 30].forEach(diameter => {
           prices[`D${diameter}`] = structuralEstimateRebarPrice(diameter, preset.prices.rebarKg) / divisor;
         });
+        prices.wallRebarD10 = prices.D10;
         return prices;
       }
 
@@ -64807,11 +64810,11 @@
       }
 
       function createWallEstimateQuantity() {
-        return {wallCount: 0, length: 0, grossArea: 0, openingArea: 0, netArea: 0, chb4: 0, chb6: 0};
+        return {wallCount: 0, length: 0, grossArea: 0, openingArea: 0, netArea: 0, chb4: 0, chb6: 0, verticalRebarLength: 0, horizontalRebarLength: 0};
       }
 
       function mergeWallEstimateQuantity(target, source) {
-        ["wallCount", "length", "grossArea", "openingArea", "netArea", "chb4", "chb6"].forEach(key => {
+        ["wallCount", "length", "grossArea", "openingArea", "netArea", "chb4", "chb6", "verticalRebarLength", "horizontalRebarLength"].forEach(key => {
           target[key] += Number(source?.[key]) || 0;
         });
         return target;
@@ -64986,11 +64989,15 @@
             if (!length || !height || !netArea) return;
             const quantity = wallEstimateLevelBucket(estimates.walls, levelLabel);
             const chbQuantity = netArea * STRUCTURAL_ESTIMATE_FACTORS.chbPiecesPerSquareMeter * STRUCTURAL_ESTIMATE_FACTORS.chbAllowance;
+            const verticalBarCount = Math.ceil(length / STRUCTURAL_ESTIMATE_FACTORS.chbRebarSpacing) + 1;
+            const horizontalBarCount = Math.ceil(height / STRUCTURAL_ESTIMATE_FACTORS.chbRebarSpacing) + 1;
             quantity.wallCount += 1;
             quantity.length += length;
             quantity.grossArea += grossArea;
             quantity.openingArea += openingArea;
             quantity.netArea += netArea;
+            quantity.verticalRebarLength += verticalBarCount * height;
+            quantity.horizontalRebarLength += horizontalBarCount * length;
             if (wallIsOnExteriorFootprint(wall, planData)) quantity.chb6 += chbQuantity;
             else quantity.chb4 += chbQuantity;
           });
@@ -65070,11 +65077,17 @@
           ["wallCount", "No. of walls"], ["length", "Wall length<br>(m)"],
           ["grossArea", "Gross wall area<br>(sq.m.)"], ["openingArea", "Opening deductions<br>(sq.m.)"],
           ["netArea", "Net wall area<br>(sq.m.)"], ["chb4", '4&quot; interior CHB<br>(pcs)'],
-          ["chb6", '6&quot; exterior CHB<br>(pcs)']
+          ["chb6", '6&quot; exterior CHB<br>(pcs)'],
+          ["verticalRebarLength", "D10 vertical wall rebar<br>(6 m pcs @ 0.60 m)"],
+          ["horizontalRebarLength", "D10 horizontal wall rebar<br>(6 m pcs @ 0.60 m)"]
         ];
-        const value = (quantity, key) => key === "wallCount" || key === "chb4" || key === "chb6"
-          ? Math.ceil(Number(quantity?.[key]) || 0)
-          : (Number(quantity?.[key]) || 0).toFixed(2);
+        const value = (quantity, key) => {
+          if (key === "wallCount" || key === "chb4" || key === "chb6") return Math.ceil(Number(quantity?.[key]) || 0);
+          if (key === "verticalRebarLength" || key === "horizontalRebarLength") {
+            return Math.ceil((Number(quantity?.[key]) || 0) * STRUCTURAL_ESTIMATE_FACTORS.rebarAllowance / STRUCTURAL_ESTIMATE_FACTORS.commercialBarLength);
+          }
+          return (Number(quantity?.[key]) || 0).toFixed(2);
+        };
         const header = `<tr><th>Level</th>${columns.map(([, label]) => `<th>${label}</th>`).join("")}</tr>`;
         const entries = Array.from(category.levels.entries()).sort((a, b) => structuralEstimateLevelOrder(a[0]) - structuralEstimateLevelOrder(b[0]) || a[0].localeCompare(b[0], undefined, {numeric: true}));
         const body = entries.length
@@ -65083,13 +65096,14 @@
         const total = entries.length
           ? `<tr class="structural-estimate-total"><td>TOTAL — WALLS</td>${columns.map(([key]) => `<td>${value(category.total, key)}</td>`).join("")}</tr>`
           : "";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">WALLS — BY LEVEL</h4><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted, and CHB quantities include a 5% allowance at 12.5 blocks per square metre. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></section>`;
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">WALLS — BY LEVEL</h4><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted from CHB, which includes a 5% allowance at 12.5 blocks per square metre. D10 wall bars are estimated vertically and horizontally at 0.60 m spacing using gross wall geometry, with 10% cutting/lap allowance, then rounded to 6 m commercial lengths. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></section>`;
       }
 
       function structuralEstimateOverallMarkup(estimates) {
-        const categoryKeys = ["beams", "columns", "slabs", "footings", "wallFootings"];
+        const structuralCategoryKeys = ["beams", "columns", "slabs", "footings", "wallFootings"];
+        const categoryKeys = ["beams", "columns", "slabs", "footings", "walls", "wallFootings"];
         const grandTotal = createStructuralEstimateQuantity();
-        categoryKeys.forEach(key => mergeStructuralEstimateQuantity(grandTotal, estimates[key].total));
+        structuralCategoryKeys.forEach(key => mergeStructuralEstimateQuantity(grandTotal, estimates[key].total));
         const diameters = Array.from(grandTotal.rebars.keys()).sort((a, b) => a - b);
         ensureStructuralEstimatePricing();
         const allRows = [
@@ -65097,15 +65111,31 @@
           ["Sand", "cu.m.", "sand"], ["Gravel", "cu.m.", "gravel"],
           ["Water", "cu.m.", "water"], ["Formwork", "sq.m.", "formwork"],
           ["Tie wire", "kg", "tieWire"],
-          ...diameters.map(diameter => [`D${diameter} rebar`, "6 m pcs", `D${diameter}`])
+          ...diameters.map(diameter => [`D${diameter} rebar`, "6 m pcs", `D${diameter}`]),
+          ['4" CHB — interior walls', "pcs", "chb4"],
+          ['6" CHB — exterior walls', "pcs", "chb6"],
+          ["D10 CHB wall rebar @ 0.60 m vertical & horizontal", "6 m pcs", "wallRebarD10"]
         ];
         const siteMixKeys = new Set(["cement", "sand", "gravel", "water"]);
         const rows = allRows.filter(([, , key]) => structuralEstimatePricingState.concreteMode === "ready"
           ? !siteMixKeys.has(key)
           : key !== "concrete");
-        const quantityValue = (quantity, key) => key === "water"
+        const wallKeys = new Set(["chb4", "chb6", "wallRebarD10"]);
+        const wallQuantityValue = key => {
+          if (key === "chb4" || key === "chb6") return Math.ceil(Number(estimates.walls.total[key]) || 0);
+          if (key === "wallRebarD10") {
+            const totalLength = (Number(estimates.walls.total.verticalRebarLength) || 0) + (Number(estimates.walls.total.horizontalRebarLength) || 0);
+            return Math.ceil(totalLength * STRUCTURAL_ESTIMATE_FACTORS.rebarAllowance / STRUCTURAL_ESTIMATE_FACTORS.commercialBarLength);
+          }
+          return 0;
+        };
+        const structuralQuantityValue = (quantity, key) => key === "water"
           ? ((Number(quantity.water) || 0) / 1000).toFixed(3)
           : structuralEstimateValue(quantity, key);
+        const categoryQuantityValue = (categoryKey, key) => {
+          if (categoryKey === "walls") return wallKeys.has(key) ? wallQuantityValue(key) : "0";
+          return wallKeys.has(key) ? "0" : structuralQuantityValue(estimates[categoryKey].total, key);
+        };
         const currencySymbol = structuralEstimateCurrencySymbol();
         const currencyOptions = Object.entries(STRUCTURAL_ESTIMATE_CURRENCIES).map(([code, detail]) => `<option value="${code}"${code === structuralEstimatePricingState.currency ? " selected" : ""}>${code} — ${escapeHtml(detail.label)}</option>`).join("");
         const pricingControls = `<div class="structural-estimate-pricing-controls" aria-label="Concrete supply and currency"><div><span class="structural-estimate-control-label">Concrete supply</span><div class="structural-estimate-mix-options"><label><input type="checkbox" data-estimate-concrete-mode="site"${structuralEstimatePricingState.concreteMode === "site" ? " checked" : ""}>Site Mixing</label><label><input type="checkbox" data-estimate-concrete-mode="ready"${structuralEstimatePricingState.concreteMode === "ready" ? " checked" : ""}>Ready Mixed Concrete</label></div></div><label>Currency<select id="structuralEstimateCurrency">${currencyOptions}</select></label></div>`;
@@ -65114,13 +65144,14 @@
             const defaults = structuralEstimatePresetPrices(structuralEstimatePricingState.preset);
             structuralEstimatePricingState.prices[key] = Number(defaults[key]) || 0;
           }
-          const quantity = Number(quantityValue(grandTotal, key)) || 0;
+          const overallDisplay = wallKeys.has(key) ? wallQuantityValue(key) : structuralQuantityValue(grandTotal, key);
+          const quantity = Number(overallDisplay) || 0;
           const unitPrice = Number(structuralEstimatePricingState.prices[key]) || 0;
-          return `<tr data-estimate-price-row data-price-key="${key}" data-quantity="${quantity}"><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${quantityValue(estimates[categoryKey].total, key)}</td>`).join("")}<td><strong>${quantityValue(grandTotal, key)}</strong></td><td><span class="structural-estimate-price-editor"><span aria-hidden="true">${escapeHtml(currencySymbol)}</span><input class="structural-estimate-price-input" data-estimate-unit-price type="number" min="0" step="0.01" inputmode="decimal" value="${unitPrice.toFixed(2)}" aria-label="${escapeHtml(material)} unit price in ${escapeHtml(structuralEstimatePricingState.currency)}"></span></td><td data-estimate-item-cost>${structuralEstimateMoney(quantity * unitPrice)}</td></tr>`;
+          return `<tr data-estimate-price-row data-price-key="${key}" data-quantity="${quantity}"><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${categoryQuantityValue(categoryKey, key)}</td>`).join("")}<td><strong>${overallDisplay}</strong></td><td><span class="structural-estimate-price-editor"><span aria-hidden="true">${escapeHtml(currencySymbol)}</span><input class="structural-estimate-price-input" data-estimate-unit-price type="number" min="0" step="0.01" inputmode="decimal" value="${unitPrice.toFixed(2)}" aria-label="${escapeHtml(material)} unit price in ${escapeHtml(structuralEstimatePricingState.currency)}"></span></td><td data-estimate-item-cost>${structuralEstimateMoney(quantity * unitPrice)}</td></tr>`;
         }).join("");
         saveStructuralEstimatePricing();
         const totalLabel = structuralEstimatePricingState.concreteMode === "ready" ? "READY-MIX CONCRETE TOTAL" : "SITE-MIX CONCRETE TOTAL";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Ready Mixed Concrete uses the concrete volume row instead, preventing double counting. Edit every unit price as required.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Ready Mixed Concrete uses the concrete volume row instead, preventing double counting. Edit every unit price as required. CHB prices start at zero until a local supplier price is entered; D10 wall rebar uses the selected location's D10 rebar reference price.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
       }
 
       function refreshStructuralEstimateCosts() {
