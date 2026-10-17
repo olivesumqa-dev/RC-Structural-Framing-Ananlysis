@@ -64703,7 +64703,15 @@
         chbPiecesPerSquareMeter: 12.5,
         chbAllowance: 1.05,
         chbRebarDiameter: 10,
-        chbRebarSpacing: 0.60
+        chbRebarSpacing: 0.60,
+        chbLayingMortarWetVolumePerSquareMeter: 0.012,
+        chbFinishThicknessPerFace: 0.012,
+        chbFinishFaces: 2,
+        mortarDryVolumeFactor: 1.33,
+        mortarMaterialAllowance: 1.10,
+        mortarCementPart: 1,
+        mortarSandParts: 3,
+        cementBagVolume: 0.0278
       });
 
       const STRUCTURAL_ESTIMATE_CURRENCIES = Object.freeze({
@@ -64772,6 +64780,8 @@
           prices[`D${diameter}`] = structuralEstimateRebarPrice(diameter, preset.prices.rebarKg) / divisor;
         });
         prices.wallRebarD10 = prices.D10;
+        prices.wallCement = prices.cement;
+        prices.wallSand = prices.sand;
         return prices;
       }
 
@@ -64810,11 +64820,11 @@
       }
 
       function createWallEstimateQuantity() {
-        return {wallCount: 0, length: 0, grossArea: 0, openingArea: 0, netArea: 0, chb4: 0, chb6: 0, verticalRebarLength: 0, horizontalRebarLength: 0};
+        return {wallCount: 0, length: 0, grossArea: 0, openingArea: 0, netArea: 0, chb4: 0, chb6: 0, verticalRebarLength: 0, horizontalRebarLength: 0, layingMortarVolume: 0, finishArea: 0, finishMortarVolume: 0, mortarFinishCementBags: 0, mortarFinishSand: 0};
       }
 
       function mergeWallEstimateQuantity(target, source) {
-        ["wallCount", "length", "grossArea", "openingArea", "netArea", "chb4", "chb6", "verticalRebarLength", "horizontalRebarLength"].forEach(key => {
+        ["wallCount", "length", "grossArea", "openingArea", "netArea", "chb4", "chb6", "verticalRebarLength", "horizontalRebarLength", "layingMortarVolume", "finishArea", "finishMortarVolume", "mortarFinishCementBags", "mortarFinishSand"].forEach(key => {
           target[key] += Number(source?.[key]) || 0;
         });
         return target;
@@ -64991,6 +65001,14 @@
             const chbQuantity = netArea * STRUCTURAL_ESTIMATE_FACTORS.chbPiecesPerSquareMeter * STRUCTURAL_ESTIMATE_FACTORS.chbAllowance;
             const verticalBarCount = Math.ceil(length / STRUCTURAL_ESTIMATE_FACTORS.chbRebarSpacing) + 1;
             const horizontalBarCount = Math.ceil(height / STRUCTURAL_ESTIMATE_FACTORS.chbRebarSpacing) + 1;
+            const layingMortarVolume = netArea * STRUCTURAL_ESTIMATE_FACTORS.chbLayingMortarWetVolumePerSquareMeter;
+            const finishArea = netArea * STRUCTURAL_ESTIMATE_FACTORS.chbFinishFaces;
+            const finishMortarVolume = finishArea * STRUCTURAL_ESTIMATE_FACTORS.chbFinishThicknessPerFace;
+            const totalWetMortarVolume = layingMortarVolume + finishMortarVolume;
+            const totalDryMortarVolume = totalWetMortarVolume * STRUCTURAL_ESTIMATE_FACTORS.mortarDryVolumeFactor * STRUCTURAL_ESTIMATE_FACTORS.mortarMaterialAllowance;
+            const totalMortarParts = STRUCTURAL_ESTIMATE_FACTORS.mortarCementPart + STRUCTURAL_ESTIMATE_FACTORS.mortarSandParts;
+            const cementVolume = totalDryMortarVolume * STRUCTURAL_ESTIMATE_FACTORS.mortarCementPart / totalMortarParts;
+            const sandVolume = totalDryMortarVolume * STRUCTURAL_ESTIMATE_FACTORS.mortarSandParts / totalMortarParts;
             quantity.wallCount += 1;
             quantity.length += length;
             quantity.grossArea += grossArea;
@@ -64998,6 +65016,11 @@
             quantity.netArea += netArea;
             quantity.verticalRebarLength += verticalBarCount * height;
             quantity.horizontalRebarLength += horizontalBarCount * length;
+            quantity.layingMortarVolume += layingMortarVolume;
+            quantity.finishArea += finishArea;
+            quantity.finishMortarVolume += finishMortarVolume;
+            quantity.mortarFinishCementBags += cementVolume / STRUCTURAL_ESTIMATE_FACTORS.cementBagVolume;
+            quantity.mortarFinishSand += sandVolume;
             if (wallIsOnExteriorFootprint(wall, planData)) quantity.chb6 += chbQuantity;
             else quantity.chb4 += chbQuantity;
           });
@@ -65079,7 +65102,12 @@
           ["netArea", "Net wall area<br>(sq.m.)"], ["chb4", '4&quot; interior CHB<br>(pcs)'],
           ["chb6", '6&quot; exterior CHB<br>(pcs)'],
           ["verticalRebarLength", "D10 vertical wall rebar<br>(6 m pcs @ 0.60 m)"],
-          ["horizontalRebarLength", "D10 horizontal wall rebar<br>(6 m pcs @ 0.60 m)"]
+          ["horizontalRebarLength", "D10 horizontal wall rebar<br>(6 m pcs @ 0.60 m)"],
+          ["layingMortarVolume", "CHB laying mortar<br>(cu.m.)"],
+          ["finishArea", "Cement finish, 2 faces<br>(sq.m.)"],
+          ["finishMortarVolume", "Cement finish mortar<br>(cu.m.)"],
+          ["mortarFinishCementBags", "Mortar + finish cement<br>(40 kg bags)"],
+          ["mortarFinishSand", "Mortar + finish sand<br>(cu.m.)"]
         ];
         const value = (quantity, key) => {
           if (key === "wallCount" || key === "chb4" || key === "chb6") return Math.ceil(Number(quantity?.[key]) || 0);
@@ -65096,7 +65124,7 @@
         const total = entries.length
           ? `<tr class="structural-estimate-total"><td>TOTAL — WALLS</td>${columns.map(([key]) => `<td>${value(category.total, key)}</td>`).join("")}</tr>`
           : "";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">WALLS — BY LEVEL</h4><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted from CHB, which includes a 5% allowance at 12.5 blocks per square metre. D10 wall bars are estimated vertically and horizontally at 0.60 m spacing using gross wall geometry, with 10% cutting/lap allowance, then rounded to 6 m commercial lengths. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></section>`;
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">WALLS — BY LEVEL</h4><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted from CHB, which includes a 5% allowance at 12.5 blocks per square metre. D10 wall bars are estimated vertically and horizontally at 0.60 m spacing using gross wall geometry, with 10% cutting/lap allowance, then rounded to 6 m commercial lengths. CHB laying mortar uses 0.012 cu.m./sq.m.; cement finish uses 12 mm on both faces. Mortar materials use a 1:3 cement-sand mix, 1.33 dry-volume factor, and 10% material allowance. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></section>`;
       }
 
       function structuralEstimateOverallMarkup(estimates) {
@@ -65114,19 +65142,23 @@
           ...diameters.map(diameter => [`D${diameter} rebar`, "6 m pcs", `D${diameter}`]),
           ['4" CHB — interior walls', "pcs", "chb4"],
           ['6" CHB — exterior walls', "pcs", "chb6"],
-          ["D10 CHB wall rebar @ 0.60 m vertical & horizontal", "6 m pcs", "wallRebarD10"]
+          ["D10 CHB wall rebar @ 0.60 m vertical & horizontal", "6 m pcs", "wallRebarD10"],
+          ["CHB mortar + cement finish cement", "40 kg bags", "wallCement"],
+          ["CHB mortar + cement finish sand", "cu.m.", "wallSand"]
         ];
         const siteMixKeys = new Set(["cement", "sand", "gravel", "water"]);
         const rows = allRows.filter(([, , key]) => structuralEstimatePricingState.concreteMode === "ready"
           ? !siteMixKeys.has(key)
           : key !== "concrete");
-        const wallKeys = new Set(["chb4", "chb6", "wallRebarD10"]);
+        const wallKeys = new Set(["chb4", "chb6", "wallRebarD10", "wallCement", "wallSand"]);
         const wallQuantityValue = key => {
           if (key === "chb4" || key === "chb6") return Math.ceil(Number(estimates.walls.total[key]) || 0);
           if (key === "wallRebarD10") {
             const totalLength = (Number(estimates.walls.total.verticalRebarLength) || 0) + (Number(estimates.walls.total.horizontalRebarLength) || 0);
             return Math.ceil(totalLength * STRUCTURAL_ESTIMATE_FACTORS.rebarAllowance / STRUCTURAL_ESTIMATE_FACTORS.commercialBarLength);
           }
+          if (key === "wallCement") return Math.ceil(Number(estimates.walls.total.mortarFinishCementBags) || 0);
+          if (key === "wallSand") return (Number(estimates.walls.total.mortarFinishSand) || 0).toFixed(3);
           return 0;
         };
         const structuralQuantityValue = (quantity, key) => key === "water"
