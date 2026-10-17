@@ -25,7 +25,12 @@ const checks = [
   ["WF table before estimates", /id="wallFootingResultsSection"[\s\S]*?id="structuralEstimatesSection"/],
   ["WF separate estimate category", /wallFootings:\s*\{label:\s*"WALL FOOTINGS"[\s\S]*?structuralEstimateLevelBucket\(estimates\.wallFootings, "FOUNDATION"\)/],
   ["WF included in overall estimate", /categoryKeys\s*=\s*\["beams", "columns", "slabs", "footings", "wallFootings"\]/],
-  ["WF print controls", /wallFootingResultsPrintBtn[\s\S]*?wallFootingResultsPrintPdfBtn/]
+  ["WF print controls", /wallFootingResultsPrintBtn[\s\S]*?wallFootingResultsPrintPdfBtn/],
+  ["wall estimate category", /walls:\s*\{label:\s*"WALLS"[\s\S]*?function wallEstimateTableMarkup/],
+  ["wall exterior perimeter classification", /function wallIsOnExteriorFootprint[\s\S]*?bothNear\(startX, endX, totalX\)[\s\S]*?bothNear\(startY, endY, totalY\)/],
+  ["wall openings deducted", /const openingArea = Math\.min\(grossArea[\s\S]*?const netArea = Math\.max\(0, grossArea - openingArea\)/],
+  ["CHB sizes and allowance", /4&quot; interior CHB[\s\S]*?6&quot; exterior CHB[\s\S]*?5% allowance at 12\.5 blocks per square metre/],
+  ["walls table before wall footings estimate", /wallEstimateTableMarkup\(estimates\.walls\) \+ structuralEstimateTableMarkup\(estimates\.wallFootings\)/]
 ];
 
 const failures = checks.filter(([, expression]) => !expression.test(source)).map(([label]) => label);
