@@ -51834,6 +51834,7 @@
         const transform = fitDrawingTransform(canvas, {minX: 0, maxX: totalX, minY: 0, maxY: totalY});
         ctx.save();
         ctx.translate(planView.pan.x, planView.pan.y);
+        ctx.scale(planView.zoom, planView.zoom);
         const left = transform.x(0);
         const top = transform.y(totalY);
         const width = transform.x(totalX) - left;
@@ -51843,8 +51844,6 @@
           || cadImportState.sources.find(item => item.role === "LEVEL-1")
           || cadImportState.sources.find(item => item.role === "FOUNDATION")
           || cadImportState;
-        ctx.fillStyle = canvasTheme("--surface", "#ffffff");
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = canvasTheme("--muted", "#64748b");
         ctx.font = `300 ${scaledDrawingTextSize(18, 8)}px ${DRAWING_FONT_FAMILY}`;
         ctx.textAlign = "center";
@@ -51884,6 +51883,7 @@
 
         ctx.save();
         ctx.translate(planView.pan.x, planView.pan.y);
+        ctx.scale(planView.zoom, planView.zoom);
         drawingGridBubbleBoxes = [];
         auxiliaryLabelBoxes = [];
         planSlabLabelTargets = [];
@@ -51893,9 +51893,9 @@
         const totalY = data.yPos[data.yPos.length - 1] || 1;
         const baseTransform = fitDrawingTransform(canvas, {minX: 0, maxX: totalX, minY: 0, maxY: totalY});
         const t = {
-          scale: baseTransform.scale * planView.zoom,
-          x: value => baseTransform.x(value) * planView.zoom,
-          y: value => baseTransform.y(value) * planView.zoom
+          scale: baseTransform.scale,
+          x: value => baseTransform.x(value),
+          y: value => baseTransform.y(value)
         };
         const point = (x, y) => ({x: t.x(x), y: t.y(y)});
         const selectedY = byId("planXFrameLine")?.value || "2";
@@ -51913,9 +51913,6 @@
         const leftBubbleX = overallLeftDimX - 42;
         const planMode = byId("planUnifiedModeLabel");
         if (planMode) planMode.textContent = `Mode: ${planModeLabel()} / Zoom: ${Math.round(planView.zoom * 100)}%`;
-
-        ctx.fillStyle = canvasTheme("--surface", "#fff");
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         drawBuildingGrid(ctx, data, point);
 
@@ -52460,16 +52457,26 @@
         const minV = Math.min(...boundsPoints.map(point => point.v));
         const maxV = Math.max(...boundsPoints.map(point => point.v));
         const baseScale = Math.min((canvas.width - 250) / Math.max(1, maxU - minU), (canvas.height - 180) / Math.max(1, maxV - minV));
-        const scale = baseScale * Math.max(0.35, Math.min(3.5, Number(isometricView.zoom) || 1));
+        const isoZoom = Math.max(0.35, Math.min(3.5, Number(isometricView.zoom) || 1));
+        const scale = baseScale;
         const offsetX = (canvas.width - (maxU - minU) * scale) / 2 - minU * scale;
         const offsetY = (canvas.height - (maxV - minV) * scale) / 2 - minV * scale + 12;
         const point = (x, y, z) => {
           const raw = isoRaw(x, y, z);
           return {
-            x: offsetX + raw.u * scale + (Number(isometricView.pan?.x) || 0),
-            y: offsetY + raw.v * scale + (Number(isometricView.pan?.y) || 0)
+            x: offsetX + raw.u * scale,
+            y: offsetY + raw.v * scale
           };
         };
+        // Apply one paper-space transform to the complete ISO drawing so
+        // members and every annotation retain the same plotted proportions.
+        ctx.save();
+        ctx.translate(
+          canvas.width / 2 + (Number(isometricView.pan?.x) || 0),
+          canvas.height / 2 + (Number(isometricView.pan?.y) || 0)
+        );
+        ctx.scale(isoZoom, isoZoom);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
         const stroke3d = (a, b, color, width = 1, dash = []) => {
           const p1 = point(a.x, a.y, a.z);
           const p2 = point(b.x, b.y, b.z);
@@ -52762,6 +52769,7 @@
         isoHeaderX += ctx.measureText(xFrameTitle).width + 18;
         ctx.fillStyle = "#00d43b";
         ctx.fillText(`Y-AXIS FRAME @ GRID ${selectedX}`, isoHeaderX, 38);
+        ctx.restore();
         ctx.restore();
         const isoModeLabel = byId("planUnifiedModeLabel");
         if (isoModeLabel && planState.activeView === "ISO") {
@@ -55378,9 +55386,10 @@
       }
 
       function slabLabelAt(canvasPoint, data = makePlanData()) {
+        const zoom = Math.max(0.01, Number(planView.zoom) || 1);
         const local = {
-          x: canvasPoint.x - planView.pan.x,
-          y: canvasPoint.y - planView.pan.y
+          x: (canvasPoint.x - planView.pan.x) / zoom,
+          y: (canvasPoint.y - planView.pan.y) / zoom
         };
         const padding = 4;
         const targets = planSlabLabelTargets.filter(item => {
@@ -55407,9 +55416,10 @@
       }
 
       function planNameLabelAt(canvasPoint) {
+        const zoom = Math.max(0.01, Number(planView.zoom) || 1);
         const local = {
-          x: canvasPoint.x - planView.pan.x,
-          y: canvasPoint.y - planView.pan.y
+          x: (canvasPoint.x - planView.pan.x) / zoom,
+          y: (canvasPoint.y - planView.pan.y) / zoom
         };
         const inset = 6;
         const targets = planNameLabelTargets.filter(item => {
@@ -56714,7 +56724,7 @@
         let displayLabel = String(label || "w = 0.0 kN/m");
 
         ctx.save();
-        ctx.font = "700 9px Arial";
+        ctx.font = `300 ${scaledDrawingTextSize(9)}px ${DRAWING_FONT_FAMILY}`;
         if (ctx.measureText(displayLabel).width > availableLabelWidth && wallOnly) displayLabel = wallOnly;
         if (ctx.measureText(displayLabel).width > availableLabelWidth) displayLabel = "LOAD";
         ctx.strokeStyle = color;
@@ -57147,6 +57157,7 @@
 
         ctx.save();
         ctx.translate(yAxisView.pan.x, yAxisView.pan.y);
+        ctx.scale(yAxisView.zoom, yAxisView.zoom);
         drawingGridBubbleBoxes = [];
         auxiliaryLabelBoxes = [];
         yFrameNameLabelTargets = [];
@@ -57159,9 +57170,9 @@
         const maxLevel = levelY[levelY.length - 1] || 1;
         const baseTransform = fitDrawingTransform(canvas, {minX: 0, maxX: totalY, minY: 0, maxY: maxLevel});
         const t = {
-          scale: baseTransform.scale * yAxisView.zoom,
-          x: value => baseTransform.x(value) * yAxisView.zoom,
-          y: value => baseTransform.y(value) * yAxisView.zoom
+          scale: baseTransform.scale,
+          x: value => baseTransform.x(value),
+          y: value => baseTransform.y(value)
         };
         const xForGridIndex = index => t.x(totalY - data.yPos[index]);
         const yForLevel = index => t.y(levelY[index]);
@@ -57173,9 +57184,6 @@
         const leftDimX = t.x(0) - 71;
         const overallTopDimY = topDimY - 28;
         const topBubbleY = overallTopDimY - 42;
-
-        ctx.fillStyle = canvasTheme("--surface", "#fff");
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         data.yLabels.forEach((label, index) => {
           const x = xForGridIndex(index);
@@ -57538,9 +57546,10 @@
       }
 
       function yFrameMemberNameAt(canvasPoint) {
+        const zoom = Math.max(0.01, Number(yAxisView.zoom) || 1);
         const local = {
-          x: canvasPoint.x - yAxisView.pan.x,
-          y: canvasPoint.y - yAxisView.pan.y
+          x: (canvasPoint.x - yAxisView.pan.x) / zoom,
+          y: (canvasPoint.y - yAxisView.pan.y) / zoom
         };
         const hit = yFrameNameLabelTargets.slice().reverse().find(target =>
           local.x >= target.box.x && local.x <= target.box.x + target.box.w &&
@@ -57675,7 +57684,7 @@
         };
         return renderedLoadTargets.Y.slice().reverse().find(target => {
           if (target.polygon) return pointInPolygon(local, target.polygon);
-          return Math.hypot(local.x - target.x, local.y - target.y) <= (target.radius || 18) / yAxisView.zoom;
+          return Math.hypot(local.x - target.x, local.y - target.y) <= (target.radius || 18);
         }) || null;
       }
 

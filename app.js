@@ -642,12 +642,11 @@ function loadAnnotationColor() {
 }
 
 function viewScale() {
-  // Canvas coordinates already include the model zoom.  Annotation geometry
-  // (text, arrow heads, dimensions, nodes and line weights) must remain in
-  // screen pixels, as it does in a CAD drawing.  Letting these values follow
-  // `zoom` made labels and point-load arrows grow/shrink and forced the
-  // collision solver to move them on every redraw.
-  return 1;
+  // Treat the frame as one printed drawing sheet. Model geometry, text,
+  // dimensions, arrow heads, nodes, load symbols and line weights must all
+  // follow the same zoom so their proportions and relative positions remain
+  // unchanged while the sheet is enlarged or reduced.
+  return Math.max(0.01, Number(zoom) || 1);
 }
 
 function scaled(value) {
@@ -1284,7 +1283,7 @@ function drawNodes() {
     ctx.fillStyle = isSelected ? "#f59e0b" : (isNight ? "#000" : "#fff");
     ctx.fill();
     ctx.strokeStyle = isNight ? "#fff" : annotationColor();
-    ctx.lineWidth = Math.max(0.9, scaled(1.35));
+    ctx.lineWidth = Math.max(0.1, scaled(1.35));
     ctx.stroke();
 
     ctx.fillStyle = isNight && !isSelected ? "#fff" : annotationColor();
@@ -1410,7 +1409,7 @@ function arrow(x1, y1, x2, y2, color, head=8, width=2) {
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
   const headSize = scaled(head * 1.25);
-  ctx.lineWidth = Math.max(0.6, scaled(width * 0.5));
+  ctx.lineWidth = Math.max(0.1, scaled(width * 0.5));
   ctx.beginPath();
   ctx.moveTo(x1,y1);
   ctx.lineTo(x2,y2);
@@ -1429,7 +1428,7 @@ function openArrowHead(x, y, angle, color, head=8, width=2) {
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
   const headSize = scaled(head * 1.25);
-  ctx.lineWidth = Math.max(0.6, scaled(width * 0.5));
+  ctx.lineWidth = Math.max(0.1, scaled(width * 0.5));
   ctx.beginPath();
   ctx.moveTo(x, y);
   ctx.lineTo(x - headSize * Math.cos(angle - Math.PI / 6), y - headSize * Math.sin(angle - Math.PI / 6));
@@ -1448,7 +1447,7 @@ function drawMomentArrow(cx, cy, value, color, widthScale = 1) {
   let last = null;
 
   ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(1, scaled(1 * widthScale));
+  ctx.lineWidth = Math.max(0.1, scaled(1 * widthScale));
   ctx.beginPath();
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
@@ -2620,18 +2619,18 @@ function valueText(value, unit) {
 }
 
 function resultFont(size, family = '"Aptos Light", Aptos, Arial, sans-serif') {
-  return `300 ${Math.max(6, scaled(size) * fontScale).toFixed(1)}px ${family}`;
+  return `300 ${Math.max(1, scaled(size) * fontScale).toFixed(1)}px ${family}`;
 }
 
 function resultMeasureBox(text, x, y) {
   const metrics = rctx.measureText(text);
-  const height = Math.max(10, scaled(12) * fontScale);
+  const height = Math.max(1, scaled(12) * fontScale);
   const pad = scaled(3);
   return {x: x - metrics.width / 2 - pad, y: y - height / 2 - pad, w: metrics.width + pad * 2, h: height + pad * 2};
 }
 
 function findResultLabelPoint(text, x, y, nx, ny) {
-  const gap = Math.max(10, scaled(12) * fontScale);
+  const gap = Math.max(1, scaled(12) * fontScale);
   const candidates = [
     {x: x + nx * gap, y: y + ny * gap},
     {x: x - nx * gap, y: y - ny * gap},
@@ -2709,7 +2708,7 @@ function drawResultDiagramOnMember(m, kind, globalMax) {
   rctx.lineTo(p1.x, p1.y);
   const color = kind === "shear" ? "#018A61" : "#FF961F";
   rctx.strokeStyle = color;
-  rctx.lineWidth = Math.max(0.8, scaled(kind === "shear" ? 1.2 : 1.4));
+  rctx.lineWidth = Math.max(0.1, scaled(kind === "shear" ? 1.2 : 1.4));
   rctx.setLineDash(kind === "shear" ? [] : [scaled(8), scaled(5)]);
   rctx.stroke();
   rctx.setLineDash([]);
