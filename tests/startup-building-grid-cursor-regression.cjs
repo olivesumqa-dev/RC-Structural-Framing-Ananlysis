@@ -11,13 +11,18 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, "assets", "persisten
 const sample = JSON.parse(fs.readFileSync(path.join(root, "JSON", "2-STOREY SAMPLE.stf"), "utf8"));
 
 assert.strictEqual(manifest.defaultProject, "2-STOREY SAMPLE");
-assert.strictEqual(manifest.id, "2026-10-20-two-storey-sample-startup-v3");
+assert.strictEqual(manifest.id, "2026-10-20-two-storey-res-bldg-startup-v4");
 assert.strictEqual(manifest.projects[0].source, "JSON/2-STOREY SAMPLE.stf");
 assert(sample.model && sample.structuralProject?.workspace, "The startup STF must contain both frame and structural workspace data");
 assert.strictEqual(sample.structuralProject.workspace.planActiveView, "ISO", "The uploaded startup STF must open in its saved 3D ISO view");
+assert.strictEqual(sample.structuralProject.workspace.isometricView?.projection, "perspective", "The startup view must retain the template's perspective projection");
+assert.strictEqual(sample.structuralProject.workspace.isometricView?.tilt, 38, "The startup view must retain the template's 38-degree tilt");
+assert.strictEqual(sample.structuralProject.workspace.isometricView?.cameraHeight, 20, "The startup view must retain the template's 20 m camera height");
+assert(Math.abs(sample.structuralProject.workspace.isometricView?.rotation - (-2.4633527426555055)) < 1e-12, "The startup view must retain the template's saved rotation");
+assert.strictEqual(sample.structuralProject.workspace.controls?.planLevels?.value, "Level-1,Level-2,Level-3", "The startup project must retain all three template levels");
 assert.strictEqual(sample.strucForgeTemplateLibrary?.userTemplates?.[0]?.name, "2-STOREY RES.BLDG", "The bundled startup STF must contain its current template");
 assert(/^data:image\/jpeg;base64,/.test(sample.strucForgeTemplateLibrary?.userTemplates?.[0]?.thumbnail || ""), "The current template must include its updated thumbnail");
-assert(app.includes('persistence-manifest.json?v=20261020a'), "The refreshed bundled project manifest must bypass stale browser caches");
+assert(app.includes('persistence-manifest.json?v=20261020b'), "The refreshed bundled project manifest must bypass stale browser caches");
 assert(app.includes('loadProjectPackage(data, "2-STOREY SAMPLE.stf"'), "Embedded fallback must use the new sample name");
 assert(html.indexOf('id="modeNode"') < html.indexOf('id="modeColumn"'), "Create Node must appear before Create Column");
 assert(!html.includes('id="modeWall"'), "The sidebar Structural Wall Tool entry must be removed");

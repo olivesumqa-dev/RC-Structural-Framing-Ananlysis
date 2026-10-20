@@ -23,6 +23,9 @@ assert.strictEqual(embeddedProject.project?.title, "Frame Analysis", "The suppli
 assert(embeddedProject.structuralProject?.workspace, "The default project must include the coordinated structural workspace");
 assert.strictEqual(embeddedProject.model?.h?.length, 4, "The startup project must contain the supplied sample's vertical model");
 assert.strictEqual(embeddedProject.structuralProject?.workspace?.planActiveView, "ISO", "The startup project must preserve the uploaded sample's active 3D ISO view");
+assert.strictEqual(embeddedProject.structuralProject?.workspace?.isometricView?.projection, "perspective", "The embedded startup project must preserve the current template's perspective view");
+assert.strictEqual(embeddedProject.structuralProject?.workspace?.isometricView?.tilt, 38, "The embedded startup project must preserve the current template's tilt");
+assert.strictEqual(embeddedProject.structuralProject?.workspace?.isometricView?.cameraHeight, 20, "The embedded startup project must preserve the current template's camera height");
 assert.strictEqual(embeddedProject.strucForgeTemplateLibrary?.userTemplates?.[0]?.name, "2-STOREY RES.BLDG", "The embedded startup project must include the uploaded current template");
 assert(/^data:image\/jpeg;base64,/.test(embeddedProject.strucForgeTemplateLibrary?.userTemplates?.[0]?.thumbnail || ""), "The embedded current template must include its updated thumbnail");
 assert(app.includes('loadProjectPackage(data, "2-STOREY SAMPLE.stf"') && app.includes('recordName.value = "2-STOREY SAMPLE"'), "Startup must identify the supplied package as 2-STOREY SAMPLE");
