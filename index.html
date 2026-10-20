@@ -2876,6 +2876,7 @@
                 <button id="isoResetViewBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Reset 3D Isometric View" aria-label="Reset 3D Isometric View"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6M4 5v6h6"></path></svg></button>
                 <button id="isoPanModeBtn" class="drawing-tool-btn iso-only-tool is-active" type="button" title="Pan 3D View" aria-label="Pan 3D View" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"></path><path d="m12 3-3 3m3-3 3 3m6 6-3-3m3 3-3 3m-6 6-3-3m3 3 3-3M3 12l3-3m-3 3 3 3"></path></svg></button>
                 <button id="isoRotateModeBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Rotate 3D Around Z-Axis" aria-label="Rotate 3D Around Z-Axis" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8a8 8 0 1 1-1 8"></path><path d="M5 3v5h5"></path><path d="M12 8v8M9 10h6"></path></svg></button>
+                <button id="isoProjectionBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Switch to Perspective View" aria-label="Switch to Perspective View" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6l8-3 8 3-2 14H6L4 6Z"></path><path d="M8 8l4-2 4 2-1 8H9L8 8Z"></path></svg></button>
                 <button id="isoFramesOnlyBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Show only X &amp; Y Axis Frames" aria-label="Show only X and Y Axis Frames" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V5h8v15M13 20V3h8v17M3 12h8M13 9h8"></path><path d="M8 5h8M8 20h8" stroke-dasharray="2 2"></path></svg></button>
                 <label class="iso-only-tool iso-tilt-control" for="isoTiltInput" title="Set the 3D isometric tilt angle">Tilt° <input id="isoTiltInput" type="number" min="10" max="60" step="1" value="30" inputmode="numeric" aria-label="3D isometric tilt angle in degrees"></label>
                 <button id="planRenameToolBtn" class="drawing-tool-btn" type="button" title="Edit Member Name" aria-label="Edit Member Name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10.9-10.9a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"></path><path d="m14.8 6.4 2.8 2.8"></path></svg></button>
@@ -46545,6 +46546,7 @@
         pan: {x: 0, y: 0},
         mode: "pan",
         frameOnly: false,
+        projection: "isometric",
         dragging: false,
         dragMode: "pan",
         start: null,
@@ -46712,7 +46714,8 @@
           slabDesignOverrides: deepCopy(engineeringState.slabDesignOverrides),
           planView: {zoom: planView.zoom, pan: deepCopy(planView.pan)},
           yView: {zoom: yAxisView.zoom, pan: deepCopy(yAxisView.pan)},
-          isometricView: {zoom: isometricView.zoom, rotation: isometricView.rotation, tilt: isometricView.tilt, pan: deepCopy(isometricView.pan), mode: isometricView.mode, frameOnly: isometricView.frameOnly},
+          isometricView: {zoom: isometricView.zoom, rotation: isometricView.rotation, tilt: isometricView.tilt, pan: deepCopy(isometricView.pan), mode: isometricView.mode, frameOnly: isometricView.frameOnly, projection: isometricView.projection},
+          structuralEstimatePricing: deepCopy(structuralEstimatePricingState),
           xState,
           yState: {
             model: deepCopy(yFrameState.model),
@@ -46812,6 +46815,12 @@
           isometricView.pan = deepCopy(snapshot.isometricView?.pan) || {x: 0, y: 0};
           isometricView.mode = snapshot.isometricView?.mode === "rotate" ? "rotate" : "pan";
           isometricView.frameOnly = Boolean(snapshot.isometricView?.frameOnly);
+          isometricView.projection = snapshot.isometricView?.projection === "perspective" ? "perspective" : "isometric";
+          if (snapshot.structuralEstimatePricing && typeof snapshot.structuralEstimatePricing === "object") {
+            Object.assign(structuralEstimatePricingState, deepCopy(snapshot.structuralEstimatePricing));
+            structuralEstimatePricingState.prices = {...(snapshot.structuralEstimatePricing.prices || {})};
+            structuralEstimatePricingState.categoryPrices = deepCopy(snapshot.structuralEstimatePricing.categoryPrices) || {};
+          }
           if (snapshot.xState?.model) {
             Object.assign(model, deepCopy(snapshot.xState.model));
             zoom = Number(snapshot.xState.zoom) || 0.84;
@@ -46909,6 +46918,7 @@
         isometricView.pan = {x: 0, y: 0};
         isometricView.mode = "pan";
         isometricView.frameOnly = false;
+        isometricView.projection = "isometric";
         try { lastAnalysisResult = null; } catch (error) {}
         workspaceHistory.length = 0;
         updateUndoControls();
@@ -51097,6 +51107,10 @@
         byId("isoFramesOnlyBtn")?.classList.toggle("is-active", Boolean(isometricView.frameOnly));
         byId("isoFramesOnlyBtn")?.setAttribute("aria-pressed", isometricView.frameOnly ? "true" : "false");
         byId("isoFramesOnlyBtn")?.setAttribute("title", isometricView.frameOnly ? "Show regular 3D structural view" : "Show only X & Y Axis Frames");
+        const perspective = isometricView.projection === "perspective";
+        byId("isoProjectionBtn")?.classList.toggle("is-active", perspective);
+        byId("isoProjectionBtn")?.setAttribute("aria-pressed", perspective ? "true" : "false");
+        byId("isoProjectionBtn")?.setAttribute("title", perspective ? "Switch to Isometric View" : "Switch to Perspective View");
         const tiltInput = byId("isoTiltInput");
         if (tiltInput && document.activeElement !== tiltInput) tiltInput.value = String(Math.round(isometricView.tilt));
         byId("isometricCanvas")?.classList.toggle("iso-rotation-active", rotating);
@@ -52419,7 +52433,13 @@
           const dy = displayY - centerY;
           const rotatedX = dx * cosRotation - dy * sinRotation;
           const rotatedY = dx * sinRotation + dy * cosRotation;
-          return {u: (rotatedX - rotatedY) * Math.cos(tiltRadians), v: (rotatedX + rotatedY) * Math.sin(tiltRadians) - z * 1.18};
+          const u = (rotatedX - rotatedY) * Math.cos(tiltRadians);
+          const v = (rotatedX + rotatedY) * Math.sin(tiltRadians) - z * 1.18;
+          if (isometricView.projection !== "perspective") return {u, v};
+          const cameraDistance = Math.max(12, Math.max(totalX, totalY, totalZ) * 2.8);
+          const depth = rotatedX + rotatedY + z * 0.28;
+          const perspectiveScale = Math.max(0.58, Math.min(1.55, cameraDistance / (cameraDistance + depth)));
+          return {u: u * perspectiveScale, v: v * perspectiveScale};
         };
         const isoFootings = Object.entries(planState.footings || {}).map(([key, footing]) => {
           const [xLabel, yLabel] = String(footing?.key || key).split("|");
@@ -52685,7 +52705,7 @@
               x0: start.x - columnWidth / 2, x1: start.x + columnWidth / 2,
               y0: start.y - columnDepth / 2, y1: start.y + columnDepth / 2,
               z0: start.z, z1: end.z
-            }, "rgba(60, 116, 105, 0.88)", columnColor);
+            }, "rgba(28, 138, 86, 0.72)", "#72f2ad");
             label3d(planColumnName(key, storyIndex), start, end, "#00e676", -8, 9);
           }
           if (!planState.footings[key]) {
@@ -52718,7 +52738,7 @@
               const start = {x: data.xPos[a], y: data.yPos[yi], z};
               const end = {x: data.xPos[b], y: data.yPos[yi], z};
               const section = isoBeamDimensions("X", yLabel, group.designGroupId);
-              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - section.width / 2, y1: start.y + section.width / 2, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.9)", beamColor);
+              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - section.width / 2, y1: start.y + section.width / 2, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.42)", beamColor);
               label3d(group.name, start, end, "#ff1744", -7, 9);
             }
           });
@@ -52737,7 +52757,7 @@
               const start = {x: data.xPos[xi], y: data.yPos[a], z};
               const end = {x: data.xPos[xi], y: data.yPos[b], z};
               const section = isoBeamDimensions("Y", xLabel, group.designGroupId);
-              drawIsoSolid({x0: start.x - section.width / 2, x1: start.x + section.width / 2, y0: start.y, y1: end.y, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.9)", beamColor);
+              drawIsoSolid({x0: start.x - section.width / 2, x1: start.x + section.width / 2, y0: start.y, y1: end.y, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.42)", beamColor);
               label3d(group.name, start, end, "#ff1744", 7, 9);
             }
           });
@@ -52754,14 +52774,23 @@
             const memberWidth = Math.max(0.1, (Number(member.width) || numericInput("beamWidth", 300)) / 1000);
             const memberHeight = Math.max(0.15, (Number(member.height) || numericInput("beamHeight", 500)) / 1000);
             if (planMemberAxis(member, data) === "Y") {
-              drawIsoSolid({x0: start.x - memberWidth / 2, x1: start.x + memberWidth / 2, y0: start.y, y1: end.y, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.9)", "#7fc8ff");
+              drawIsoSolid({x0: start.x - memberWidth / 2, x1: start.x + memberWidth / 2, y0: start.y, y1: end.y, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.42)", "#7fc8ff");
             } else {
-              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - memberWidth / 2, y1: start.y + memberWidth / 2, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.9)", "#7fc8ff");
+              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - memberWidth / 2, y1: start.y + memberWidth / 2, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.42)", "#7fc8ff");
             }
             label3d(member.name || member.id || "Beam", start, end, member.type === "Column" ? "#00e676" : "#ff1744", -7, 9);
           });
           if (!frameOnly) slabRegions(levelIndex, data).forEach(region => {
             const centroid = slabRegionCentroid(region, data);
+            if (!region.open) region.cells.forEach(cell => {
+              const override = engineeringState.slabDesignOverrides[cell.key] || {};
+              const thickness = Math.max(0.05, (Number(override.thickness) || numericInput("slabThickness", 150)) / 1000);
+              drawIsoSolid({
+                x0: data.xPos[cell.xIndex], x1: data.xPos[cell.xIndex + 1],
+                y0: data.yPos[cell.yIndex], y1: data.yPos[cell.yIndex + 1],
+                z0: z - thickness, z1: z
+              }, "rgba(163, 120, 113, 0.14)", "rgba(163, 120, 113, 0.42)");
+            });
             const xIndices = region.cells.flatMap(cell => [cell.xIndex, cell.xIndex + 1]);
             const minXIndex = Math.min(...xIndices);
             const maxXIndex = Math.max(...xIndices);
@@ -52826,7 +52855,7 @@
         const isoModeLabel = byId("planUnifiedModeLabel");
         if (isoModeLabel && planState.activeView === "ISO") {
           isoModeLabel.hidden = false;
-          isoModeLabel.textContent = `Mode: ${isometricView.mode === "rotate" ? "Rotate" : "Pan"} / Zoom: ${Math.round(isometricView.zoom * 100)}% / Tilt: ${Math.round(tiltDegrees)}° / Z Rotation: ${Math.round(rotation * 180 / Math.PI)}° / ${data.levels.length} Level${data.levels.length === 1 ? "" : "s"} above Foundation${frameOnly ? " / X-Y Frames Only" : ""}`;
+          isoModeLabel.textContent = `${isometricView.projection === "perspective" ? "Perspective" : "Isometric"} / Mode: ${isometricView.mode === "rotate" ? "Rotate" : "Pan"} / Zoom: ${Math.round(isometricView.zoom * 100)}% / Tilt: ${Math.round(tiltDegrees)}° / Z Rotation: ${Math.round(rotation * 180 / Math.PI)}° / ${data.levels.length} Level${data.levels.length === 1 ? "" : "s"} above Foundation${frameOnly ? " / X-Y Frames Only" : ""}`;
         }
       }
 
@@ -58108,6 +58137,13 @@
             ? "3D ISO now shows only the selected X and Y axis frames. Click the same icon to restore the regular structure view."
             : "Regular 3D ISO structural view restored.");
         });
+        byId("isoProjectionBtn")?.addEventListener("click", () => {
+          if (isDrawingViewLocked("ISO")) return;
+          isometricView.projection = isometricView.projection === "perspective" ? "isometric" : "perspective";
+          updateIsometricInteractionUi();
+          redraw();
+          if (typeof status === "function") status(`${isometricView.projection === "perspective" ? "Perspective" : "Isometric"} 3D view is active. Rotate, pan, zoom, and tilt remain available.`);
+        });
         const tiltInput = byId("isoTiltInput");
         const applyTilt = () => {
           if (isDrawingViewLocked("ISO")) return;
@@ -58132,6 +58168,7 @@
           isometricView.tilt = 30;
           isometricView.pan = {x: 0, y: 0};
           isometricView.mode = "pan";
+          isometricView.projection = "isometric";
           isometricView.dragging = false;
           canvas.classList.remove("is-panning");
           updateIsometricInteractionUi();
@@ -64848,10 +64885,10 @@
       });
 
       const structuralEstimatePricingState = (() => {
-        const fallback = {preset: "dpwh-batangas", location: "Batangas / CALABARZON", currency: "PHP", phpPerCurrency: 1, concreteMode: "site", prices: {}};
+        const fallback = {preset: "dpwh-batangas", location: "Batangas / CALABARZON", currency: "PHP", phpPerCurrency: 1, concreteMode: "site", prices: {}, categoryPrices: {}};
         try {
           const saved = JSON.parse(localStorage.getItem("strucforgeStructuralEstimatePricing") || "null");
-          return saved && typeof saved === "object" ? {...fallback, ...saved, prices: {...(saved.prices || {})}} : fallback;
+          return saved && typeof saved === "object" ? {...fallback, ...saved, prices: {...(saved.prices || {})}, categoryPrices: {...(saved.categoryPrices || {})}} : fallback;
         } catch (_) {
           return fallback;
         }
@@ -64885,6 +64922,7 @@
         if (!Object.keys(structuralEstimatePricingState.prices).length) {
           structuralEstimatePricingState.prices = structuralEstimatePresetPrices(structuralEstimatePricingState.preset, currency, structuralEstimatePricingState.phpPerCurrency);
         }
+        structuralEstimatePricingState.categoryPrices ||= {};
       }
 
       function saveStructuralEstimatePricing() {
@@ -65184,7 +65222,22 @@
         const total = entries.length
           ? `<tr class="structural-estimate-total"><td>TOTAL — ${escapeHtml(category.label)}</td>${columns.map(([key]) => `<td>${structuralEstimateValue(category.total, key)}</td>`).join("")}</tr>`
           : "";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">${escapeHtml(category.label)} — BY LEVEL</h4><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>${escapeHtml(category.label)} Structural Estimates</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></section>`;
+        const categoryKey = String(category.key || category.label || "category").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const currencySymbol = structuralEstimateCurrencySymbol();
+        structuralEstimatePricingState.categoryPrices[categoryKey] ||= {};
+        const prices = `<tr class="structural-estimate-category-prices"><td>UNIT PRICE (${escapeHtml(currencySymbol)})</td>${columns.map(([key, label]) => {
+          const fallbackPrice = Number(structuralEstimatePricingState.prices[key]) || 0;
+          const savedPrice = structuralEstimatePricingState.categoryPrices[categoryKey][key];
+          const price = Number.isFinite(Number(savedPrice)) ? Number(savedPrice) : fallbackPrice;
+          structuralEstimatePricingState.categoryPrices[categoryKey][key] = price;
+          return `<td><input class="structural-estimate-price-input" data-estimate-category-unit-price data-estimate-category="${categoryKey}" data-price-key="${key}" type="number" min="0" step="0.01" value="${price.toFixed(2)}" aria-label="${escapeHtml(category.label)} ${escapeHtml(label.replace(/<br>/g, " "))} unit price"></td>`;
+        }).join("")}</tr>`;
+        const costs = `<tr class="structural-estimate-category-costs"><td>MATERIAL TOTAL COST</td>${columns.map(([key]) => {
+          const quantity = Number(structuralEstimateValue(category.total, key)) || 0;
+          return `<td data-estimate-category-cost data-estimate-category="${categoryKey}" data-price-key="${key}" data-quantity="${quantity}">${structuralEstimateMoney(quantity * (Number(structuralEstimatePricingState.categoryPrices[categoryKey][key]) || 0))}</td>`;
+        }).join("")}</tr>`;
+        const grand = `<tr class="structural-estimate-cost-total"><td colspan="${columns.length}">TOTAL COST — ${escapeHtml(category.label)}</td><td data-estimate-category-grand-total="${categoryKey}">${structuralEstimateMoney(0)}</td></tr>`;
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">${escapeHtml(category.label)} — BY LEVEL</h4><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>${escapeHtml(category.label)} Structural Estimates</caption><thead>${header}</thead><tbody>${body}${total}${prices}${costs}${grand}</tbody></table></div></section>`;
       }
 
       function wallEstimateTableMarkup(category) {
@@ -65295,6 +65348,25 @@
         });
         const selectedTotalCell = container.querySelector("[data-estimate-selected-total]");
         if (selectedTotalCell) selectedTotalCell.textContent = structuralEstimateMoney(selectedTotal);
+        container.querySelectorAll("[data-estimate-category-unit-price]").forEach(input => {
+          const category = input.dataset.estimateCategory;
+          const key = input.dataset.priceKey;
+          structuralEstimatePricingState.categoryPrices[category] ||= {};
+          structuralEstimatePricingState.categoryPrices[category][key] = Math.max(0, Number(input.value) || 0);
+        });
+        container.querySelectorAll("[data-estimate-category-grand-total]").forEach(totalCell => {
+          const category = totalCell.dataset.estimateCategoryGrandTotal;
+          let categoryTotal = 0;
+          container.querySelectorAll(`[data-estimate-category-cost][data-estimate-category="${category}"]`).forEach(costCell => {
+            const key = costCell.dataset.priceKey;
+            const quantity = Number(costCell.dataset.quantity) || 0;
+            const price = Number(structuralEstimatePricingState.categoryPrices[category]?.[key]) || 0;
+            const cost = quantity * price;
+            costCell.textContent = structuralEstimateMoney(cost);
+            categoryTotal += cost;
+          });
+          totalCell.textContent = structuralEstimateMoney(categoryTotal);
+        });
         saveStructuralEstimatePricing();
       }
 
@@ -65304,7 +65376,7 @@
         if (!container.dataset.pricingReady) {
           container.dataset.pricingReady = "true";
           container.addEventListener("input", event => {
-            if (event.target.matches("[data-estimate-unit-price]")) refreshStructuralEstimateCosts();
+            if (event.target.matches("[data-estimate-unit-price], [data-estimate-category-unit-price]")) refreshStructuralEstimateCosts();
           });
           container.addEventListener("change", event => {
             if (event.target.matches("[data-estimate-concrete-mode]")) {
@@ -67136,6 +67208,7 @@
           isometricView.tilt = 30;
           isometricView.pan = {x: 0, y: 0};
           isometricView.mode = "pan";
+          isometricView.projection = "isometric";
           if (typeof draw === "function") draw();
           drawPlan(data);
         }

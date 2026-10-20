@@ -29,6 +29,6 @@ assert(html.includes("sharedCornerAlphabeticBubble.y - 2 * sharedCornerAlphabeti
 assert(!html.includes('ctx.fillStyle = "rgba(5, 21, 23, 0.82)"'), "3D ISO member labels must not use opaque background rectangles");
 assert(html.includes('const isoTitle = "3D ISOMETRIC VIEW"') && !html.includes('ctx.fillText("3D ISOMETRIC STRUCTURAL VIEW"'), "The 3D canvas heading must use the shortened requested title");
 assert(html.includes('ctx.fillText(xFrameTitle, isoHeaderX, 38)') && html.includes('ctx.fillText(`Y-AXIS FRAME @ GRID ${selectedX}`, isoHeaderX, 38)'), "The X/Y frame titles must share one horizontal line with the 3D ISO title");
-assert(html.includes('isoModeLabel.textContent = `Mode: ${isometricView.mode === "rotate" ? "Rotate" : "Pan"} / Zoom:') && html.includes('/ Z Rotation:'), "3D mode, zoom, rotation, and level status must move to the shared top-right view-status location");
+assert(html.includes('isoModeLabel.textContent = `${isometricView.projection === "perspective" ? "Perspective" : "Isometric"} / Mode:') && html.includes('/ Z Rotation:'), "3D projection, mode, zoom, rotation, and level status must share the top-right view-status location");
 
 console.log("isometric footing and top-grid regression tests: passed");
