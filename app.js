@@ -2818,7 +2818,7 @@ async function saveProjectFile(forcePicker) {
     status("StrucForge .stf file downloaded using browser fallback.");
   }
 }
-if (exportJson) exportJson.onclick = () => saveProjectFile(true);
+if (typeof exportJson !== "undefined" && exportJson) exportJson.onclick = () => saveProjectFile(true);
 
 window.addEventListener("load", async () => {
   updateLoadInputs();

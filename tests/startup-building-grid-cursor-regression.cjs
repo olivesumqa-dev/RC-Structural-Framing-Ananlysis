@@ -24,6 +24,7 @@ assert.strictEqual(sample.strucForgeTemplateLibrary?.userTemplates?.[0]?.name, "
 assert(/^data:image\/jpeg;base64,/.test(sample.strucForgeTemplateLibrary?.userTemplates?.[0]?.thumbnail || ""), "The current template must include its updated thumbnail");
 assert(app.includes('persistence-manifest.json?v=20261020b'), "The refreshed bundled project manifest must bypass stale browser caches");
 assert(app.includes('loadProjectPackage(data, "2-STOREY SAMPLE.stf"'), "Embedded fallback must use the new sample name");
+assert(app.includes('typeof exportJson !== "undefined" && exportJson'), "A removed Export button must not abort startup before the STF is loaded");
 assert(html.indexOf('id="modeNode"') < html.indexOf('id="modeColumn"'), "Create Node must appear before Create Column");
 assert(!html.includes('id="modeWall"'), "The sidebar Structural Wall Tool entry must be removed");
 assert(html.includes('id="planWallToolBtn"'), "The drawing-toolbar Wall tool must remain available");
@@ -43,6 +44,6 @@ assert(html.includes('function drawFixedFrameUdlBand') && html.includes('drawFix
 assert(html.includes('font: "700 9px Arial"') && html.includes('const depth = 18;'), "Frame load labels and arrows must use fixed screen-pixel presentation sizes");
 assert(app.includes('function viewScale()') && app.includes('return Math.max(0.01, Number(zoom) || 1);'), "The complete drawing sheet must scale uniformly with drawing zoom");
 assert(app.includes('Keep the first, deliberate annotation offset') && html.includes('Do not make drawing annotations hop between collision candidates'), "Drawing labels must retain stable CAD-style anchors during pan and zoom");
-assert(html.includes('app.js?v=80'), "The fixed annotation renderer must use the current script revision rather than a stale browser cache");
+assert(html.includes('app.js?v=81'), "The startup loader fix must use the current script revision rather than a stale browser cache");
 
 console.log("Startup template, building grid, wall tool, and cursor checks: passed");
