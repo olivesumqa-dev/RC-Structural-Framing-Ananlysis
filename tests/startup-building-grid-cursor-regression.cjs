@@ -25,6 +25,8 @@ assert(/^data:image\/jpeg;base64,/.test(sample.strucForgeTemplateLibrary?.userTe
 assert(app.includes('persistence-manifest.json?v=20261020b'), "The refreshed bundled project manifest must bypass stale browser caches");
 assert(app.includes('loadProjectPackage(data, "2-STOREY SAMPLE.stf"'), "Embedded fallback must use the new sample name");
 assert(app.includes('typeof exportJson !== "undefined" && exportJson'), "A removed Export button must not abort startup before the STF is loaded");
+assert(html.includes('older static PLAN state or browser record, owns the opening view'), "The bundled STF must be restored after legacy workspace initialization");
+assert(html.includes('window.strucForgeOpenStartupView(project?.structuralProject?.workspace?.planActiveView || "ISO")'), "The final startup step must open the view saved inside the supplied STF");
 assert(html.indexOf('id="modeNode"') < html.indexOf('id="modeColumn"'), "Create Node must appear before Create Column");
 assert(!html.includes('id="modeWall"'), "The sidebar Structural Wall Tool entry must be removed");
 assert(html.includes('id="planWallToolBtn"'), "The drawing-toolbar Wall tool must remain available");

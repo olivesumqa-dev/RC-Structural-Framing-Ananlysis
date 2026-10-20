@@ -49769,5 +49769,26 @@
       window.addEventListener("pagehide", () => cancelAnimationFrame(raf), { once: true });
     })();
   </script>
+  <script>
+    // Run after every legacy workspace initializer so the bundled STF, rather
+    // than an older static PLAN state or browser record, owns the opening view.
+    window.addEventListener("load", () => {
+      window.setTimeout(() => {
+        try {
+          const embedded = document.getElementById("defaultProjectData");
+          if (!embedded?.textContent?.trim() || typeof loadProjectPackage !== "function") return;
+          const project = JSON.parse(embedded.textContent);
+          loadProjectPackage(project, "2-STOREY SAMPLE.stf", {pushHistory: false, applyTheme: false});
+          const savedName = document.getElementById("recordName");
+          if (savedName) savedName.value = "2-STOREY SAMPLE";
+          if (typeof window.strucForgeOpenStartupView === "function") {
+            window.strucForgeOpenStartupView(project?.structuralProject?.workspace?.planActiveView || "ISO");
+          }
+        } catch (error) {
+          console.error("The bundled STF opening project could not be restored.", error);
+        }
+      }, 0);
+    }, {once: true});
+  </script>
 </body>
 </html>
