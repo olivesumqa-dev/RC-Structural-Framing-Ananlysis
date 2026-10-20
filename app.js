@@ -1157,6 +1157,7 @@ function drawMemberLabel(m, A, B) {
 
   ctx.fillStyle = annotationColor();
   setScaledFont(10);
+  ctx.font = ctx.font.replace(/^300\s/, "700 ");
   if (m.type === "Beam" || m.type === "Tie Beam") {
     const p = findClearLabelPoint(midX, midY, label, [
       {x: 0, y: scaled(13)},

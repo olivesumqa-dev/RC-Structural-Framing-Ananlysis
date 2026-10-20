@@ -2689,8 +2689,8 @@
         <input id="slabClearCover" value="20" />
         <div class="economical-design-control" role="group" aria-label="Economical design">
           <strong>ECONOMICAL DESIGN</strong>
-          <label for="autoDesignEnabled"><input id="autoDesignEnabled" type="checkbox" checked /><span>ON</span></label>
-          <label for="autoDesignDisabled"><input id="autoDesignDisabled" type="checkbox" /><span>OFF</span></label>
+          <label for="autoDesignEnabled"><input id="autoDesignEnabled" type="checkbox" /><span>ON</span></label>
+          <label for="autoDesignDisabled"><input id="autoDesignDisabled" type="checkbox" checked /><span>OFF</span></label>
         </div>
         <label>Beam cracked-stiffness modifier, Ie/Ig</label>
         <input id="beamStiffnessModifier" value="0.35" />
@@ -52507,7 +52507,7 @@
           ctx.save();
           ctx.translate(x, y);
           ctx.rotate(angle);
-          ctx.font = `300 ${scaledDrawingTextSize(fontSize)}px ${DRAWING_FONT_FAMILY}`;
+          ctx.font = `700 ${scaledDrawingTextSize(fontSize)}px ${DRAWING_FONT_FAMILY}`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           // ISO member labels intentionally have no backing rectangle. This keeps
@@ -52630,6 +52630,43 @@
 
         const columnColor = canvasTheme("--column", "#ffffff");
         const beamColor = canvasTheme("--beam", "#dce6e3");
+        const drawIsoSolid = (bounds, fill, stroke) => {
+          const vertices = {
+            p000: point(bounds.x0, bounds.y0, bounds.z0), p100: point(bounds.x1, bounds.y0, bounds.z0),
+            p110: point(bounds.x1, bounds.y1, bounds.z0), p010: point(bounds.x0, bounds.y1, bounds.z0),
+            p001: point(bounds.x0, bounds.y0, bounds.z1), p101: point(bounds.x1, bounds.y0, bounds.z1),
+            p111: point(bounds.x1, bounds.y1, bounds.z1), p011: point(bounds.x0, bounds.y1, bounds.z1)
+          };
+          const faces = [
+            [vertices.p000, vertices.p100, vertices.p101, vertices.p001],
+            [vertices.p100, vertices.p110, vertices.p111, vertices.p101],
+            [vertices.p110, vertices.p010, vertices.p011, vertices.p111],
+            [vertices.p010, vertices.p000, vertices.p001, vertices.p011],
+            [vertices.p001, vertices.p101, vertices.p111, vertices.p011]
+          ].sort((a, b) => a.reduce((sum, item) => sum + item.y, 0) - b.reduce((sum, item) => sum + item.y, 0));
+          faces.forEach(face => {
+            ctx.save();
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            face.forEach((item, index) => index ? ctx.lineTo(item.x, item.y) : ctx.moveTo(item.x, item.y));
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+          });
+        };
+        const isoBeamDimensions = (axis, frameLine, designGroupId) => {
+          const entries = [engineeringState.frameCatalog?.[axis]?.[frameLine], frameModelCache[axis]?.get(frameLine)];
+          const member = entries.flatMap(entry => entry?.model?.members || []).find(candidate =>
+            candidate.type !== "Column" && String(candidate.designGroupId || "") === String(designGroupId || "")
+          );
+          return {
+            width: Math.max(0.1, (Number(member?.width) || numericInput("beamWidth", 300)) / 1000),
+            height: Math.max(0.15, (Number(member?.height) || numericInput("beamHeight", 500)) / 1000)
+          };
+        };
         isoFootings.filter(footing => !frameOnly || Math.abs(footing.y - frameY) < 1e-9 || Math.abs(footing.x - frameX) < 1e-9).forEach(drawIsoFooting);
         planState.columns.forEach(key => {
           const [xLabel, yLabel] = key.split("|");
@@ -52641,7 +52678,14 @@
             if (!isPlanColumnStoryActive(key, storyIndex)) continue;
             const start = {x: data.xPos[xi], y: data.yPos[yi], z: elevations[storyIndex]};
             const end = {x: data.xPos[xi], y: data.yPos[yi], z: elevations[storyIndex + 1]};
-            stroke3d(start, end, columnColor, 3);
+            const columnOverride = engineeringState.columnDesignOverrides[columnOverrideKey(key, storyIndex)] || {};
+            const columnWidth = Math.max(0.2, (Number(columnOverride.width) || numericInput("columnWidth", 400)) / 1000);
+            const columnDepth = Math.max(0.2, (Number(columnOverride.height) || numericInput("columnHeight", 400)) / 1000);
+            drawIsoSolid({
+              x0: start.x - columnWidth / 2, x1: start.x + columnWidth / 2,
+              y0: start.y - columnDepth / 2, y1: start.y + columnDepth / 2,
+              z0: start.z, z1: end.z
+            }, "rgba(60, 116, 105, 0.88)", columnColor);
             label3d(planColumnName(key, storyIndex), start, end, "#00e676", -8, 9);
           }
           if (!planState.footings[key]) {
@@ -52673,7 +52717,8 @@
               const b = data.xLabels.indexOf(xLabels[group.endIndex]);
               const start = {x: data.xPos[a], y: data.yPos[yi], z};
               const end = {x: data.xPos[b], y: data.yPos[yi], z};
-              stroke3d(start, end, beamColor, 2.2);
+              const section = isoBeamDimensions("X", yLabel, group.designGroupId);
+              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - section.width / 2, y1: start.y + section.width / 2, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.9)", beamColor);
               label3d(group.name, start, end, "#ff1744", -7, 9);
             }
           });
@@ -52691,7 +52736,8 @@
               const b = data.yLabels.indexOf(yLabels[group.endIndex]);
               const start = {x: data.xPos[xi], y: data.yPos[a], z};
               const end = {x: data.xPos[xi], y: data.yPos[b], z};
-              stroke3d(start, end, beamColor, 2.2);
+              const section = isoBeamDimensions("Y", xLabel, group.designGroupId);
+              drawIsoSolid({x0: start.x - section.width / 2, x1: start.x + section.width / 2, y0: start.y, y1: end.y, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.9)", beamColor);
               label3d(group.name, start, end, "#ff1744", 7, 9);
             }
           });
@@ -52705,7 +52751,13 @@
             }
             const start = {x: endpoints.start.x, y: endpoints.start.y, z};
             const end = {x: endpoints.end.x, y: endpoints.end.y, z};
-            stroke3d(start, end, "#7fc8ff", 2.2);
+            const memberWidth = Math.max(0.1, (Number(member.width) || numericInput("beamWidth", 300)) / 1000);
+            const memberHeight = Math.max(0.15, (Number(member.height) || numericInput("beamHeight", 500)) / 1000);
+            if (planMemberAxis(member, data) === "Y") {
+              drawIsoSolid({x0: start.x - memberWidth / 2, x1: start.x + memberWidth / 2, y0: start.y, y1: end.y, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.9)", "#7fc8ff");
+            } else {
+              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - memberWidth / 2, y1: start.y + memberWidth / 2, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.9)", "#7fc8ff");
+            }
             label3d(member.name || member.id || "Beam", start, end, member.type === "Column" ? "#00e676" : "#ff1744", -7, 9);
           });
           if (!frameOnly) slabRegions(levelIndex, data).forEach(region => {
@@ -55088,6 +55140,26 @@
           });
       }
 
+      function nearestPlanPointLoad(canvasPoint, data = makePlanData()) {
+        if (planState.activeLevelIndex < 0) return null;
+        const canvas = byId("structuralPlanCanvas");
+        if (!canvas) return null;
+        const totalX = data.xPos[data.xPos.length - 1] || 1;
+        const totalY = data.yPos[data.yPos.length - 1] || 1;
+        const transform = fitDrawingTransform(canvas, {minX: 0, maxX: totalX, minY: 0, maxY: totalY});
+        const local = {
+          x: (canvasPoint.x - planView.pan.x) / planView.zoom,
+          y: (canvasPoint.y - planView.pan.y) / planView.zoom
+        };
+        let nearest = null;
+        (planState.pointLoads || []).filter(record => Number(record.levelIndex) === Number(planState.activeLevelIndex)).forEach(record => {
+          const target = {x: transform.x(Number(record.point?.x)), y: transform.y(Number(record.point?.y))};
+          const distance = Math.hypot(local.x - target.x, local.y - target.y);
+          if (distance <= 18 / planView.zoom && (!nearest || distance < nearest.distance)) nearest = {record, distance};
+        });
+        return nearest?.record || null;
+      }
+
       function nearestPlanWall(canvasPoint, data = makePlanData()) {
         if (planState.activeLevelIndex < 0) return null;
         const canvas = byId("structuralPlanCanvas");
@@ -56217,6 +56289,19 @@
         }
         if (planState.mode === "delete") {
           if (deleteAnnotationAt("PLAN", canvasPoint, canvas.getContext("2d"), projectPoint)) return;
+          const pointLoad = nearestPlanPointLoad(canvasPoint, data);
+          if (pointLoad) {
+            pushWorkspaceHistory();
+            planState.pointLoads = (planState.pointLoads || []).filter(record => record !== pointLoad);
+            engineeringState.designEnvelopes = null;
+            engineeringState.frameCatalog = {X: {}, Y: {}};
+            frameModelCache.X.clear();
+            frameModelCache.Y.clear();
+            setCalculationDirty(true);
+            drawPlan(data);
+            if (typeof status === "function") status("Point load deleted. Recalculate to update the analysis. Undo is available.");
+            return;
+          }
           const overlappingObjects = planOverlapCandidates(canvasPoint, data);
           if (overlappingObjects.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
             mode: "delete",
@@ -61369,9 +61454,9 @@
       const BEAM_LONG_SPAN_MAX_STEEL_RESERVE_PERCENT = 25;
       const BEAM_LONG_SPAN_STEEL_RESERVE_STORAGE_KEY = "strucforge_beam_long_span_steel_reserve_percent";
       const REBAR_ELASTIC_MODULUS = 200000;
-      const MPR_AUTO_PASS_STORAGE_KEY = "strucforge_mpr_auto_pass_by_table";
+      const MPR_AUTO_PASS_STORAGE_KEY = "strucforge_mpr_auto_pass_by_table_v2";
       const mprAutoPassState = (() => {
-        const fallback = {beams: true, columns: true, slabs: true, footings: true};
+        const fallback = {beams: false, columns: false, slabs: false, footings: false};
         try {
           const saved = JSON.parse(window.localStorage?.getItem(MPR_AUTO_PASS_STORAGE_KEY) || "null");
           return saved && typeof saved === "object" ? {...fallback, ...saved} : fallback;
@@ -61382,7 +61467,7 @@
       let mprAutoPassRecalculationTimer = null;
 
       function mprAutoPassEnabled(tableKey) {
-        return mprAutoPassState[tableKey] !== false;
+        return mprAutoPassState[tableKey] === true;
       }
 
       function saveMprAutoPassState() {
@@ -61436,10 +61521,8 @@
         return percent;
       }
 
-      function beamLongSpanSteelFactor(length, economicalDesignEnabled = null) {
-        const economicalOn = economicalDesignEnabled == null
-          ? mprAutoPassEnabled("beams")
-          : Boolean(economicalDesignEnabled);
+      function beamLongSpanSteelFactor(length, economicalDesignEnabled = true) {
+        const economicalOn = Boolean(economicalDesignEnabled);
         return economicalOn && Number(length) + 1e-9 >= BEAM_LONG_SPAN_THRESHOLD_M
           ? 1 + beamLongSpanSteelReservePercent() / 100
           : 1;
@@ -66786,7 +66869,7 @@
         let beamOptimization = {optimized: 0, failed: 0};
         let columnOptimization = {optimized: 0, failed: 0};
         if (autoPassBeams || autoPassColumns) {
-          for (let iteration = 0; iteration < 12; iteration += 1) {
+          for (let iteration = 0; iteration < 50; iteration += 1) {
             const iterationBeamOptimization = {optimized: 0, failed: 0};
             if (autoPassBeams) ["X", "Y"].forEach(axis => {
               Object.entries(catalog[axis] || {}).forEach(([frameLine, entry]) => {
@@ -67510,7 +67593,7 @@
         });
         resultCalculationAutoPass?.addEventListener("change", () => {
           if (!resultCalculationAutoPass.checked) {
-            resultCalculationAutoPass.checked = true;
+            setEconomicalDesignEnabled(false, true);
             return;
           }
           setEconomicalDesignEnabled(true, true);

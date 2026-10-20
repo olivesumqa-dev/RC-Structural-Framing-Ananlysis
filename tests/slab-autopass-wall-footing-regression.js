@@ -19,7 +19,7 @@ const checks = [
   ["slab edit redraws plan", /data-slab-type[\s\S]*?slabRegionStateKeys\(region\)[\s\S]*?drawPlan\(makePlanData\(\)\)/],
   ["table AUTO-PASS schedules recalculation", /function scheduleMprAutoPassCalculation[\s\S]*?requestCoordinatedAnalysis\(\)/],
   ["beam editing preserves AUTO-PASS", /function setCoordinatedBeamDimension[\s\S]*?scheduleMprAutoPassCalculation\("beams"\)/],
-  ["extended convergence loop", /for \(let iteration = 0; iteration < 12; iteration \+= 1\)/],
+  ["extended convergence loop", /for \(let iteration = 0; iteration < 50; iteration \+= 1\)/],
   ["WF MPR table", /id="wallFootingResultsSection"[\s\S]*?id="wallFootingResultsTable"[\s\S]*?id="wallFootingResultsBody"/],
   ["WF design result rows", /function wallFootingResultRows[\s\S]*?transverseBarCount[\s\S]*?longitudinalBarCount[\s\S]*?REVISE WF DESIGN/],
   ["WF table before estimates", /id="wallFootingResultsSection"[\s\S]*?id="structuralEstimatesSection"/],
