@@ -52436,8 +52436,12 @@
           const u = (rotatedX - rotatedY) * Math.cos(tiltRadians);
           const v = (rotatedX + rotatedY) * Math.sin(tiltRadians) - z * 1.18;
           if (isometricView.projection !== "perspective") return {u, v};
+          // Perspective eye is positioned at a realistic mid-storey viewing
+          // height above the footing datum. Higher building points are closer
+          // to the eye (never farther away as in the former under-footing view).
+          const cameraHeight = 4.5;
           const cameraDistance = Math.max(12, Math.max(totalX, totalY, totalZ) * 2.8);
-          const depth = rotatedX + rotatedY + z * 0.28;
+          const depth = rotatedX + rotatedY + (cameraHeight - z) * Math.sin(tiltRadians);
           const perspectiveScale = Math.max(0.58, Math.min(1.55, cameraDistance / (cameraDistance + depth)));
           return {u: u * perspectiveScale, v: v * perspectiveScale};
         };
@@ -52789,7 +52793,7 @@
                 x0: data.xPos[cell.xIndex], x1: data.xPos[cell.xIndex + 1],
                 y0: data.yPos[cell.yIndex], y1: data.yPos[cell.yIndex + 1],
                 z0: z - thickness, z1: z
-              }, "rgba(163, 120, 113, 0.14)", "rgba(163, 120, 113, 0.42)");
+              }, "rgba(163, 120, 113, 0.25)", "rgba(163, 120, 113, 0.48)");
             });
             const xIndices = region.cells.flatMap(cell => [cell.xIndex, cell.xIndex + 1]);
             const minXIndex = Math.min(...xIndices);
