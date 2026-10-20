@@ -22,12 +22,13 @@ assert(html.includes("const isoAlphabeticLabels = data.xLabels.slice().reverse()
 assert(html.includes("const isoNumericLabels = data.yLabels.slice()"), "Numeric 3D grid bubbles must follow the plan-view order without a second reversal");
 assert(html.includes("{x, y: xGridSideY, z: totalZ}"), "Alphabetic grid bubbles are not fixed to their outer side");
 assert(html.includes("{x: yGridSideX, y, z: totalZ}"), "Numeric grid bubbles are not fixed to their outer side");
-assert(html.includes("ctx.moveTo(base.x, base.y - columnGap)"), "3D grid leaders must begin above the columns with a gap");
-assert(html.includes("ctx.lineTo(base.x, bubble.y + bubbleRadius)"), "3D grid leaders must remain screen-vertical");
+assert(html.includes("const verticalReference = point(modelPoint.x, modelPoint.y, (modelPoint.z || 0) + 1)"), "3D grid leaders must derive their direction from the perspective projection");
+assert(html.includes("ctx.moveTo(base.x + direction.x * columnGap, base.y + direction.y * columnGap)"), "3D grid leaders must begin above the columns with a projected gap");
+assert(html.includes("ctx.lineTo(bubble.x - direction.x * bubbleRadius, bubble.y - direction.y * bubbleRadius)"), "3D grid leaders must remain aligned with the projected columns");
 assert(html.includes("stack * 28"), "Overlapping 3D grid bubbles are not vertically stacked");
 assert(html.includes("sharedCornerAlphabeticBubble"), "The shared A/1 corner grid stacking rule is missing");
 assert(html.includes("suppressLeader: true"), "Grid 1 must omit its leader when stacked directly above Grid A");
-assert(html.includes("sharedCornerAlphabeticBubble.y - 2 * sharedCornerAlphabeticBubble.radius - 2"), "Grid 1 must sit directly above the Grid A circle");
+assert(html.includes("sharedCornerAlphabeticBubble.directionY * (2 * sharedCornerAlphabeticBubble.radius + 2)"), "The shared numeric grid must stack along the projected column direction");
 assert(!html.includes('ctx.fillStyle = "rgba(5, 21, 23, 0.82)"'), "3D ISO member labels must not use opaque background rectangles");
 assert(html.includes('const isoTitle = "3D ISOMETRIC VIEW"') && !html.includes('ctx.fillText("3D ISOMETRIC STRUCTURAL VIEW"'), "The 3D canvas heading must use the shortened requested title");
 assert(html.includes('ctx.fillText(xFrameTitle, isoHeaderX, 38)') && html.includes('ctx.fillText(`Y-AXIS FRAME @ GRID ${selectedX}`, isoHeaderX, 38)'), "The X/Y frame titles must share one horizontal line with the 3D ISO title");

@@ -19,6 +19,7 @@ assert(html.includes('id="isoCameraHeightInput"') && html.includes('Number(isome
 assert(html.includes('min="-60" max="60"') && html.includes("Math.max(-60, Math.min(60"), "Camera tilt must support both negative and positive values");
 assert(html.includes("cameraHeight: isometricView.cameraHeight"), "Perspective camera height must save with the current STF project");
 assert(html.includes('id="isoShowSlabs"') && html.includes('id="isoShowFootings"') && html.includes('id="isoShowColumns"') && html.includes('id="isoShowBeams"'), "3D view needs independent visibility checkboxes");
+assert(html.includes('id="isoShowFrames"') && html.includes("if (isometricView.visibility.frames)"), "3D view needs a functional X and Y axis frames visibility checkbox");
 assert(html.includes("visibility: deepCopy(isometricView.visibility)"), "3D visibility choices must save with the current STF project");
 assert(["footings", "columns", "beams", "slabs"].every(key => new RegExp(`if \\(.*isometricView\\.visibility\\.${key}`).test(html)), "Each visibility checkbox must control its corresponding 3D objects");
 assert(html.includes('"rgba(163, 120, 113, 0.25)"'), "3D slabs need the requested #A37871 color at 25% opacity");

@@ -2883,7 +2883,7 @@
                 <button id="isoFramesOnlyBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Show only X &amp; Y Axis Frames" aria-label="Show only X and Y Axis Frames" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V5h8v15M13 20V3h8v17M3 12h8M13 9h8"></path><path d="M8 5h8M8 20h8" stroke-dasharray="2 2"></path></svg></button>
                 <label class="iso-only-tool iso-tilt-control" for="isoTiltInput" title="Set the 3D camera tilt angle; negative values tilt in the opposite direction">Tilt° <input id="isoTiltInput" type="number" min="-60" max="60" step="1" value="30" inputmode="numeric" aria-label="3D camera tilt angle in degrees"></label>
                 <label class="iso-only-tool iso-tilt-control" for="isoCameraHeightInput" title="Set perspective camera height above footing level">Camera H, m <input id="isoCameraHeightInput" type="number" min="0" max="100" step="0.1" value="4.5" inputmode="decimal" aria-label="Perspective camera height in metres"></label>
-                <span class="iso-only-tool iso-visibility-controls" role="group" aria-label="Show 3D structural objects"><label><input id="isoShowSlabs" type="checkbox" checked>Slabs</label><label><input id="isoShowFootings" type="checkbox" checked>Footings</label><label><input id="isoShowColumns" type="checkbox" checked>Columns</label><label><input id="isoShowBeams" type="checkbox" checked>Beams</label></span>
+                <span class="iso-only-tool iso-visibility-controls" role="group" aria-label="Show 3D structural objects"><label><input id="isoShowSlabs" type="checkbox" checked>Slabs</label><label><input id="isoShowFootings" type="checkbox" checked>Footings</label><label><input id="isoShowColumns" type="checkbox" checked>Columns</label><label><input id="isoShowBeams" type="checkbox" checked>Beams</label><label><input id="isoShowFrames" type="checkbox" checked>X&amp;Y Axis Frames</label></span>
                 <button id="planRenameToolBtn" class="drawing-tool-btn" type="button" title="Edit Member Name" aria-label="Edit Member Name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10.9-10.9a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"></path><path d="m14.8 6.4 2.8 2.8"></path></svg></button>
                 <button id="planLineToolBtn" class="drawing-tool-btn" type="button" title="Draw Line" aria-label="Draw Line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 20 5"></path><circle cx="4" cy="19" r="1.5"></circle><circle cx="20" cy="5" r="1.5"></circle></svg></button>
                 <button id="planEditLineToolBtn" class="drawing-tool-btn" type="button" title="Edit Line" aria-label="Edit Line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 14 9"></path><path d="m13 18 6-6 2 2-6 6-3 1z"></path></svg></button>
@@ -46553,7 +46553,7 @@
         frameOnly: false,
         projection: "isometric",
         cameraHeight: 4.5,
-        visibility: {slabs: true, footings: true, columns: true, beams: true},
+        visibility: {slabs: true, footings: true, columns: true, beams: true, frames: true},
         dragging: false,
         dragMode: "pan",
         start: null,
@@ -46824,7 +46824,7 @@
           isometricView.frameOnly = Boolean(snapshot.isometricView?.frameOnly);
           isometricView.projection = snapshot.isometricView?.projection === "perspective" ? "perspective" : "isometric";
           isometricView.cameraHeight = Math.max(0, Math.min(100, Number(snapshot.isometricView?.cameraHeight) || 4.5));
-          isometricView.visibility = {...{slabs: true, footings: true, columns: true, beams: true}, ...(snapshot.isometricView?.visibility || {})};
+          isometricView.visibility = {...{slabs: true, footings: true, columns: true, beams: true, frames: true}, ...(snapshot.isometricView?.visibility || {})};
           if (snapshot.structuralEstimatePricing && typeof snapshot.structuralEstimatePricing === "object") {
             Object.assign(structuralEstimatePricingState, deepCopy(snapshot.structuralEstimatePricing));
             structuralEstimatePricingState.prices = {...(snapshot.structuralEstimatePricing.prices || {})};
@@ -46929,7 +46929,7 @@
         isometricView.frameOnly = false;
         isometricView.projection = "isometric";
         isometricView.cameraHeight = 4.5;
-        isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true};
+        isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: true};
         try { lastAnalysisResult = null; } catch (error) {}
         workspaceHistory.length = 0;
         updateUndoControls();
@@ -51122,7 +51122,7 @@
         byId("isoProjectionBtn")?.classList.toggle("is-active", perspective);
         byId("isoProjectionBtn")?.setAttribute("aria-pressed", perspective ? "true" : "false");
         byId("isoProjectionBtn")?.setAttribute("title", perspective ? "Switch to Isometric View" : "Switch to Perspective View");
-        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"]].forEach(([id, key]) => {
+        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"], ["isoShowFrames", "frames"]].forEach(([id, key]) => {
           const input = byId(id);
           if (input) input.checked = isometricView.visibility[key] !== false;
         });
@@ -52622,17 +52622,29 @@
         const gridBubbleCenters = [];
         const drawIsoGridBubble = (modelPoint, label, color, options = {}) => {
           const base = point(modelPoint.x, modelPoint.y, modelPoint.z || 0);
+          const verticalReference = point(modelPoint.x, modelPoint.y, (modelPoint.z || 0) + 1);
+          const verticalLength = Math.max(0.001, Math.hypot(verticalReference.x - base.x, verticalReference.y - base.y));
+          const direction = {
+            x: (verticalReference.x - base.x) / verticalLength,
+            y: (verticalReference.y - base.y) / verticalLength
+          };
           const bubbleRadius = 13;
           const columnGap = 9;
           const leaderHeight = 34;
           let stack = 0;
           let bubble = options.bubble
             ? {x: Number(options.bubble.x), y: Number(options.bubble.y)}
-            : {x: base.x, y: base.y - columnGap - leaderHeight - bubbleRadius};
+            : {
+                x: base.x + direction.x * (columnGap + leaderHeight + bubbleRadius),
+                y: base.y + direction.y * (columnGap + leaderHeight + bubbleRadius)
+              };
           if (!options.bubble) {
             while (gridBubbleCenters.some(existing => Math.hypot(existing.x - bubble.x, existing.y - bubble.y) < 29) && stack < 10) {
               stack += 1;
-              bubble = {x: base.x, y: base.y - columnGap - leaderHeight - bubbleRadius - stack * 28};
+              bubble = {
+                x: base.x + direction.x * (columnGap + leaderHeight + bubbleRadius + stack * 28),
+                y: base.y + direction.y * (columnGap + leaderHeight + bubbleRadius + stack * 28)
+              };
             }
           }
           gridBubbleCenters.push(bubble);
@@ -52642,8 +52654,8 @@
           ctx.lineWidth = 1.7;
           if (!options.suppressLeader) {
             ctx.beginPath();
-            ctx.moveTo(base.x, base.y - columnGap);
-            ctx.lineTo(base.x, bubble.y + bubbleRadius);
+            ctx.moveTo(base.x + direction.x * columnGap, base.y + direction.y * columnGap);
+            ctx.lineTo(bubble.x - direction.x * bubbleRadius, bubble.y - direction.y * bubbleRadius);
             ctx.stroke();
           }
           ctx.beginPath();
@@ -52656,13 +52668,15 @@
           ctx.textBaseline = "middle";
           ctx.fillText(String(label), bubble.x, bubble.y + 0.5);
           ctx.restore();
-          return {...bubble, radius: bubbleRadius};
+          return {...bubble, radius: bubbleRadius, directionX: direction.x, directionY: direction.y};
         };
 
-        plane([{x: 0, y: frameY, z: 0}, {x: totalX, y: frameY, z: 0}, {x: totalX, y: frameY, z: totalZ}, {x: 0, y: frameY, z: totalZ}], "#ff7a00");
-        plane([{x: frameX, y: 0, z: 0}, {x: frameX, y: totalY, z: 0}, {x: frameX, y: totalY, z: totalZ}, {x: frameX, y: 0, z: totalZ}], "#00d43b");
-        label3d(`X-AXIS FRAME @ GRID ${selectedY}`, {x: 0, y: frameY, z: totalZ}, {x: totalX, y: frameY, z: totalZ}, "#ff7a00", -13, 12);
-        label3d(`Y-AXIS FRAME @ GRID ${selectedX}`, {x: frameX, y: 0, z: totalZ}, {x: frameX, y: totalY, z: totalZ}, "#00d43b", 13, 12);
+        if (isometricView.visibility.frames) {
+          plane([{x: 0, y: frameY, z: 0}, {x: totalX, y: frameY, z: 0}, {x: totalX, y: frameY, z: totalZ}, {x: 0, y: frameY, z: totalZ}], "#ff7a00");
+          plane([{x: frameX, y: 0, z: 0}, {x: frameX, y: totalY, z: 0}, {x: frameX, y: totalY, z: totalZ}, {x: frameX, y: 0, z: totalZ}], "#00d43b");
+          label3d(`X-AXIS FRAME @ GRID ${selectedY}`, {x: 0, y: frameY, z: totalZ}, {x: totalX, y: frameY, z: totalZ}, "#ff7a00", -13, 12);
+          label3d(`Y-AXIS FRAME @ GRID ${selectedX}`, {x: frameX, y: 0, z: totalZ}, {x: frameX, y: totalY, z: totalZ}, "#00d43b", 13, 12);
+        }
 
         if (frameOnly) {
           stroke3d({x: 0, y: frameY, z: 0}, {x: totalX, y: frameY, z: 0}, gridColor, 1, [4, 5]);
@@ -52832,7 +52846,7 @@
 
         // Match the plan-view convention: alphabetic grids occupy one fixed outer
         // side and numeric grids occupy the adjacent fixed outer side. Their
-        // leaders continue the screen-vertical column direction above the roof,
+        // leaders continue the projected column direction above the roof,
         // with a short gap so the grid annotation cannot be mistaken for concrete.
         const xGridSideY = totalY;
         const yGridSideX = 0;
@@ -52853,8 +52867,8 @@
             sharedCornerGrid
               ? {
                   bubble: {
-                    x: sharedCornerAlphabeticBubble.x,
-                    y: sharedCornerAlphabeticBubble.y - 2 * sharedCornerAlphabeticBubble.radius - 2
+                    x: sharedCornerAlphabeticBubble.x + sharedCornerAlphabeticBubble.directionX * (2 * sharedCornerAlphabeticBubble.radius + 2),
+                    y: sharedCornerAlphabeticBubble.y + sharedCornerAlphabeticBubble.directionY * (2 * sharedCornerAlphabeticBubble.radius + 2)
                   },
                   suppressLeader: true
                 }
@@ -58190,7 +58204,7 @@
           redraw();
           if (typeof status === "function") status(`${isometricView.projection === "perspective" ? "Perspective" : "Isometric"} 3D view is active. Rotate, pan, zoom, and tilt remain available.`);
         });
-        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"]].forEach(([id, key]) => {
+        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"], ["isoShowFrames", "frames"]].forEach(([id, key]) => {
           byId(id)?.addEventListener("change", event => {
             isometricView.visibility[key] = Boolean(event.target.checked);
             redraw();
@@ -58241,7 +58255,7 @@
           isometricView.mode = "pan";
           isometricView.projection = "isometric";
           isometricView.cameraHeight = 4.5;
-          isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true};
+          isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: true};
           isometricView.dragging = false;
           canvas.classList.remove("is-panning");
           updateIsometricInteractionUi();
@@ -67284,7 +67298,7 @@
           isometricView.mode = "pan";
           isometricView.projection = "isometric";
           isometricView.cameraHeight = 4.5;
-          isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true};
+          isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: true};
           if (typeof draw === "function") draw();
           drawPlan(data);
         }
