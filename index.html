@@ -2882,6 +2882,7 @@
                 <button id="isoProjectionBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Switch to Perspective View" aria-label="Switch to Perspective View" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6l8-3 8 3-2 14H6L4 6Z"></path><path d="M8 8l4-2 4 2-1 8H9L8 8Z"></path></svg></button>
                 <button id="isoFramesOnlyBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Show only X &amp; Y Axis Frames" aria-label="Show only X and Y Axis Frames" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V5h8v15M13 20V3h8v17M3 12h8M13 9h8"></path><path d="M8 5h8M8 20h8" stroke-dasharray="2 2"></path></svg></button>
                 <label class="iso-only-tool iso-tilt-control" for="isoTiltInput" title="Set the 3D isometric tilt angle">Tilt° <input id="isoTiltInput" type="number" min="10" max="60" step="1" value="30" inputmode="numeric" aria-label="3D isometric tilt angle in degrees"></label>
+                <label class="iso-only-tool iso-tilt-control" for="isoCameraHeightInput" title="Set perspective camera height above footing level">Camera H, m <input id="isoCameraHeightInput" type="number" min="0" max="100" step="0.1" value="4.5" inputmode="decimal" aria-label="Perspective camera height in metres"></label>
                 <span class="iso-only-tool iso-visibility-controls" role="group" aria-label="Show 3D structural objects"><label><input id="isoShowSlabs" type="checkbox" checked>Slabs</label><label><input id="isoShowFootings" type="checkbox" checked>Footings</label><label><input id="isoShowColumns" type="checkbox" checked>Columns</label><label><input id="isoShowBeams" type="checkbox" checked>Beams</label></span>
                 <button id="planRenameToolBtn" class="drawing-tool-btn" type="button" title="Edit Member Name" aria-label="Edit Member Name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10.9-10.9a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"></path><path d="m14.8 6.4 2.8 2.8"></path></svg></button>
                 <button id="planLineToolBtn" class="drawing-tool-btn" type="button" title="Draw Line" aria-label="Draw Line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 20 5"></path><circle cx="4" cy="19" r="1.5"></circle><circle cx="20" cy="5" r="1.5"></circle></svg></button>
@@ -46551,6 +46552,7 @@
         mode: "pan",
         frameOnly: false,
         projection: "isometric",
+        cameraHeight: 4.5,
         visibility: {slabs: true, footings: true, columns: true, beams: true},
         dragging: false,
         dragMode: "pan",
@@ -46719,7 +46721,7 @@
           slabDesignOverrides: deepCopy(engineeringState.slabDesignOverrides),
           planView: {zoom: planView.zoom, pan: deepCopy(planView.pan)},
           yView: {zoom: yAxisView.zoom, pan: deepCopy(yAxisView.pan)},
-          isometricView: {zoom: isometricView.zoom, rotation: isometricView.rotation, tilt: isometricView.tilt, pan: deepCopy(isometricView.pan), mode: isometricView.mode, frameOnly: isometricView.frameOnly, projection: isometricView.projection, visibility: deepCopy(isometricView.visibility)},
+          isometricView: {zoom: isometricView.zoom, rotation: isometricView.rotation, tilt: isometricView.tilt, pan: deepCopy(isometricView.pan), mode: isometricView.mode, frameOnly: isometricView.frameOnly, projection: isometricView.projection, cameraHeight: isometricView.cameraHeight, visibility: deepCopy(isometricView.visibility)},
           structuralEstimatePricing: deepCopy(structuralEstimatePricingState),
           xState,
           yState: {
@@ -46821,6 +46823,7 @@
           isometricView.mode = snapshot.isometricView?.mode === "rotate" ? "rotate" : "pan";
           isometricView.frameOnly = Boolean(snapshot.isometricView?.frameOnly);
           isometricView.projection = snapshot.isometricView?.projection === "perspective" ? "perspective" : "isometric";
+          isometricView.cameraHeight = Math.max(0, Math.min(100, Number(snapshot.isometricView?.cameraHeight) || 4.5));
           isometricView.visibility = {...{slabs: true, footings: true, columns: true, beams: true}, ...(snapshot.isometricView?.visibility || {})};
           if (snapshot.structuralEstimatePricing && typeof snapshot.structuralEstimatePricing === "object") {
             Object.assign(structuralEstimatePricingState, deepCopy(snapshot.structuralEstimatePricing));
@@ -46925,6 +46928,7 @@
         isometricView.mode = "pan";
         isometricView.frameOnly = false;
         isometricView.projection = "isometric";
+        isometricView.cameraHeight = 4.5;
         isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true};
         try { lastAnalysisResult = null; } catch (error) {}
         workspaceHistory.length = 0;
@@ -51124,6 +51128,8 @@
         });
         const tiltInput = byId("isoTiltInput");
         if (tiltInput && document.activeElement !== tiltInput) tiltInput.value = String(Math.round(isometricView.tilt));
+        const cameraHeightInput = byId("isoCameraHeightInput");
+        if (cameraHeightInput && document.activeElement !== cameraHeightInput) cameraHeightInput.value = Number(isometricView.cameraHeight || 4.5).toFixed(1);
         byId("isometricCanvas")?.classList.toggle("iso-rotation-active", rotating);
       }
 
@@ -52450,7 +52456,7 @@
           // True pinhole camera: the eye sits in front of the building at a
           // realistic mid-storey height and looks toward the footprint. Depth
           // lines therefore converge away from the viewer toward the horizon.
-          const cameraHeight = 4.5;
+          const cameraHeight = Math.max(0, Math.min(100, Number(isometricView.cameraHeight) || 4.5));
           const cameraDistance = Math.max(12, Math.max(totalX, totalY, totalZ) * 2.8);
           const relativeDepth = rotatedY + cameraDistance;
           const relativeHeight = z - cameraHeight;
@@ -52830,14 +52836,16 @@
         // with a short gap so the grid annotation cannot be mistaken for concrete.
         const xGridSideY = totalY;
         const yGridSideX = 0;
+        const isoAlphabeticLabels = data.xLabels.slice().reverse();
+        const isoNumericLabels = data.yLabels.slice().reverse();
         let sharedCornerAlphabeticBubble = null;
         data.xPos.forEach((x, index) => {
-          const bubble = drawIsoGridBubble({x, y: xGridSideY, z: totalZ}, data.xLabels[index], "#ff9a3d");
-          if (String(data.xLabels[index]).toUpperCase() === "A" && Math.abs(x) < 1e-9) sharedCornerAlphabeticBubble = bubble;
+          const bubble = drawIsoGridBubble({x, y: xGridSideY, z: totalZ}, isoAlphabeticLabels[index], "#ff9a3d");
+          if (Math.abs(x) < 1e-9) sharedCornerAlphabeticBubble = bubble;
         });
         data.yPos.forEach((y, index) => {
-          const label = String(data.yLabels[index]);
-          const sharedCornerGrid = label === "1" && Math.abs(y - totalY) < 1e-9 && sharedCornerAlphabeticBubble;
+          const label = String(isoNumericLabels[index]);
+          const sharedCornerGrid = Math.abs(y - totalY) < 1e-9 && sharedCornerAlphabeticBubble;
           drawIsoGridBubble(
             {x: yGridSideX, y, z: totalZ},
             label,
@@ -58206,6 +58214,23 @@
             tiltInput.blur();
           }
         });
+        const cameraHeightInput = byId("isoCameraHeightInput");
+        const applyCameraHeight = () => {
+          if (isDrawingViewLocked("ISO")) return;
+          const value = Math.max(0, Math.min(100, Number(cameraHeightInput?.value) || 4.5));
+          isometricView.cameraHeight = value;
+          if (cameraHeightInput) cameraHeightInput.value = value.toFixed(1);
+          redraw();
+          if (typeof status === "function") status(`Perspective camera height set to ${value.toFixed(1)} m above footing level.`);
+        };
+        cameraHeightInput?.addEventListener("change", applyCameraHeight);
+        cameraHeightInput?.addEventListener("keydown", event => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            applyCameraHeight();
+            cameraHeightInput.blur();
+          }
+        });
         byId("isoResetViewBtn")?.addEventListener("click", () => {
           if (isDrawingViewLocked("ISO")) return;
           isometricView.zoom = 1;
@@ -58214,6 +58239,7 @@
           isometricView.pan = {x: 0, y: 0};
           isometricView.mode = "pan";
           isometricView.projection = "isometric";
+          isometricView.cameraHeight = 4.5;
           isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true};
           isometricView.dragging = false;
           canvas.classList.remove("is-panning");
@@ -67256,6 +67282,7 @@
           isometricView.pan = {x: 0, y: 0};
           isometricView.mode = "pan";
           isometricView.projection = "isometric";
+          isometricView.cameraHeight = 4.5;
           isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true};
           if (typeof draw === "function") draw();
           drawPlan(data);
