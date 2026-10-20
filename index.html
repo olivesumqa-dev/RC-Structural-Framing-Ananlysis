@@ -50846,11 +50846,11 @@
       }
 
       function slabRegionPlanLabel(region, data = makePlanData()) {
-        const override = String(engineeringState.slabDesignOverrides[region.key]?.name || "").trim();
-        const slabId = slabRegionTableId(region, data);
         if (region.open) return "OPEN SPACE";
         if (region.earthFilled) return "EARTH FILLED";
-        return override || `S-${slabId.replace(/^S/i, "")}`;
+        // MPR slab IDs are editable, but plan drawings retain their stable
+        // coordinate-based designation so an MPR rename cannot alter plans.
+        return `S-${slabRegionCode(region, data)}`;
       }
 
       function slabRegionUsage(region) {
@@ -52058,16 +52058,6 @@
               renderedState: slabRegionUsage(region),
               box: auxiliaryTextBox(ctx, label, placement.x, placement.y, {...labelOptions, padding: 6})
             });
-            if (!region.open) {
-              planNameLabelTargets.push({
-                kind: "slab",
-                key: region.key,
-                levelIndex: region.levelIndex,
-                currentName: slabRegionTableId(region, data),
-                fontSize: canvasFontPixelSize(labelOptions.font, 10),
-                box: auxiliaryTextBox(ctx, label, placement.x, placement.y, {...labelOptions, padding: 7})
-              });
-            }
           });
         }
         ctx.lineCap = "round";
@@ -56340,7 +56330,7 @@
           } else {
             const target = planNameLabelAt(canvasPoint);
             if (target) openMemberNameDialog(target);
-            else if (typeof status === "function") status("No editable user text or generated plan member/slab name was found at that point.");
+            else if (typeof status === "function") status("No editable user text or generated plan beam, column, or footing name was found at that point. Slab IDs are editable only in MPR.");
           }
           return;
         }
@@ -67916,7 +67906,7 @@
           planState.selectedAnnotationIds = [];
           setPlanCreationMode(planState.mode === "annotation_edit_text" ? "pan" : "annotation_edit_text");
           if (typeof status === "function") status(planState.mode === "annotation_edit_text"
-            ? "Edit Text is active: select user text for multi-edit, or click a generated beam, column, footing, or slab name to rename it."
+            ? "Edit Text is active: select user text for multi-edit, or click a generated beam, column, or footing name to rename it. Slab IDs are editable only in MPR."
             : "Edit Text is off.");
         });
         byId("modeAnnotationMatch")?.addEventListener("click", () => {
