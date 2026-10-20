@@ -15,7 +15,8 @@ assert(html.includes('id="isoProjectionBtn"'), "3D view needs an isometric/persp
 assert(html.includes('isometricView.projection === "perspective"'), "Perspective projection must be selectable and rendered");
 assert(html.includes('"rgba(150, 166, 163, 0.42)"'), "3D beam solids need reduced opacity");
 assert(html.includes('"rgba(28, 138, 86, 0.72)", "#72f2ad"'), "3D columns need green faces and light-green outlines");
-assert(html.includes('id="isoCameraHeightInput"') && html.includes('Number(isometricView.cameraHeight) || 4.5') && html.includes('relativeDepth * Math.cos(tiltRadians) + relativeHeight * Math.sin(tiltRadians)'), "Perspective camera height must be user-adjustable and make height recede toward the horizon");
+assert(html.includes('id="isoCameraHeightInput"') && html.includes('Number(isometricView.cameraHeight) || 4.5') && html.includes('relativeDepth * Math.cos(tiltRadians) - relativeHeight * Math.sin(tiltRadians)'), "Perspective camera height must be user-adjustable and positive tilt must bring higher levels toward the camera");
+assert(html.includes('min="-60" max="60"') && html.includes("Math.max(-60, Math.min(60"), "Camera tilt must support both negative and positive values");
 assert(html.includes("cameraHeight: isometricView.cameraHeight"), "Perspective camera height must save with the current STF project");
 assert(html.includes('id="isoShowSlabs"') && html.includes('id="isoShowFootings"') && html.includes('id="isoShowColumns"') && html.includes('id="isoShowBeams"'), "3D view needs independent visibility checkboxes");
 assert(html.includes("visibility: deepCopy(isometricView.visibility)"), "3D visibility choices must save with the current STF project");

@@ -19,7 +19,7 @@ assert(html.includes('canvas.dataset.isoFrameOnly = frameOnly ? "true" : "false"
 assert(html.includes("const xGridSideY = totalY"), "Alphabetic 3D grids must stay on the fixed plan-view top side");
 assert(html.includes("const yGridSideX = 0"), "Numeric 3D grids must stay on the fixed plan-view left side");
 assert(html.includes("const isoAlphabeticLabels = data.xLabels.slice().reverse()"), "Alphabetic 3D grid bubbles must follow the plan-view order");
-assert(html.includes("const isoNumericLabels = data.yLabels.slice().reverse()"), "Numeric 3D grid bubbles must follow the plan-view order");
+assert(html.includes("const isoNumericLabels = data.yLabels.slice()"), "Numeric 3D grid bubbles must follow the plan-view order without a second reversal");
 assert(html.includes("{x, y: xGridSideY, z: totalZ}"), "Alphabetic grid bubbles are not fixed to their outer side");
 assert(html.includes("{x: yGridSideX, y, z: totalZ}"), "Numeric grid bubbles are not fixed to their outer side");
 assert(html.includes("ctx.moveTo(base.x, base.y - columnGap)"), "3D grid leaders must begin above the columns with a gap");
