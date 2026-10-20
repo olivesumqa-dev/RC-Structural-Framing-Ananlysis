@@ -10,6 +10,9 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 assert(html.includes("function nearestPlanPointLoad"), "Plan point loads need an eraser hit-test");
 assert.match(html, /planState\.mode === "delete"[\s\S]*?nearestPlanPointLoad\(canvasPoint, data\)[\s\S]*?planState\.pointLoads = \(planState\.pointLoads \|\| \[\]\)\.filter/, "The Plan eraser must remove a clicked point load");
+assert(html.includes("function removeCoordinatedPlanPointLoad"), "Frame erasing needs a coordinated Plan/X/Y point-load remover");
+assert.match(html, /function deleteYLoadAt[\s\S]*?removeCoordinatedPlanPointLoad\(hit\.sourceId\)/, "The Y-frame eraser must remove coordinated point loads");
+assert.match(html, /function deleteXLoadAt[\s\S]*?removeCoordinatedPlanPointLoad\(hit\.sourceId\)/, "The X-frame eraser must remove coordinated point loads");
 assert(html.includes("const drawIsoSolid = (bounds, fill, stroke) =>"), "3D ISO needs a solid member renderer");
 assert(html.includes('isoBeamDimensions("X"') && html.includes('isoBeamDimensions("Y"'), "3D ISO beams must use MPR dimensions on both axes");
 assert(html.includes("engineeringState.columnDesignOverrides[columnOverrideKey(key, storyIndex)]"), "3D ISO columns must use story-specific MPR dimensions");

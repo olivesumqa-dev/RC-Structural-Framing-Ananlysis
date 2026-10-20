@@ -57802,15 +57802,35 @@
         }) || null;
       }
 
+      function removeCoordinatedPlanPointLoad(sourceId) {
+        const id = String(sourceId || "");
+        if (!id) return false;
+        const before = (planState.pointLoads || []).length;
+        planState.pointLoads = (planState.pointLoads || []).filter(record => String(record.id || "") !== id);
+        engineeringState.xPointLoads = (engineeringState.xPointLoads || []).filter(load => String(load.sourceId || load.planPointLoadId || "") !== id);
+        yFrameState.pointLoads = (yFrameState.pointLoads || []).filter(load => String(load.sourceId || load.planPointLoadId || "") !== id);
+        allKnownFrameModels().forEach(frameModel => {
+          frameModel.loads = (frameModel.loads || []).filter(load => String(load.planPointLoadId || "") !== id);
+        });
+        if ((planState.pointLoads || []).length !== before) {
+          engineeringState.designEnvelopes = null;
+          engineeringState.lastAudit = null;
+          setCalculationDirty(true);
+          return true;
+        }
+        return false;
+      }
+
       function deleteYLoadAt(canvasPoint) {
-        if (calculationDirty || (typeof loadsVisible !== "undefined" && !loadsVisible)) return false;
+        if (typeof loadsVisible !== "undefined" && !loadsVisible) return false;
         const hit = yRenderedLoadAt(canvasPoint);
         if (!hit || !yFrameState.model) return false;
         pushYHistory();
         if (hit.kind === "point") {
+          const coordinated = removeCoordinatedPlanPointLoad(hit.sourceId);
           yFrameState.pointLoads = yFrameState.pointLoads.filter(load => load !== hit.record && load.sourceId !== hit.sourceId);
-          yFrameState.model.loads = yFrameState.model.loads.filter(load => !hit.sourceId || load.source !== hit.sourceId);
-          if (typeof status === "function") status("Deleted Y-axis P load and its equivalent nodal forces.");
+          yFrameState.model.loads = yFrameState.model.loads.filter(load => !hit.sourceId || (load.source !== hit.sourceId && load.planPointLoadId !== hit.sourceId));
+          if (typeof status === "function") status(coordinated ? "Deleted the coordinated point load from Plan, X-frame, and Y-frame views." : "Deleted Y-axis P load and its equivalent nodal forces.");
         } else if (hit.kind === "member_udl") {
           yFrameState.model.loads = yFrameState.model.loads.filter(load => !(load.kind === "member_udl" && String(load.member) === String(hit.member)));
           if (typeof status === "function") status(`Deleted Y-axis UDL loads from Member ${hit.member}.`);
@@ -60732,7 +60752,7 @@
       }
 
       function xLoadAt(canvasPoint) {
-        if (calculationDirty || (typeof loadsVisible !== "undefined" && !loadsVisible)) return null;
+        if (typeof loadsVisible !== "undefined" && !loadsVisible) return null;
         const directPoint = renderedLoadTargets.X.slice().reverse().find(target =>
           Math.hypot(canvasPoint.x - target.x, canvasPoint.y - target.y) <= (target.radius || 18)
         );
@@ -60775,9 +60795,10 @@
         if (!hit) return false;
         pushWorkspaceHistory();
         if (hit.kind === "point") {
+          const coordinated = removeCoordinatedPlanPointLoad(hit.sourceId);
           engineeringState.xPointLoads = engineeringState.xPointLoads.filter(load => load !== hit.record && load.sourceId !== hit.sourceId);
-          model.loads = model.loads.filter(load => !hit.sourceId || load.source !== hit.sourceId);
-          if (typeof status === "function") status("Deleted X-axis P load and its equivalent nodal forces.");
+          model.loads = model.loads.filter(load => !hit.sourceId || (load.source !== hit.sourceId && load.planPointLoadId !== hit.sourceId));
+          if (typeof status === "function") status(coordinated ? "Deleted the coordinated point load from Plan, X-frame, and Y-frame views." : "Deleted X-axis P load and its equivalent nodal forces.");
         } else if (hit.kind === "member_point") {
           model.loads = model.loads.filter(load => load !== hit.load);
           if (typeof status === "function") status("Deleted X-axis member P load.");
