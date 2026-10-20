@@ -11,9 +11,13 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, "assets", "persisten
 const sample = JSON.parse(fs.readFileSync(path.join(root, "JSON", "2-STOREY SAMPLE.stf"), "utf8"));
 
 assert.strictEqual(manifest.defaultProject, "2-STOREY SAMPLE");
-assert.strictEqual(manifest.id, "2026-10-15-two-storey-sample-startup-v2");
+assert.strictEqual(manifest.id, "2026-10-20-two-storey-sample-startup-v3");
 assert.strictEqual(manifest.projects[0].source, "JSON/2-STOREY SAMPLE.stf");
 assert(sample.model && sample.structuralProject?.workspace, "The startup STF must contain both frame and structural workspace data");
+assert.strictEqual(sample.structuralProject.workspace.planActiveView, "ISO", "The uploaded startup STF must open in its saved 3D ISO view");
+assert.strictEqual(sample.strucForgeTemplateLibrary?.userTemplates?.[0]?.name, "2-STOREY RES.BLDG", "The bundled startup STF must contain its current template");
+assert(/^data:image\/jpeg;base64,/.test(sample.strucForgeTemplateLibrary?.userTemplates?.[0]?.thumbnail || ""), "The current template must include its updated thumbnail");
+assert(app.includes('persistence-manifest.json?v=20261020a'), "The refreshed bundled project manifest must bypass stale browser caches");
 assert(app.includes('loadProjectPackage(data, "2-STOREY SAMPLE.stf"'), "Embedded fallback must use the new sample name");
 assert(html.indexOf('id="modeNode"') < html.indexOf('id="modeColumn"'), "Create Node must appear before Create Column");
 assert(!html.includes('id="modeWall"'), "The sidebar Structural Wall Tool entry must be removed");
@@ -32,8 +36,8 @@ assert(html.includes('renderXAxisUdlBands') && html.includes('drawXAxisUdlBand')
 assert(html.includes('"#fff200"'), "WL and EQ frame labels must use bright yellow text");
 assert(html.includes('function drawFixedFrameUdlBand') && html.includes('drawFixedFrameUdlBand(ctx, member, a, b, label, color, renderedLoadTargets.Y)') && html.includes('drawFixedFrameUdlBand(ctx, xMember, start, end'), "X and Y frames must share one distributed-load presentation primitive");
 assert(html.includes('font: "700 9px Arial"') && html.includes('const depth = 18;'), "Frame load labels and arrows must use fixed screen-pixel presentation sizes");
-assert(app.includes('function viewScale()') && app.includes('return 1;'), "Drawing annotations must not scale with drawing zoom");
+assert(app.includes('function viewScale()') && app.includes('return Math.max(0.01, Number(zoom) || 1);'), "The complete drawing sheet must scale uniformly with drawing zoom");
 assert(app.includes('Keep the first, deliberate annotation offset') && html.includes('Do not make drawing annotations hop between collision candidates'), "Drawing labels must retain stable CAD-style anchors during pan and zoom");
-assert(html.includes('app.js?v=78'), "The fixed annotation renderer must use a new script revision rather than a stale browser cache");
+assert(html.includes('app.js?v=80'), "The fixed annotation renderer must use the current script revision rather than a stale browser cache");
 
 console.log("Startup template, building grid, wall tool, and cursor checks: passed");

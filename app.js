@@ -1782,7 +1782,7 @@ function getRecordNames() {
   }
 }
 
-const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261015b";
+const bundledPersistenceManifestUrl = "assets/persistence-manifest.json?v=20261020a";
 const bundledPersistenceVersionsKey = "strucforge_bundled_persistence_versions_v1";
 let bundledStartupProject = null;
 
