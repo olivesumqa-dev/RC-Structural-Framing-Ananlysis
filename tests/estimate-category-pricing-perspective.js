@@ -13,8 +13,8 @@ assert(html.includes("categoryPrices"), "Per-member estimate prices must persist
 assert(html.includes("structuralEstimatePricing: deepCopy(structuralEstimatePricingState)"), "Estimate prices must save with the current STF project");
 assert(html.includes('id="isoProjectionBtn"'), "3D view needs an isometric/perspective toggle");
 assert(html.includes('isometricView.projection === "perspective"'), "Perspective projection must be selectable and rendered");
-assert(html.includes('"rgba(150, 166, 163, 0.42)"'), "3D beam solids need reduced opacity");
-assert(html.includes('"rgba(28, 138, 86, 0.72)", "#72f2ad"'), "3D columns need green faces and light-green outlines");
+assert(html.includes('"rgba(150, 166, 163, 0.50)"'), "3D beam solids need 50% opacity");
+assert(html.includes('"rgba(28, 138, 86, 0.50)", "#72f2ad"'), "3D columns need 50% green faces and light-green outlines");
 assert(html.includes('id="isoCameraHeightInput"') && html.includes('Number(isometricView.cameraHeight) || 4.5') && html.includes('relativeDepth * Math.cos(tiltRadians) - relativeHeight * Math.sin(tiltRadians)'), "Perspective camera height must be user-adjustable and positive tilt must bring higher levels toward the camera");
 assert(html.includes('min="-60" max="60"') && html.includes("Math.max(-60, Math.min(60"), "Camera tilt must support both negative and positive values");
 assert(html.includes("cameraHeight: isometricView.cameraHeight"), "Perspective camera height must save with the current STF project");
@@ -22,7 +22,7 @@ assert(html.includes('id="isoShowSlabs"') && html.includes('id="isoShowFootings"
 assert(html.includes('id="isoShowFrames"') && html.includes("if (isometricView.visibility.frames)"), "3D view needs a functional X and Y axis frames visibility checkbox");
 assert(html.includes("visibility: deepCopy(isometricView.visibility)"), "3D visibility choices must save with the current STF project");
 assert(["footings", "columns", "beams", "slabs"].every(key => new RegExp(`if \\(.*isometricView\\.visibility\\.${key}`).test(html)), "Each visibility checkbox must control its corresponding 3D objects");
-assert(html.includes('"rgba(163, 120, 113, 0.25)"'), "3D slabs need the requested #A37871 color at 25% opacity");
+assert(html.includes('"rgba(163, 120, 113, 0.50)"'), "3D slabs need the requested #A37871 color at 50% opacity");
 assert.match(html, /slabDesignOverrides\[cell\.key\][\s\S]*?override\.thickness[\s\S]*?drawIsoSolid/, "3D slabs must use their actual MPR thickness");
 
 console.log("member estimate pricing and perspective 3D regression checks: passed");

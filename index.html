@@ -2895,7 +2895,7 @@
                 <button id="isoFramesOnlyBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Show only X &amp; Y Axis Frames" aria-label="Show only X and Y Axis Frames" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V5h8v15M13 20V3h8v17M3 12h8M13 9h8"></path><path d="M8 5h8M8 20h8" stroke-dasharray="2 2"></path></svg></button>
                 <label class="iso-only-tool iso-tilt-control" for="isoTiltInput" title="Set the 3D camera tilt angle; negative values tilt in the opposite direction">Tilt° <input id="isoTiltInput" type="number" min="-60" max="60" step="1" value="30" inputmode="numeric" aria-label="3D camera tilt angle in degrees"></label>
                 <label class="iso-only-tool iso-tilt-control" for="isoCameraHeightInput" title="Set perspective camera height above footing level">Camera H, m <input id="isoCameraHeightInput" type="number" min="0" max="100" step="0.1" value="4.5" inputmode="decimal" aria-label="Perspective camera height in metres"></label>
-                <span class="iso-only-tool iso-visibility-controls" role="group" aria-label="Show 3D structural objects"><label><input id="isoShowSlabs" type="checkbox" checked>Slabs</label><label><input id="isoShowFootings" type="checkbox" checked>Footings</label><label><input id="isoShowColumns" type="checkbox" checked>Columns</label><label><input id="isoShowBeams" type="checkbox" checked>Beams</label><label><input id="isoShowFrames" type="checkbox" checked>X&amp;Y Axis Frames</label></span>
+                <span class="iso-only-tool iso-visibility-controls" role="group" aria-label="Show 3D structural objects"><label><input id="isoShowSlabs" type="checkbox" checked>Slabs</label><label><input id="isoShowFootings" type="checkbox" checked>Footings</label><label><input id="isoShowColumns" type="checkbox" checked>Columns</label><label><input id="isoShowBeams" type="checkbox" checked>Beams</label><label><input id="isoShowFrames" type="checkbox">X&amp;Y Axis Frames</label></span>
                 <button id="planRenameToolBtn" class="drawing-tool-btn" type="button" title="Edit Member Name" aria-label="Edit Member Name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10.9-10.9a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"></path><path d="m14.8 6.4 2.8 2.8"></path></svg></button>
                 <button id="planLineToolBtn" class="drawing-tool-btn" type="button" title="Draw Line" aria-label="Draw Line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 20 5"></path><circle cx="4" cy="19" r="1.5"></circle><circle cx="20" cy="5" r="1.5"></circle></svg></button>
                 <button id="planEditLineToolBtn" class="drawing-tool-btn" type="button" title="Edit Line" aria-label="Edit Line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 14 9"></path><path d="m13 18 6-6 2 2-6 6-3 1z"></path></svg></button>
@@ -27950,13 +27950,14 @@
         frameOnly: false,
         projection: "isometric",
         cameraHeight: 4.5,
-        visibility: {slabs: true, footings: true, columns: true, beams: true, frames: true},
+        visibility: {slabs: true, footings: true, columns: true, beams: true, frames: false},
         dragging: false,
         dragMode: "pan",
         start: null,
         startPan: null,
         startRotation: 0
       };
+      let isometricPrintRender = false;
       const drawingViewLocks = {PLAN: false, X: false, Y: false, ISO: false};
       const drawingSelectionState = {PLAN: false, X: false, Y: false, ISO: false};
       const selectedPlanColumnKeys = new Set();
@@ -28221,7 +28222,7 @@
           isometricView.frameOnly = Boolean(snapshot.isometricView?.frameOnly);
           isometricView.projection = snapshot.isometricView?.projection === "perspective" ? "perspective" : "isometric";
           isometricView.cameraHeight = Math.max(0, Math.min(100, Number(snapshot.isometricView?.cameraHeight) || 4.5));
-          isometricView.visibility = {...{slabs: true, footings: true, columns: true, beams: true, frames: true}, ...(snapshot.isometricView?.visibility || {})};
+          isometricView.visibility = {...{slabs: true, footings: true, columns: true, beams: true, frames: false}, ...(snapshot.isometricView?.visibility || {})};
           if (snapshot.structuralEstimatePricing && typeof snapshot.structuralEstimatePricing === "object") {
             Object.assign(structuralEstimatePricingState, deepCopy(snapshot.structuralEstimatePricing));
             structuralEstimatePricingState.prices = {...(snapshot.structuralEstimatePricing.prices || {})};
@@ -28326,7 +28327,7 @@
         isometricView.frameOnly = false;
         isometricView.projection = "isometric";
         isometricView.cameraHeight = 4.5;
-        isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: true};
+        isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: false};
         try { lastAnalysisResult = null; } catch (error) {}
         workspaceHistory.length = 0;
         updateUndoControls();
@@ -33933,7 +33934,7 @@
         if (!ctx) return;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const surface = canvasTheme("--surface", "#061719");
+        const surface = isometricPrintRender ? "#ffffff" : canvasTheme("--surface", "#061719");
         const ink = canvasTheme("--dimension", "#ffffff");
         const gridColor = canvasTheme("--grid", "#31545a");
         ctx.fillStyle = surface;
@@ -34117,8 +34118,8 @@
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.fillStyle = fill;
-            ctx.strokeStyle = "#f0c79f";
-            ctx.lineWidth = 1.35;
+            ctx.strokeStyle = isometricPrintRender ? "#000000" : "#f0c79f";
+            ctx.lineWidth = isometricPrintRender ? 2.25 : 1.35;
             ctx.beginPath();
             points.forEach((item, index) => index ? ctx.lineTo(item.x, item.y) : ctx.moveTo(item.x, item.y));
             ctx.closePath();
@@ -34132,8 +34133,8 @@
             [vertices.b11, vertices.b01, vertices.t01, vertices.t11],
             [vertices.b01, vertices.b00, vertices.t00, vertices.t01]
           ].sort((a, b) => a.reduce((sum, item) => sum + item.y, 0) - b.reduce((sum, item) => sum + item.y, 0));
-          sideFaces.forEach(points => face(points, "#684426", 0.86));
-          face([vertices.t00, vertices.t10, vertices.t11, vertices.t01], "#9a6b42", 0.94);
+          sideFaces.forEach(points => face(points, "#684426", 0.5));
+          face([vertices.t00, vertices.t10, vertices.t11, vertices.t01], "#9a6b42", 0.5);
           label3d(
             footing.name,
             {x: x0, y: footing.y, z: 0.01},
@@ -34228,9 +34229,9 @@
           ].sort((a, b) => a.reduce((sum, item) => sum + item.y, 0) - b.reduce((sum, item) => sum + item.y, 0));
           faces.forEach(face => {
             ctx.save();
-            ctx.fillStyle = fill;
-            ctx.strokeStyle = stroke;
-            ctx.lineWidth = 1;
+            ctx.fillStyle = isometricPrintRender ? "rgba(128, 128, 128, 0.50)" : fill;
+            ctx.strokeStyle = isometricPrintRender ? "#000000" : stroke;
+            ctx.lineWidth = isometricPrintRender ? 2.25 : 1;
             ctx.beginPath();
             face.forEach((item, index) => index ? ctx.lineTo(item.x, item.y) : ctx.moveTo(item.x, item.y));
             ctx.closePath();
@@ -34267,7 +34268,7 @@
               x0: start.x - columnWidth / 2, x1: start.x + columnWidth / 2,
               y0: start.y - columnDepth / 2, y1: start.y + columnDepth / 2,
               z0: start.z, z1: end.z
-            }, "rgba(28, 138, 86, 0.72)", "#72f2ad");
+            }, "rgba(28, 138, 86, 0.50)", "#72f2ad");
             label3d(planColumnName(key, storyIndex), start, end, "#00e676", -8, 9);
           }
           if (!planState.footings[key]) {
@@ -34300,7 +34301,7 @@
               const start = {x: data.xPos[a], y: data.yPos[yi], z};
               const end = {x: data.xPos[b], y: data.yPos[yi], z};
               const section = isoBeamDimensions("X", yLabel, group.designGroupId);
-              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - section.width / 2, y1: start.y + section.width / 2, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.42)", beamColor);
+              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - section.width / 2, y1: start.y + section.width / 2, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.50)", beamColor);
               label3d(group.name, start, end, "#ff1744", -7, 9);
             }
           });
@@ -34319,7 +34320,7 @@
               const start = {x: data.xPos[xi], y: data.yPos[a], z};
               const end = {x: data.xPos[xi], y: data.yPos[b], z};
               const section = isoBeamDimensions("Y", xLabel, group.designGroupId);
-              drawIsoSolid({x0: start.x - section.width / 2, x1: start.x + section.width / 2, y0: start.y, y1: end.y, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.42)", beamColor);
+              drawIsoSolid({x0: start.x - section.width / 2, x1: start.x + section.width / 2, y0: start.y, y1: end.y, z0: z - section.height, z1: z}, "rgba(150, 166, 163, 0.50)", beamColor);
               label3d(group.name, start, end, "#ff1744", 7, 9);
             }
           });
@@ -34336,9 +34337,9 @@
             const memberWidth = Math.max(0.1, (Number(member.width) || numericInput("beamWidth", 300)) / 1000);
             const memberHeight = Math.max(0.15, (Number(member.height) || numericInput("beamHeight", 500)) / 1000);
             if (planMemberAxis(member, data) === "Y") {
-              drawIsoSolid({x0: start.x - memberWidth / 2, x1: start.x + memberWidth / 2, y0: start.y, y1: end.y, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.42)", "#7fc8ff");
+              drawIsoSolid({x0: start.x - memberWidth / 2, x1: start.x + memberWidth / 2, y0: start.y, y1: end.y, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.50)", "#7fc8ff");
             } else {
-              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - memberWidth / 2, y1: start.y + memberWidth / 2, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.42)", "#7fc8ff");
+              drawIsoSolid({x0: start.x, x1: end.x, y0: start.y - memberWidth / 2, y1: start.y + memberWidth / 2, z0: z - memberHeight, z1: z}, "rgba(88, 143, 181, 0.50)", "#7fc8ff");
             }
             label3d(member.name || member.id || "Beam", start, end, member.type === "Column" ? "#00e676" : "#ff1744", -7, 9);
           });
@@ -34351,7 +34352,7 @@
                 x0: data.xPos[cell.xIndex], x1: data.xPos[cell.xIndex + 1],
                 y0: data.yPos[cell.yIndex], y1: data.yPos[cell.yIndex + 1],
                 z0: z - thickness, z1: z
-              }, "rgba(163, 120, 113, 0.25)", "rgba(163, 120, 113, 0.48)");
+              }, "rgba(163, 120, 113, 0.50)", "rgba(163, 120, 113, 0.88)");
             });
             const xIndices = region.cells.flatMap(cell => [cell.xIndex, cell.xIndex + 1]);
             const minXIndex = Math.min(...xIndices);
@@ -49002,9 +49003,9 @@
         const printDocument = frame.contentDocument;
         printDocument.open();
         printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeOutputHtml(title)}</title><style>
-          @page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}html,body{background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+          @page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}html,body{width:100%;background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
           header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
-          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:158mm;object-fit:contain}.drawing-page{height:165mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-page h2{margin:0 0 4mm;font-size:14px;text-align:center;text-transform:uppercase}.drawing-page .drawing{flex:1;min-height:0}
+          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:178mm;object-fit:contain}.drawing-page{width:100%;height:181mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always;overflow:hidden}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-page h2{flex:0 0 auto;margin:0 0 2mm;font-size:13px;line-height:6mm;text-align:center;text-transform:uppercase}.drawing-page .drawing{flex:1 1 auto;width:100%;height:100%;min-height:0;max-height:none;object-fit:contain;object-position:center center}
           .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#000;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #555}.mpr-solution-section h4{margin:0 0 7px;color:#000;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #000;border-radius:50%;color:#000;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#000;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#000;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #000;background:#fff;color:#000;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #000;background:#fff;color:#000}.mpr-academic-figure figcaption{margin:0 0 8px;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#000;background:#fff}.mpr-academic-figure svg text{fill:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#000;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#000;stroke-width:1.55}.academic-compression-block{fill:#ddd;stroke:#000;stroke-width:1}.academic-stirrup{fill:none;stroke:#000;stroke-width:1.5}.academic-diagram-lines circle{fill:#fff;stroke:#000;stroke-width:1}.academic-dimension{fill:none;stroke:#000;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#000;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#000;stroke-width:.75}.mpr-academic-figure p{margin:7px 0 0;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;background:#fff!important;color:#000!important;font-size:9.45px}caption{background:#fff!important;color:#000!important;font-weight:700;padding:4px;border:1px solid #000;border-top:2mm solid #fff}th,td{border:1px solid #000!important;background:#fff!important;color:#000!important;padding:3px;white-space:nowrap}th{font-weight:700}.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;color:#000;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#fff!important;color:#000!important;font-weight:700}
         </style></head><body><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
         printDocument.close();
@@ -49029,7 +49030,7 @@
         printStandaloneOutput(title, `<img class="drawing" src="${image}" alt="${title}">`, outputMode);
       }
 
-      function monochromeDrawingDataUrl(sourceCanvas) {
+      function monochromeDrawingDataUrl(sourceCanvas, preserveTones = false) {
         const output = document.createElement("canvas");
         output.width = sourceCanvas.width;
         output.height = sourceCanvas.height;
@@ -49048,18 +49049,46 @@
           g: color.g + pixels[offset + 1] / sampleOffsets.length,
           b: color.b + pixels[offset + 2] / sampleOffsets.length
         }), {r: 0, g: 0, b: 0});
+        let minX = output.width;
+        let minY = output.height;
+        let maxX = -1;
+        let maxY = -1;
         for (let offset = 0; offset < pixels.length; offset += 4) {
           const alpha = pixels[offset + 3];
           const distance = Math.abs(pixels[offset] - background.r) + Math.abs(pixels[offset + 1] - background.g) + Math.abs(pixels[offset + 2] - background.b);
           const paper = alpha < 16 || distance < 24;
-          const value = paper ? 255 : 0;
+          const value = paper ? 255 : (preserveTones
+            ? Math.max(0, Math.min(220, Math.round(pixels[offset] * 0.2126 + pixels[offset + 1] * 0.7152 + pixels[offset + 2] * 0.0722)))
+            : 0);
+          if (!paper) {
+            const pixelIndex = offset / 4;
+            const x = pixelIndex % output.width;
+            const y = Math.floor(pixelIndex / output.width);
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
           pixels[offset] = value;
           pixels[offset + 1] = value;
           pixels[offset + 2] = value;
           pixels[offset + 3] = 255;
         }
         context.putImageData(image, 0, 0);
-        return output.toDataURL("image/png");
+        if (maxX < minX || maxY < minY) return output.toDataURL("image/png");
+        const padding = Math.max(18, Math.round(Math.max(maxX - minX + 1, maxY - minY + 1) * 0.018));
+        const sourceX = Math.max(0, minX - padding);
+        const sourceY = Math.max(0, minY - padding);
+        const sourceWidth = Math.min(output.width - sourceX, maxX - sourceX + 1 + padding);
+        const sourceHeight = Math.min(output.height - sourceY, maxY - sourceY + 1 + padding);
+        const cropped = document.createElement("canvas");
+        cropped.width = sourceWidth;
+        cropped.height = sourceHeight;
+        const croppedContext = cropped.getContext("2d");
+        croppedContext.fillStyle = "#ffffff";
+        croppedContext.fillRect(0, 0, cropped.width, cropped.height);
+        croppedContext.drawImage(output, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+        return cropped.toDataURL("image/png");
       }
 
       function printAllDrawingViews(outputMode = "printer") {
@@ -49071,9 +49100,27 @@
         if (![planCanvas, xCanvas, yCanvas, isoCanvas].every(Boolean)) return;
         const originalView = planState.activeView;
         const originalLevelIndex = planState.activeLevelIndex;
+        const originalDrawingTransforms = {
+          planZoom: planView.zoom,
+          planPan: {...planView.pan},
+          xZoom: zoom,
+          xPan: {...pan},
+          yZoom: yAxisView.zoom,
+          yPan: {...yAxisView.pan},
+          isoZoom: isometricView.zoom,
+          isoPan: {...isometricView.pan}
+        };
         const pages = [];
-        const capture = (title, canvasElement) => pages.push({title, image: monochromeDrawingDataUrl(canvasElement)});
+        const capture = (title, canvasElement, preserveTones = false) => pages.push({title, image: monochromeDrawingDataUrl(canvasElement, preserveTones)});
         try {
+          planView.zoom = 0.84;
+          planView.pan = {x: 0, y: 0};
+          zoom = 1;
+          pan = {x: 0, y: 0};
+          yAxisView.zoom = 0.84;
+          yAxisView.pan = {x: 0, y: 0};
+          isometricView.zoom = 1;
+          isometricView.pan = {x: 0, y: 0};
           planState.activeView = "PLAN";
           for (let levelIndex = -1; levelIndex < data.levels.length; levelIndex += 1) {
             planState.activeLevelIndex = levelIndex;
@@ -49084,9 +49131,19 @@
           capture("X-Axis Frame", xCanvas);
           drawYAxisCanvas(data);
           capture("Y-Axis Frame", yCanvas);
+          isometricPrintRender = true;
           drawIsometricStructure(data);
-          capture("3D Isometric View", isoCanvas);
+          capture("3D Isometric View", isoCanvas, true);
         } finally {
+          isometricPrintRender = false;
+          planView.zoom = originalDrawingTransforms.planZoom;
+          planView.pan = originalDrawingTransforms.planPan;
+          zoom = originalDrawingTransforms.xZoom;
+          pan = originalDrawingTransforms.xPan;
+          yAxisView.zoom = originalDrawingTransforms.yZoom;
+          yAxisView.pan = originalDrawingTransforms.yPan;
+          isometricView.zoom = originalDrawingTransforms.isoZoom;
+          isometricView.pan = originalDrawingTransforms.isoPan;
           planState.activeLevelIndex = originalLevelIndex;
           planState.activeView = originalView;
           renderPlanLevelTabs(data);
