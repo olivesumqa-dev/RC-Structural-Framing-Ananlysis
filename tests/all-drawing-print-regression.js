@@ -12,6 +12,12 @@ assert.match(source, /capture\("X-Axis Frame", xCanvas\);[\s\S]*?capture\("Y-Axi
   "X frame, Y frame, and 3D ISO must be included");
 assert.match(source, /\.drawing-page\{[^}]*break-after:page;page-break-after:always/,
   "each drawing view must print on a separate page");
+assert.match(source, /@page\{size:A4 landscape;/,
+  "Structural Plan and MPR print output must explicitly use A4 landscape orientation");
+assert.match(source, /function monochromeDrawingDataUrl\([\s\S]*?const paper = alpha < 16 \|\| distance < 24;[\s\S]*?return output\.toDataURL\("image\/png"\);/,
+  "drawing canvases must be converted to a white-background, black-object print image");
+assert.match(source, /const capture = \(title, canvasElement\) => pages\.push\(\{title, image: monochromeDrawingDataUrl\(canvasElement\)\}\);/,
+  "combined drawing pages must use monochrome captures");
 assert.match(source, /planState\.activeLevelIndex = originalLevelIndex;[\s\S]*?planState\.activeView = originalView;/,
   "printing must restore the user's original drawing view");
 assert.match(source, /byId\("planPrintBtn"\)\?\.addEventListener\("click", \(\) => printAllDrawingViews\("printer"\)\)/,

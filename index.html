@@ -49002,10 +49002,10 @@
         const printDocument = frame.contentDocument;
         printDocument.open();
         printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeOutputHtml(title)}</title><style>
-          @page{size:landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;color:#111;font-family:Arial,sans-serif}
+          @page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}html,body{background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
           header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
           h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:158mm;object-fit:contain}.drawing-page{height:165mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-page h2{margin:0 0 4mm;font-size:14px;text-align:center;text-transform:uppercase}.drawing-page .drawing{flex:1;min-height:0}
-          .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#39514b;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #9aa5a2}.mpr-solution-section h4{margin:0 0 7px;color:#553c00;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #4c625c;border-radius:50%;color:#173a31;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#111;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#553c00;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #f3ad4b;background:#fff7e8;color:#2a2925;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #8f9d98;background:#fff;color:#151515}.mpr-academic-figure figcaption{margin:0 0 8px;color:#132b25;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#151515;background:#fff}.mpr-academic-figure svg text{fill:#151515;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#151515;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#151515;stroke-width:1.55}.academic-compression-block{fill:#e4e0d5;stroke:#151515;stroke-width:1}.academic-stirrup{fill:none;stroke:#345b50;stroke-width:1.5}.academic-diagram-lines circle{fill:#d58019;stroke:#151515;stroke-width:1}.academic-dimension{fill:none;stroke:#4b5f58;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#666;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#777;stroke-width:.75}.mpr-academic-figure p{margin:7px 0 0;color:#3a453f;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;font-size:9.45px}caption{background:#878181;color:#fff;font-weight:700;padding:4px;border-top:2mm solid #fff}th,td{border:1px solid #777;padding:3px;white-space:nowrap}th{background:#e9e9e9}.design-status.warn,.design-status.fail{color:#F3AD4B!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#303637!important;color:#fff!important;font-weight:700}
+          .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#000;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #555}.mpr-solution-section h4{margin:0 0 7px;color:#000;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #000;border-radius:50%;color:#000;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#000;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#000;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #000;background:#fff;color:#000;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #000;background:#fff;color:#000}.mpr-academic-figure figcaption{margin:0 0 8px;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#000;background:#fff}.mpr-academic-figure svg text{fill:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#000;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#000;stroke-width:1.55}.academic-compression-block{fill:#ddd;stroke:#000;stroke-width:1}.academic-stirrup{fill:none;stroke:#000;stroke-width:1.5}.academic-diagram-lines circle{fill:#fff;stroke:#000;stroke-width:1}.academic-dimension{fill:none;stroke:#000;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#000;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#000;stroke-width:.75}.mpr-academic-figure p{margin:7px 0 0;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;background:#fff!important;color:#000!important;font-size:9.45px}caption{background:#fff!important;color:#000!important;font-weight:700;padding:4px;border:1px solid #000;border-top:2mm solid #fff}th,td{border:1px solid #000!important;background:#fff!important;color:#000!important;padding:3px;white-space:nowrap}th{font-weight:700}.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;color:#000;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#fff!important;color:#000!important;font-weight:700}
         </style></head><body><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
         printDocument.close();
         const cleanup = () => window.setTimeout(() => frame.remove(), 400);
@@ -49025,8 +49025,41 @@
       function printCanvasOutput(canvasId, title, outputMode) {
         const drawing = byId(canvasId);
         if (!drawing) return;
-        const image = drawing.toDataURL("image/png");
+        const image = monochromeDrawingDataUrl(drawing);
         printStandaloneOutput(title, `<img class="drawing" src="${image}" alt="${title}">`, outputMode);
+      }
+
+      function monochromeDrawingDataUrl(sourceCanvas) {
+        const output = document.createElement("canvas");
+        output.width = sourceCanvas.width;
+        output.height = sourceCanvas.height;
+        const context = output.getContext("2d", {willReadFrequently: true});
+        context.drawImage(sourceCanvas, 0, 0);
+        const image = context.getImageData(0, 0, output.width, output.height);
+        const pixels = image.data;
+        const sampleOffsets = [
+          0,
+          (output.width - 1) * 4,
+          (output.height - 1) * output.width * 4,
+          ((output.height - 1) * output.width + output.width - 1) * 4
+        ];
+        const background = sampleOffsets.reduce((color, offset) => ({
+          r: color.r + pixels[offset] / sampleOffsets.length,
+          g: color.g + pixels[offset + 1] / sampleOffsets.length,
+          b: color.b + pixels[offset + 2] / sampleOffsets.length
+        }), {r: 0, g: 0, b: 0});
+        for (let offset = 0; offset < pixels.length; offset += 4) {
+          const alpha = pixels[offset + 3];
+          const distance = Math.abs(pixels[offset] - background.r) + Math.abs(pixels[offset + 1] - background.g) + Math.abs(pixels[offset + 2] - background.b);
+          const paper = alpha < 16 || distance < 24;
+          const value = paper ? 255 : 0;
+          pixels[offset] = value;
+          pixels[offset + 1] = value;
+          pixels[offset + 2] = value;
+          pixels[offset + 3] = 255;
+        }
+        context.putImageData(image, 0, 0);
+        return output.toDataURL("image/png");
       }
 
       function printAllDrawingViews(outputMode = "printer") {
@@ -49039,7 +49072,7 @@
         const originalView = planState.activeView;
         const originalLevelIndex = planState.activeLevelIndex;
         const pages = [];
-        const capture = (title, canvasElement) => pages.push({title, image: canvasElement.toDataURL("image/png")});
+        const capture = (title, canvasElement) => pages.push({title, image: monochromeDrawingDataUrl(canvasElement)});
         try {
           planState.activeView = "PLAN";
           for (let levelIndex = -1; levelIndex < data.levels.length; levelIndex += 1) {
