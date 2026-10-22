@@ -1024,8 +1024,6 @@ function drawGridBubbles() {
     bubbleBoxes.push({x, y: top, r: scaled(15)});
     ctx.beginPath();
     ctx.arc(x, top, scaled(15), 0, Math.PI*2);
-    ctx.fillStyle = isNight ? "#000" : "#fff";
-    ctx.fill();
     ctx.strokeStyle = isNight ? "#fff" : color;
     ctx.lineWidth = scaled(1);
     ctx.stroke();

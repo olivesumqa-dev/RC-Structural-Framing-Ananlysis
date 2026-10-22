@@ -3285,7 +3285,7 @@
             <colgroup>
               <col style="width:3.5%"><col style="width:4.5%"><col style="width:6%"><col style="width:4%"><col style="width:3.3%"><col style="width:3.3%"><col style="width:3.3%">
               <col style="width:5%"><col style="width:6%"><col style="width:5%"><col style="width:5.2%">
-              <col style="width:4%"><col style="width:4%"><col style="width:5%"><col style="width:6%"><col style="width:6%"><col style="width:5%"><col style="width:13.8%"><col style="width:5%"><col style="width:3%">
+              <col style="width:4%"><col style="width:4%"><col style="width:4.5%"><col style="width:5%"><col style="width:6%"><col style="width:6%"><col style="width:5%"><col style="width:13.8%"><col style="width:5%"><col style="width:3%">
             </colgroup>
             <thead>
               <tr>
@@ -3299,12 +3299,13 @@
                 <th>A, mm2</th><th>I, mm4</th><th>E, MPa</th><th class="mpr-load-heading">DL, kN/m</th><th class="mpr-load-heading">LL, kN/m</th><th class="mpr-load-heading">Point, kN</th><th class="mpr-load-heading">Wall, kN/m</th><th class="mpr-load-heading">WL frame, kN</th><th class="mpr-load-heading">EQ frame, kN</th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="shear">Vu, kN<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="moment">Mu, kN-m<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
+                <th>Max Def., mm</th>
                 <th aria-sort="none"><button class="mpr-sort-button" type="button" data-beam-sort="rebar" data-mpr-bulk-rebar-kind="beam-longitudinal" title="Click to sort. Right-click to change all longitudinal rebar sizes.">Rebar dia., mm<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M4.5 5.5 8 2l3.5 3.5"/></svg></button></th>
                 <th>Support</th><th>Midspan</th><th><button class="mpr-rebar-bulk-header" type="button" data-mpr-bulk-rebar-kind="beam-stirrup" title="Right-click to change all stirrup sizes.">Stirrup diameter, mm</button></th><th>Stirrup spacing, mm</th><th>D/C / Status</th><th class="mpr-visibility-heading">Hide</th>
               </tr>
             </thead>
             <tbody id="memberPropsBody">
-              <tr><td colspan="25">No data</td></tr>
+              <tr><td colspan="26">No data</td></tr>
             </tbody>
           </table>
           </div>
@@ -27884,7 +27885,7 @@
     })();
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=82"></script>
+  <script src="app.js?v=83"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -38375,9 +38376,11 @@
         return !!member && (member.type === "Tie Beam" || /^TB/i.test(String(member.name || "")));
       }
 
-      function displayedTieBeamLoads(member, loads) {
+      function displayedBeamLoads(member, loads) {
         const displayed = Array.isArray(loads) ? loads.slice() : [];
-        if (!isTieBeamMember(member)) return displayed;
+        if (!member || member.type === "Column") return displayed;
+        const hasSlabLoad = displayed.some(load => ["floor-slab", "roof-slab", "occupancy-live", "roof-live"].includes(String(load.generator || "")));
+        if (!isTieBeamMember(member) && hasSlabLoad) return displayed;
         const hasSelfWeight = displayed.some(load => loadCaseLabel(load.case) === "DL-SW");
         if (!hasSelfWeight) {
           let selfWeight = 0;
@@ -38393,6 +38396,14 @@
             displayOnly: true
           });
         }
+        if (!displayed.some(load => loadCaseLabel(load.case) === "LL")) displayed.push({
+          kind: "member_udl",
+          case: "LL",
+          member: member.id,
+          w: 0,
+          wx: 0,
+          displayOnly: true
+        });
         return displayed;
       }
 
@@ -38988,7 +38999,7 @@
 
             const rawMemberLoads = yModel.loads.filter(load => String(load.member) === String(member.id) && load.kind === "member_udl");
             const assignedMemberLoads = rawMemberLoads.filter(load => ["structural-wall-plan", "manual-wall-plan", "manual-wall"].includes(String(load.source || "")));
-            const memberLoads = showCalculatedLoads ? displayedTieBeamLoads(member, rawMemberLoads) : assignedMemberLoads;
+            const memberLoads = showCalculatedLoads ? displayedBeamLoads(member, rawMemberLoads) : assignedMemberLoads;
             if (memberLoads.length && loadsAreVisible) {
               drawYAxisUdlBox(ctx, member, {x: ax, y: ay}, {x: bx, y: by}, memberLoads);
             }
@@ -42223,13 +42234,16 @@
               load.node = representative.id;
               nodeLoadMap[`story|${key}`] = load;
             });
-            (model.members || []).filter(isTieBeamMember).forEach(member => {
-              const key = `${member.id}|STANDARD`;
+            (model.members || []).filter(member => member.type !== "Column").forEach(member => {
+              const memberLoads = model.loads.filter(load => String(load.member) === String(member.id));
+              const displayLoads = displayedBeamLoads(member, memberLoads);
+              if (displayLoads.length === memberLoads.length) return;
+              const key = String(member.id);
               if (!memberUdlMap[key]) memberUdlMap[key] = {kind: "member_udl", member: member.id, cases: {}, wallSource: false};
-              if (!memberUdlMap[key].cases["DL-SW"]) {
-                const selfWeightLoad = displayedTieBeamLoads(member, []).find(load => load.case === "DL-SW");
-                memberUdlMap[key].cases["DL-SW"] = {w: Number(selfWeightLoad?.w) || 0, wx: 0};
-              }
+              displayLoads.filter(load => load.displayOnly).forEach(load => {
+                const caseName = load.case || "UDL";
+                if (!memberUdlMap[key].cases[caseName]) memberUdlMap[key].cases[caseName] = {w: Number(load.w) || 0, wx: Number(load.wx) || 0, wallW: 0};
+              });
             });
             const renderedUdlEntries = Object.values(memberUdlMap).map(load => {
               const member = getMember(load.member);
@@ -44706,6 +44720,7 @@
             : null;
           const displayedShear = reinforcement ? Math.max(...schedules.map(item => Math.abs(item.designShear))) : Math.max(...memberValues.map(values => Math.abs(Number(values.maxShear) || 0)));
           const displayedMoment = reinforcement ? Math.max(...schedules.map(item => Math.abs(item.designMoment))) : Math.max(...memberValues.map(values => Math.abs(Number(values.maxMoment) || 0)));
+          const displayedDeflection = schedules.length ? Math.max(...schedules.map(item => Math.abs(Number(item.serviceDeflection) || 0))) : 0;
           const nameAttribute = axis === "X" ? "data-member-name" : "data-y-member-name";
           const dimensionAttribute = axis === "X" ? "data-member-dim" : "data-y-member-dim";
           const groupAttribute = escapeHtml(group.key);
@@ -44744,7 +44759,7 @@
             `${mprLoadCell(loadSources.wall, "Equivalent line load from Wall Tool walls and manual Wall Loads along Beam assignments supported by this beam.")}` +
             `${mprLoadCell(loadSources.wind, "Total wind load applied to this connected analysis frame; member forces are reported in Vu and Mu.")}` +
             `${mprLoadCell(loadSources.earthquake, "Total earthquake load applied to this connected analysis frame; member forces are reported in Vu and Mu.")}` +
-            `<td>${valueCell(displayedShear)}</td><td>${valueCell(displayedMoment)}</td>` +
+            `<td>${valueCell(displayedShear)}</td><td>${valueCell(displayedMoment)}</td><td title="Maximum conservative service-load deflection for the governing analytical segment.">${valueCell(displayedDeflection)}</td>` +
             `${reinforcementCells}${mprVisibilityCell(visibilityKey, displayName)}</tr>`;
         });
       }
@@ -47094,7 +47109,7 @@
             rows.push(...resultTableMemberRows(axis, frameLine, entry.model, result, rows.length));
           });
         });
-        body.innerHTML = rows.join("") || '<tr><td colspan="25">No analyzed beam data. Place columns so coordinated X and Y frame lines can be generated, then Calculate.</td></tr>';
+        body.innerHTML = rows.join("") || '<tr><td colspan="26">No analyzed beam data. Place columns so coordinated X and Y frame lines can be generated, then Calculate.</td></tr>';
         applyBeamMprSort();
         const columnRows = columnResultRows();
         columnBody.innerHTML = columnRows.join("") || '<tr><td colspan="25">No column data. Place columns in the Structural Plan.</td></tr>';
