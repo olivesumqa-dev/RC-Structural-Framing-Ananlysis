@@ -12,12 +12,14 @@ assert.match(source, /capture\("X-Axis Frame", xCanvas\);[\s\S]*?capture\("Y-Axi
   "X frame, Y frame, and 3D ISO must be included");
 assert.match(source, /\.drawing-page\{[^}]*break-after:page;page-break-after:always/,
   "each drawing view must print on a separate page");
-assert.match(source, /@page\{size:A4 landscape;/,
-  "Structural Plan and MPR print output must explicitly use A4 landscape orientation");
+assert.match(source, /@page\{size:297mm 210mm;/,
+  "Structural Plan and MPR print output must explicitly use physical A4 landscape dimensions");
 assert.match(source, /function monochromeDrawingDataUrl\([\s\S]*?const paper = alpha < 16 \|\| distance < 24;[\s\S]*?croppedContext\.drawImage\(output,[\s\S]*?return cropped\.toDataURL\("image\/png"\);/,
   "drawing canvases must be converted to a cropped white-background, black-object print image");
-assert.match(source, /@page\{size:A4 landscape;margin:6mm\}/,
+assert.match(source, /@page\{size:297mm 210mm;margin:5mm\}/,
   "combined view output must maximize the A4 landscape printable area");
+assert.match(source, /const trimInk = Math\.max\(1, Math\.floor\(totalInk \* 0\.0015\)\);[\s\S]*?lowerExtent\(columnInk\)[\s\S]*?upperExtent\(rowInk\)/,
+  "drawing extents must ignore isolated edge pixels that make the printed drawing too small");
 assert.match(source, /id="isoShowFrames" type="checkbox">X&amp;Y Axis Frames/,
   "3D ISO X and Y frame overlays must be off by default");
 assert.match(source, /visibility: \{slabs: true, footings: true, columns: true, beams: true, frames: false\}/,

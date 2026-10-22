@@ -49001,13 +49001,14 @@
         frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
         document.body.appendChild(frame);
         const printDocument = frame.contentDocument;
+        const outputBodyClass = content.includes('class="drawing-page"') ? "drawing-output" : "";
         printDocument.open();
         printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeOutputHtml(title)}</title><style>
-          @page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}html,body{width:100%;background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-          header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
-          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:178mm;object-fit:contain}.drawing-page{width:100%;height:181mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always;overflow:hidden}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-page h2{flex:0 0 auto;margin:0 0 2mm;font-size:13px;line-height:6mm;text-align:center;text-transform:uppercase}.drawing-page .drawing{flex:1 1 auto;width:100%;height:100%;min-height:0;max-height:none;object-fit:contain;object-position:center center}
+          @page{size:297mm 210mm;margin:5mm}*{box-sizing:border-box}html,body{width:287mm;min-width:287mm;background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+          header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}body.drawing-output>header{display:none}
+          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:196mm;object-fit:contain}.drawing-page{width:287mm;height:200mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always;overflow:hidden}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-page h2{flex:0 0 6mm;margin:0;font-size:13px;line-height:6mm;text-align:center;text-transform:uppercase}.drawing-page .drawing{display:block;flex:1 1 auto;width:287mm;height:194mm;min-height:0;max-width:287mm;max-height:194mm;object-fit:contain;object-position:center center}
           .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#000;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #555}.mpr-solution-section h4{margin:0 0 7px;color:#000;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #000;border-radius:50%;color:#000;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#000;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#000;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #000;background:#fff;color:#000;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #000;background:#fff;color:#000}.mpr-academic-figure figcaption{margin:0 0 8px;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#000;background:#fff}.mpr-academic-figure svg text{fill:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#000;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#000;stroke-width:1.55}.academic-compression-block{fill:#ddd;stroke:#000;stroke-width:1}.academic-stirrup{fill:none;stroke:#000;stroke-width:1.5}.academic-diagram-lines circle{fill:#fff;stroke:#000;stroke-width:1}.academic-dimension{fill:none;stroke:#000;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#000;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#000;stroke-width:.75}.mpr-academic-figure p{margin:7px 0 0;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;background:#fff!important;color:#000!important;font-size:9.45px}caption{background:#fff!important;color:#000!important;font-weight:700;padding:4px;border:1px solid #000;border-top:2mm solid #fff}th,td{border:1px solid #000!important;background:#fff!important;color:#000!important;padding:3px;white-space:nowrap}th{font-weight:700}.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;color:#000;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#fff!important;color:#000!important;font-weight:700}
-        </style></head><body><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
+        </style></head><body class="${outputBodyClass}"><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
         printDocument.close();
         const cleanup = () => window.setTimeout(() => frame.remove(), 400);
         frame.contentWindow.onafterprint = cleanup;
@@ -49053,6 +49054,9 @@
         let minY = output.height;
         let maxX = -1;
         let maxY = -1;
+        const columnInk = new Uint32Array(output.width);
+        const rowInk = new Uint32Array(output.height);
+        let totalInk = 0;
         for (let offset = 0; offset < pixels.length; offset += 4) {
           const alpha = pixels[offset + 3];
           const distance = Math.abs(pixels[offset] - background.r) + Math.abs(pixels[offset + 1] - background.g) + Math.abs(pixels[offset + 2] - background.b);
@@ -49068,6 +49072,9 @@
             minY = Math.min(minY, y);
             maxX = Math.max(maxX, x);
             maxY = Math.max(maxY, y);
+            columnInk[x] += 1;
+            rowInk[y] += 1;
+            totalInk += 1;
           }
           pixels[offset] = value;
           pixels[offset + 1] = value;
@@ -49076,6 +49083,30 @@
         }
         context.putImageData(image, 0, 0);
         if (maxX < minX || maxY < minY) return output.toDataURL("image/png");
+        // Ignore isolated edge pixels when determining the plotted extent. Without
+        // this, one distant anti-aliased mark can force the whole canvas into the
+        // PDF and make the actual structural drawing unnecessarily small.
+        const trimInk = Math.max(1, Math.floor(totalInk * 0.0015));
+        const lowerExtent = counts => {
+          let accumulated = 0;
+          for (let index = 0; index < counts.length; index += 1) {
+            accumulated += counts[index];
+            if (accumulated > trimInk) return index;
+          }
+          return 0;
+        };
+        const upperExtent = counts => {
+          let accumulated = 0;
+          for (let index = counts.length - 1; index >= 0; index -= 1) {
+            accumulated += counts[index];
+            if (accumulated > trimInk) return index;
+          }
+          return counts.length - 1;
+        };
+        minX = Math.max(minX, lowerExtent(columnInk));
+        maxX = Math.min(maxX, upperExtent(columnInk));
+        minY = Math.max(minY, lowerExtent(rowInk));
+        maxY = Math.min(maxY, upperExtent(rowInk));
         const padding = Math.max(18, Math.round(Math.max(maxX - minX + 1, maxY - minY + 1) * 0.018));
         const sourceX = Math.max(0, minX - padding);
         const sourceY = Math.max(0, minY - padding);
