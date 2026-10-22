@@ -2557,7 +2557,7 @@
         </button>
         <div class="sidebar-package-content" id="modelCreationPackageContent">
         <p class="hint">
-          Create Node can place a junction directly on a girder. Plan columns: choose Create Column, then click a plan grid intersection. In Create Beams mode, click one node and continue through each aligned node. Use the Wall icon in the drawing toolbar to create continuous slab-supported walls between structural or grid nodes.
+          Create Node can place a junction directly on a girder. Plan columns: choose Create Column, then click a plan grid intersection. In Create Beams mode, click any two Plan nodes to create horizontal, vertical, or diagonal beams. Use the Wall icon in the drawing toolbar to create continuous slab-supported walls between structural or grid nodes.
         </p>
         <label>Editing Frame</label>
         <select id="activeFrameEditor">
@@ -27875,7 +27875,7 @@
     })();
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=81"></script>
+  <script src="app.js?v=82"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -32304,7 +32304,7 @@
         const customSegments = planLevelMembers(levelIndex).map(member => {
           const points = planMemberModelPoints(member, data);
           const axis = planMemberAxis(member, data);
-          return points && axis ? {axis, start: points.start, end: points.end} : null;
+          return points && ["X", "Y"].includes(axis) ? {axis, start: points.start, end: points.end} : null;
         }).filter(Boolean);
         const gridTolerance = 1e-6;
         const isPrimaryCoordinate = (value, coordinates) => coordinates.some(coordinate => Math.abs(Number(coordinate) - Number(value)) <= gridTolerance);
@@ -33186,7 +33186,7 @@
           y: Number(point.y),
           hostMemberId: hostMember?.id || "",
           hostAxis: axis,
-          hostFrameLine: axis === "X" ? hostMember?.y1 : hostMember?.x1
+          hostFrameLine: axis === "D" ? `DIAGONAL:${hostMember?.id}` : (axis === "X" ? hostMember?.y1 : hostMember?.x1)
         };
       }
 
@@ -33679,20 +33679,22 @@
           ctx.lineTo(b.x, b.y);
           ctx.stroke();
           ctx.restore();
-          const vertical = planMemberAxis(member, data) === "Y";
+          const memberAxis = planMemberAxis(member, data);
+          const vertical = memberAxis === "Y";
+          const diagonal = memberAxis === "D";
           const side = (a.x + b.x) / 2 < canvas.width / 2 ? 1 : -1;
           const labelOptions = {
             font: "700 9px Arial",
             color: "#ff1744",
-            rotate: vertical ? -Math.PI / 2 : 0
+            rotate: diagonal ? Math.atan2(b.y - a.y, b.x - a.x) : (vertical ? -Math.PI / 2 : 0)
           };
           const placement = drawNonOverlappingText(ctx, member.name, (a.x + b.x) / 2 + (vertical ? side * 9 : 0), (a.y + b.y) / 2 + (vertical ? 0 : 13), labelOptions, vertical
             ? [{x: 0, y: 0}, {x: -side * 18, y: 0}, {x: side * 4, y: 14}, {x: side * 4, y: -14}]
             : [{x: 0, y: 0}, {x: 26, y: 0}, {x: -26, y: 0}, {x: 0, y: 14}, {x: 0, y: -26}]);
           planNameLabelTargets.push({
             kind: "beam",
-            axis: vertical ? "Y" : "X",
-            frameLine: vertical ? member.x1 : member.y1,
+            axis: memberAxis,
+            frameLine: diagonal ? `DIAGONAL:${member.id}` : (vertical ? member.x1 : member.y1),
             levelIndex: activeLevelIndex,
             sourcePlanMemberId: member.id,
             designGroupId: `OFFSET|${member.id}`,
@@ -35330,14 +35332,14 @@
         const hit = nearestPlanMemberHit(canvasPoint, data);
         const axis = planMemberAxis(hit?.member, data);
         if (!hit || !axis) {
-          if (typeof status === "function") status("Click directly on an existing horizontal or vertical girder to create an off-grid node.");
+          if (typeof status === "function") status("Click directly on an existing beam to create an off-grid node.");
           return false;
         }
         const snapTolerance = 0.12;
         const point = {...hit.point};
-        const alignmentValues = axis === "X"
+        const alignmentValues = axis === "D" ? [] : (axis === "X"
           ? data.xPos.concat(planState.customNodes.map(node => Number(node.x)))
-          : data.yPos.concat(planState.customNodes.map(node => Number(node.y)));
+          : data.yPos.concat(planState.customNodes.map(node => Number(node.y))));
         const coordinateName = axis === "X" ? "x" : "y";
         const snapped = alignmentValues
           .filter(Number.isFinite)
@@ -35352,7 +35354,7 @@
         pushWorkspaceHistory();
         const node = nextPlanCustomNode(planState.activeLevelIndex, point, hit.member);
         node.hostFrameLine = hit.member.frameLine || node.hostFrameLine || "";
-        node.hostCoordinate = axis === "X" ? Number(point.y) : Number(point.x);
+        node.hostCoordinate = axis === "D" ? planMemberLocalCoordinate(hit.member, point, data) : (axis === "X" ? Number(point.y) : Number(point.x));
         planState.customNodes.push(node);
         engineeringState.designEnvelopes = null;
         engineeringState.frameCatalog = {X: {}, Y: {}};
@@ -36160,7 +36162,7 @@
             type: member.type || "Beam",
             levelIndex: Number(levelIndex),
             axis,
-            frameLine: member.frameLine || (axis === "X" ? member.y1 : member.x1),
+            frameLine: member.frameLine || (axis === "D" ? `DIAGONAL:${member.id}` : (axis === "X" ? member.y1 : member.x1)),
             sourcePlanMemberId: member.id,
             components: member.components?.length ? member.components.slice() : [],
             generated: false,
@@ -36969,7 +36971,28 @@
         const dy = Math.abs(points.end.y - points.start.y);
         if (dy < 1e-6 && dx >= 1e-6) return "X";
         if (dx < 1e-6 && dy >= 1e-6) return "Y";
+        if (dx >= 1e-6 && dy >= 1e-6) return "D";
         return null;
+      }
+
+      function planMemberAnalysisAxis(member, data = makePlanData()) {
+        const axis = planMemberAxis(member, data);
+        if (axis !== "D") return axis;
+        const points = planMemberModelPoints(member, data);
+        if (!points) return null;
+        return Math.abs(points.end.x - points.start.x) >= Math.abs(points.end.y - points.start.y) ? "X" : "Y";
+      }
+
+      function planMemberLocalCoordinate(member, pointValue, data = makePlanData()) {
+        const points = planMemberModelPoints(member, data);
+        if (!points || !pointValue) return 0;
+        const dx = Number(points.end.x) - Number(points.start.x);
+        const dy = Number(points.end.y) - Number(points.start.y);
+        const length = Math.hypot(dx, dy);
+        if (length < 1e-9) return 0;
+        return Math.max(0, Math.min(length,
+          ((Number(pointValue.x) - Number(points.start.x)) * dx + (Number(pointValue.y) - Number(points.start.y)) * dy) / length
+        ));
       }
 
       function planMemberPassesNode(member, intersection, axis, data) {
@@ -37242,10 +37265,10 @@
       function createCoordinatePlanMember(start, end, data) {
         const dx = Math.abs(Number(end.x) - Number(start.x));
         const dy = Math.abs(Number(end.y) - Number(start.y));
-        const axis = dy < 1e-4 && dx >= 1e-4 ? "X" : dx < 1e-4 && dy >= 1e-4 ? "Y" : null;
+        const axis = dy < 1e-4 && dx >= 1e-4 ? "X" : dx < 1e-4 && dy >= 1e-4 ? "Y" : dx >= 1e-4 && dy >= 1e-4 ? "D" : null;
         if (!axis) {
           drawPlan(data);
-          if (typeof status === "function") status("Beam endpoints must be horizontally or vertically aligned. Create the second girder node on the matching alignment.");
+          if (typeof status === "function") status("Select a different second Plan node. A beam cannot have zero length.");
           return false;
         }
         const levelIndex = planState.activeLevelIndex;
@@ -37267,8 +37290,9 @@
           grid: `${startLabel}-${endLabel}`,
           length: Math.hypot(dx, dy),
           axis,
-          frameCoordinate: axis === "X" ? Number(start.y) : Number(start.x),
-          offGrid: !(axis === "X" ? data.yPos : data.xPos).some(value => Math.abs(value - (axis === "X" ? Number(start.y) : Number(start.x))) < 1e-6)
+          frameCoordinate: axis === "D" ? null : (axis === "X" ? Number(start.y) : Number(start.x)),
+          offGrid: axis === "D" || !(axis === "X" ? data.yPos : data.xPos).some(value => Math.abs(value - (axis === "X" ? Number(start.y) : Number(start.x))) < 1e-6),
+          diagonal: axis === "D"
         };
         const signature = planMemberSignature(member, data);
         const duplicate = planState.members.some(existing => ["Beam", "Tie Beam"].includes(existing.type) && planMemberSignature(existing, data) === signature);
@@ -37296,9 +37320,7 @@
           return createCoordinatePlanMember(start, intersection, data);
         }
         if (start.xLabel !== intersection.xLabel && start.yLabel !== intersection.yLabel) {
-          drawPlan(data);
-          if (typeof status === "function") status("Plan members must follow an X or Y gridline. Select two aligned intersections.");
-          return false;
+          return createCoordinatePlanMember(start, intersection, data);
         }
         if (start.xLabel === intersection.xLabel && start.yLabel === intersection.yLabel) {
           drawPlan(data);
@@ -37407,7 +37429,7 @@
             if (createPlanMemberBetween(start, end, data)) {
               planState.memberStart = end;
               drawPlan(data);
-              if (typeof status === "function") status(`${end.label} is now the next start node. Continue clicking aligned nodes, or use Clear Selection to finish.`);
+              if (typeof status === "function") status(`${end.label} is now the next start node. Continue clicking Plan nodes, or use Clear Selection to finish.`);
             }
             return;
           }
@@ -37426,14 +37448,14 @@
         if (!planState.memberStart) {
           planState.memberStart = endpoint;
           drawPlan(data);
-          if (typeof status === "function") status(`${restoredEndpoint ? "Restored and selected" : "Start"} node ${endpoint.label}. Continue through horizontally or vertically aligned nodes; use Clear Selection to finish.`);
+          if (typeof status === "function") status(`${restoredEndpoint ? "Restored and selected" : "Start"} node ${endpoint.label}. Click any second Plan node to create a horizontal, vertical, or diagonal beam; use Clear Selection to finish.`);
           return;
         }
         const start = planState.memberStart;
         if (createPlanMemberBetween(start, endpoint, data)) {
           planState.memberStart = endpoint;
           drawPlan(data);
-          if (typeof status === "function") status(`${endpoint.label} is now the next start node. Continue clicking aligned nodes, or use Clear Selection to finish.`);
+          if (typeof status === "function") status(`${endpoint.label} is now the next start node. Continue clicking Plan nodes, or use Clear Selection to finish.`);
         } else {
           planState.memberStart = start;
           drawPlan(data);
@@ -37589,8 +37611,9 @@
             return;
           }
           const member = hit.member;
-          const axis = member.axis || planMemberAxis(member, data);
-          const frameLine = member.frameLine || (axis === "X" ? member.y1 : member.x1);
+          const planAxis = member.axis || planMemberAxis(member, data);
+          const axis = planAxis === "D" ? planMemberAnalysisAxis(member, data) : planAxis;
+          const frameLine = member.frameLine || (planAxis === "D" ? `DIAGONAL:${member.id}` : (axis === "X" ? member.y1 : member.x1));
           const totalY = data.yPos[data.yPos.length - 1] || 0;
           const enteredLoad = numericInput("engineeringPointFy", -20);
           const verticalLoad = enteredLoad === 0 ? 0 : -Math.abs(enteredLoad);
@@ -37604,7 +37627,7 @@
             sourcePlanMemberId: member.generated ? null : member.id,
             componentIds: member.components?.length ? member.components.slice() : [],
             point: {x: Number(hit.point.x), y: Number(hit.point.y)},
-            frameCoordinate: axis === "X" ? Number(hit.point.x) : totalY - Number(hit.point.y),
+            frameCoordinate: planAxis === "D" ? planMemberLocalCoordinate(member, hit.point, data) : (axis === "X" ? Number(hit.point.x) : totalY - Number(hit.point.y)),
             fy: verticalLoad
           });
           frameModelCache.X.clear();
@@ -40506,6 +40529,14 @@
         const axis = planMemberAxis(member, data);
         const endpoints = planMemberModelPoints(member, data);
         if (!axis || !endpoints) return 0;
+        if (axis === "D") {
+          const xSpans = data.xPos.slice(1).map((value, index) => Math.abs(value - data.xPos[index])).filter(value => value > 1e-6);
+          const ySpans = data.yPos.slice(1).map((value, index) => Math.abs(value - data.yPos[index])).filter(value => value > 1e-6);
+          const average = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+          const typicalX = average(xSpans);
+          const typicalY = average(ySpans);
+          return Math.max(0, Math.min(typicalX || typicalY, typicalY || typicalX));
+        }
         const coordinate = axis === "X" ? endpoints.start.y : endpoints.start.x;
         const positions = (axis === "X" ? data.yPos : data.xPos).slice().sort((a, b) => a - b);
         const before = positions.filter(value => value < coordinate - 1e-6).pop();
@@ -40517,8 +40548,9 @@
 
       function createPlanTransferBeamModel(planMember, data = makePlanData()) {
         const endpoints = planMemberModelPoints(planMember, data);
-        const axis = planMemberAxis(planMember, data);
-        const frameLine = axis ? `OFFSET:${planMember.id}` : null;
+        const planAxis = planMemberAxis(planMember, data);
+        const axis = planMemberAnalysisAxis(planMember, data);
+        const frameLine = axis ? `${planAxis === "D" ? "DIAGONAL" : "OFFSET"}:${planMember.id}` : null;
         const previousModel = frameLine
           ? engineeringState.frameCatalog?.[axis]?.[frameLine]?.model || frameModelCache[axis]?.get(frameLine)?.model
           : null;
@@ -40578,6 +40610,7 @@
         const end = nodes[nodes.length - 1];
         return {
           axis,
+          planAxis,
           frameLine,
           planTransferBeam: true,
           transferPlanMemberId: planMember.id,
@@ -41390,12 +41423,13 @@
           return memberIds.some(id => recordIds.has(id));
         });
         if (!planMember) return record;
-        const axis = record.axis || planMember.axis || planMemberAxis(planMember, data);
+        const planAxis = planMember.axis || planMemberAxis(planMember, data);
+        const axis = record.axis === "D" ? planMemberAnalysisAxis(planMember, data) : (record.axis || (planAxis === "D" ? planMemberAnalysisAxis(planMember, data) : planAxis));
         const points = planMemberModelPoints(planMember, data);
         if (!axis || !points) return record;
         const totalY = data.yPos[data.yPos.length - 1] || 0;
         record.axis = axis;
-        record.frameLine ||= planMember.frameLine || (axis === "X" ? planMember.y1 : planMember.x1);
+        record.frameLine ||= planMember.frameLine || (planAxis === "D" ? `DIAGONAL:${planMember.id}` : (axis === "X" ? planMember.y1 : planMember.x1));
         record.planMemberIds = Array.from(new Set([
           ...recordIds,
           planMember.id,
@@ -41404,8 +41438,8 @@
           planMember.sourcePlanMemberId,
           ...(planMember.components || [])
         ].filter(Boolean).map(String)));
-        record.frameCoordinateStart = axis === "X" ? Number(points.start.x) : totalY - Number(points.start.y);
-        record.frameCoordinateEnd = axis === "X" ? Number(points.end.x) : totalY - Number(points.end.y);
+        record.frameCoordinateStart = planAxis === "D" ? 0 : (axis === "X" ? Number(points.start.x) : totalY - Number(points.start.y));
+        record.frameCoordinateEnd = planAxis === "D" ? Math.hypot(Number(points.end.x) - Number(points.start.x), Number(points.end.y) - Number(points.start.y)) : (axis === "X" ? Number(points.end.x) : totalY - Number(points.end.y));
         return record;
       }
 
@@ -41804,13 +41838,14 @@
           }
           pushWorkspaceHistory();
           beams.forEach((member, index) => {
-            const axis = member.axis || planMemberAxis(member);
-            const frameLine = member.frameLine || (axis === "X" ? member.y1 : member.x1);
+            const planAxis = member.axis || planMemberAxis(member);
+            const axis = planAxis === "D" ? planMemberAnalysisAxis(member) : planAxis;
+            const frameLine = member.frameLine || (planAxis === "D" ? `DIAGONAL:${member.id}` : (axis === "X" ? member.y1 : member.x1));
             const data = makePlanData();
             const points = planMemberModelPoints(member, data);
             const totalY = data.yPos[data.yPos.length - 1] || 0;
-            const frameCoordinateStart = axis === "X" ? Number(points?.start?.x) : totalY - Number(points?.start?.y);
-            const frameCoordinateEnd = axis === "X" ? Number(points?.end?.x) : totalY - Number(points?.end?.y);
+            const frameCoordinateStart = planAxis === "D" ? 0 : (axis === "X" ? Number(points?.start?.x) : totalY - Number(points?.start?.y));
+            const frameCoordinateEnd = planAxis === "D" ? Number(member.length || Math.hypot(Number(points?.end?.x) - Number(points?.start?.x), Number(points?.end?.y) - Number(points?.start?.y))) : (axis === "X" ? Number(points?.end?.x) : totalY - Number(points?.end?.y));
             const planMemberIds = [
               member.id,
               member.sourcePlanGeneratedId,
