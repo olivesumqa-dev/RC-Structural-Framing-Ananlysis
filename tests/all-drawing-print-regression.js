@@ -20,6 +20,14 @@ assert.match(source, /@page\{size:297mm 210mm;margin:5mm\}/,
   "combined view output must maximize the A4 landscape printable area");
 assert.match(source, /const trimInk = Math\.max\(1, Math\.floor\(totalInk \* 0\.0015\)\);[\s\S]*?lowerExtent\(columnInk\)[\s\S]*?upperExtent\(rowInk\)/,
   "drawing extents must ignore isolated edge pixels that make the printed drawing too small");
+assert.match(source, /ctx\.restore\(\);\s*if \(!isometricPrintRender\) \{\s*ctx\.save\(\);/,
+  "3D ISO title must be painted after restoring model-space pan and zoom");
+assert.match(source, /class="drawing-sheet-header"[\s\S]*?class="drawing-sheet-logo"[\s\S]*?Project Title[\s\S]*?Project Owner[\s\S]*?Project Location[\s\S]*?Designed By/,
+  "every combined drawing page must include the StrucForge logo and project details");
+assert.match(source, /\.drawing-sheet-logo\{[^}]*filter:drop-shadow\(\.25mm 0 #000\)/,
+  "the color StrucForge logo must retain a black outline on white PDF sheets");
+assert.doesNotMatch(source, /function drawFixedFrameUdlBand[\s\S]{0,1600}ctx\.fill\(\);\s*ctx\.stroke\(\);/,
+  "frame load boxes must remain open so underlying drawing information stays visible");
 assert.match(source, /id="isoShowFrames" type="checkbox">X&amp;Y Axis Frames/,
   "3D ISO X and Y frame overlays must be off by default");
 assert.match(source, /visibility: \{slabs: true, footings: true, columns: true, beams: true, frames: false\}/,

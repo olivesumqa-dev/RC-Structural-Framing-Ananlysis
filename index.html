@@ -34175,7 +34175,6 @@
           gridBubbleCenters.push(bubble);
           ctx.save();
           ctx.strokeStyle = color;
-          ctx.fillStyle = surface;
           ctx.lineWidth = 1.7;
           if (!options.suppressLeader) {
             ctx.beginPath();
@@ -34185,7 +34184,6 @@
           }
           ctx.beginPath();
           ctx.arc(bubble.x, bubble.y, bubbleRadius, 0, Math.PI * 2);
-          ctx.fill();
           ctx.stroke();
           ctx.fillStyle = color;
           ctx.font = `300 ${scaledDrawingTextSize(11)}px ${DRAWING_FONT_FAMILY}`;
@@ -34401,22 +34399,27 @@
           );
         });
 
-        ctx.save();
-        ctx.fillStyle = ink;
-        ctx.textAlign = "left";
-        ctx.font = `300 ${scaledDrawingTextSize(18, 8)}px ${DRAWING_FONT_FAMILY}`;
-        const isoTitle = "3D ISOMETRIC VIEW";
-        ctx.fillText(isoTitle, 28, 38);
-        let isoHeaderX = 28 + ctx.measureText(isoTitle).width + 20;
-        ctx.font = `300 ${scaledDrawingTextSize(11)}px ${DRAWING_FONT_FAMILY}`;
-        const xFrameTitle = `X-AXIS FRAME @ GRID ${selectedY}`;
-        ctx.fillStyle = "#ff7a00";
-        ctx.fillText(xFrameTitle, isoHeaderX, 38);
-        isoHeaderX += ctx.measureText(xFrameTitle).width + 18;
-        ctx.fillStyle = "#00d43b";
-        ctx.fillText(`Y-AXIS FRAME @ GRID ${selectedX}`, isoHeaderX, 38);
+        // Restore the model-space pan/zoom transform before painting the title.
+        // The header therefore remains anchored to the drawing window while the
+        // structural model can pan, zoom and rotate independently beneath it.
         ctx.restore();
-        ctx.restore();
+        if (!isometricPrintRender) {
+          ctx.save();
+          ctx.fillStyle = ink;
+          ctx.textAlign = "left";
+          ctx.font = `300 ${scaledDrawingTextSize(18, 8)}px ${DRAWING_FONT_FAMILY}`;
+          const isoTitle = "3D ISOMETRIC VIEW";
+          ctx.fillText(isoTitle, 28, 38);
+          let isoHeaderX = 28 + ctx.measureText(isoTitle).width + 20;
+          ctx.font = `300 ${scaledDrawingTextSize(11)}px ${DRAWING_FONT_FAMILY}`;
+          const xFrameTitle = `X-AXIS FRAME @ GRID ${selectedY}`;
+          ctx.fillStyle = "#ff7a00";
+          ctx.fillText(xFrameTitle, isoHeaderX, 38);
+          isoHeaderX += ctx.measureText(xFrameTitle).width + 18;
+          ctx.fillStyle = "#00d43b";
+          ctx.fillText(`Y-AXIS FRAME @ GRID ${selectedX}`, isoHeaderX, 38);
+          ctx.restore();
+        }
         const isoModeLabel = byId("planUnifiedModeLabel");
         if (isoModeLabel && planState.activeView === "ISO") {
           isoModeLabel.hidden = false;
@@ -38288,12 +38291,10 @@
         drawingGridBubbleBoxes.push({x, y, r: 15});
         ctx.save();
         const isNight = document.body.dataset.theme === "green_teal";
-        ctx.fillStyle = isNight ? "#000" : "#fff";
         ctx.strokeStyle = isNight ? "#fff" : canvasAnnotation();
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(x, y, 15, 0, Math.PI * 2);
-        ctx.fill();
         ctx.stroke();
         drawCanvasText(ctx, label, x, y + 1, {font: "12px Arial", color: isNight ? "#fff" : canvasAnnotation()});
         ctx.restore();
@@ -38326,8 +38327,6 @@
         ctx.save();
         ctx.beginPath();
         ctx.arc(x, y, String(label).length > 2 ? 9 : 8, 0, Math.PI * 2);
-        ctx.fillStyle = isNight ? "#000" : "#fff";
-        ctx.fill();
         ctx.strokeStyle = isNight ? "#fff" : canvasAnnotation();
         ctx.lineWidth = 1.35;
         ctx.stroke();
@@ -38435,11 +38434,9 @@
         if (ctx.measureText(displayLabel).width > availableLabelWidth && wallOnly) displayLabel = wallOnly;
         if (ctx.measureText(displayLabel).width > availableLabelWidth) displayLabel = "LOAD";
         ctx.strokeStyle = color;
-        ctx.fillStyle = "rgba(255,150,31,.08)";
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath();
-        ctx.fill();
         ctx.stroke();
         for (let ratio = 0.14; ratio < 0.93; ratio += 0.16) {
           const sx = x4 + (x3 - x4) * ratio;
@@ -49006,13 +49003,19 @@
         printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeOutputHtml(title)}</title><style>
           @page{size:297mm 210mm;margin:5mm}*{box-sizing:border-box}html,body{width:287mm;min-width:287mm;background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
           header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}body.drawing-output>header{display:none}
-          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:196mm;object-fit:contain}.drawing-page{width:287mm;height:200mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always;overflow:hidden}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-page h2{flex:0 0 6mm;margin:0;font-size:13px;line-height:6mm;text-align:center;text-transform:uppercase}.drawing-page .drawing{display:block;flex:1 1 auto;width:287mm;height:194mm;min-height:0;max-width:287mm;max-height:194mm;object-fit:contain;object-position:center center}
+          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:176mm;object-fit:contain}.drawing-page{width:287mm;height:200mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always;overflow:hidden}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-sheet-header{flex:0 0 18mm;display:grid;grid-template-columns:56mm 1fr;align-items:center;border:1px solid #000;border-bottom:1.5px solid #000;background:#fff;color:#000;overflow:hidden}.drawing-sheet-logo-wrap{height:18mm;display:flex;align-items:center;padding:1.5mm 4mm;border-right:1px solid #000}.drawing-sheet-logo{display:block;max-width:47mm;max-height:14mm;object-fit:contain;filter:drop-shadow(.25mm 0 #000) drop-shadow(-.25mm 0 #000) drop-shadow(0 .25mm #000) drop-shadow(0 -.25mm #000)}.drawing-project-details{display:grid;grid-template-columns:1fr 1fr;gap:1.2mm 7mm;padding:1.5mm 4mm;font-size:8px}.drawing-project-field{display:grid;grid-template-columns:23mm minmax(0,1fr);align-items:center;gap:1.5mm}.drawing-project-field b{text-align:right;text-transform:uppercase}.drawing-project-field span{min-height:4.5mm;padding:.7mm 1.2mm;border:1px solid #222;background:#fff;color:#000;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.drawing-page h2{flex:0 0 6mm;margin:0;font-size:13px;line-height:6mm;text-align:left;text-transform:uppercase}.drawing-page .drawing{display:block;flex:1 1 auto;width:287mm;height:176mm;min-height:0;max-width:287mm;max-height:176mm;object-fit:contain;object-position:center center}
           .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#000;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #555}.mpr-solution-section h4{margin:0 0 7px;color:#000;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #000;border-radius:50%;color:#000;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#000;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#000;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #000;background:#fff;color:#000;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #000;background:#fff;color:#000}.mpr-academic-figure figcaption{margin:0 0 8px;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#000;background:#fff}.mpr-academic-figure svg text{fill:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#000;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#000;stroke-width:1.55}.academic-compression-block{fill:#ddd;stroke:#000;stroke-width:1}.academic-stirrup{fill:none;stroke:#000;stroke-width:1.5}.academic-diagram-lines circle{fill:#fff;stroke:#000;stroke-width:1}.academic-dimension{fill:none;stroke:#000;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#000;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#000;stroke-width:.75}.mpr-academic-figure p{margin:7px 0 0;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;background:#fff!important;color:#000!important;font-size:9.45px}caption{background:#fff!important;color:#000!important;font-weight:700;padding:4px;border:1px solid #000;border-top:2mm solid #fff}th,td{border:1px solid #000!important;background:#fff!important;color:#000!important;padding:3px;white-space:nowrap}th{font-weight:700}.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;color:#000;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#fff!important;color:#000!important;font-weight:700}
         </style></head><body class="${outputBodyClass}"><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
         printDocument.close();
         const cleanup = () => window.setTimeout(() => frame.remove(), 400);
         frame.contentWindow.onafterprint = cleanup;
-        window.setTimeout(() => {
+        window.setTimeout(async () => {
+          await Promise.all(Array.from(printDocument.images).map(image => image.complete
+            ? Promise.resolve()
+            : new Promise(resolve => {
+                image.addEventListener("load", resolve, {once: true});
+                image.addEventListener("error", resolve, {once: true});
+              })));
           frame.contentWindow.focus();
           frame.contentWindow.print();
           window.setTimeout(cleanup, 1200);
@@ -49180,7 +49183,15 @@
           renderPlanLevelTabs(data);
           applyUnifiedDrawingView(originalView);
         }
-        const markup = pages.map(page => `<section class="drawing-page"><h2>${escapeOutputHtml(page.title)}</h2><img class="drawing" src="${page.image}" alt="${escapeOutputHtml(page.title)}"></section>`).join("");
+        const logoSource = document.querySelector(".topbar-logo")?.src || new URL("assets/LOGO-STRUCF.png?v=4", window.location.href).href;
+        const projectDetails = {
+          title: byId("projectTitle")?.value?.trim() || "",
+          owner: byId("projectOwner")?.value?.trim() || "",
+          location: byId("projectLocation")?.value?.trim() || "",
+          designer: byId("designedBy")?.value?.trim() || ""
+        };
+        const drawingSheetHeader = `<div class="drawing-sheet-header"><div class="drawing-sheet-logo-wrap"><img class="drawing-sheet-logo" src="${escapeOutputHtml(logoSource)}" alt="StrucForge Structural Design Studio"></div><div class="drawing-project-details"><div class="drawing-project-field"><b>Project Title</b><span>${escapeOutputHtml(projectDetails.title)}</span></div><div class="drawing-project-field"><b>Project Owner</b><span>${escapeOutputHtml(projectDetails.owner)}</span></div><div class="drawing-project-field"><b>Project Location</b><span>${escapeOutputHtml(projectDetails.location)}</span></div><div class="drawing-project-field"><b>Designed By</b><span>${escapeOutputHtml(projectDetails.designer)}</span></div></div></div>`;
+        const markup = pages.map(page => `<section class="drawing-page">${drawingSheetHeader}<h2>${escapeOutputHtml(page.title)}</h2><img class="drawing" src="${page.image}" alt="${escapeOutputHtml(page.title)}"></section>`).join("");
         printStandaloneOutput("Structural Plan — All Drawing Views", markup, outputMode);
       }
 

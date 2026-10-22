@@ -1281,8 +1281,10 @@ function drawNodes() {
     ctx.beginPath();
     ctx.arc(p.x, p.y, nodeRadius, 0, Math.PI*2);
     const isSelected = model.selectedNode?.id === n.id || model.selectedNodes.includes(n.id);
-    ctx.fillStyle = isSelected ? "#f59e0b" : (isNight ? "#000" : "#fff");
-    ctx.fill();
+    if (isSelected) {
+      ctx.fillStyle = "#f59e0b";
+      ctx.fill();
+    }
     ctx.strokeStyle = isNight ? "#fff" : annotationColor();
     ctx.lineWidth = Math.max(0.1, scaled(1.35));
     ctx.stroke();
@@ -1646,11 +1648,9 @@ function drawUdl(L, stackIndex) {
     const rightX = Math.max(A.x, B.x) - startPad;
 
     ctx.strokeStyle = color;
-    ctx.fillStyle = "rgba(255,150,31,.08)";
     ctx.lineWidth = scaled(1);
     ctx.beginPath();
     ctx.rect(leftX, upperY, Math.max(1, rightX - leftX), depth);
-    ctx.fill();
     ctx.stroke();
 
     for (let x = leftX + (rightX - leftX) * 0.14; x < rightX; x += Math.max(scaled(28), (rightX - leftX) * 0.16)) {
@@ -1679,11 +1679,10 @@ function drawUdl(L, stackIndex) {
   const x4 = x1 + nx*depth;
   const y4 = y1 + ny*depth;
   ctx.strokeStyle = color;
-  ctx.fillStyle = "rgba(255,150,31,.08)";
   ctx.lineWidth = scaled(1);
   ctx.beginPath();
   ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath();
-  ctx.fill(); ctx.stroke();
+  ctx.stroke();
   for (let t=0.14; t<0.92; t+=0.16) {
     const bx = A.x + t*dx + nx*(offset+depth);
     const by = A.y + t*dy + ny*(offset+depth);
