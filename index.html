@@ -41,7 +41,7 @@
     }
     .structural-plan-title-row {
       display: grid;
-      grid-template-columns: 42px 285px minmax(0, 1fr);
+      grid-template-columns: 42px 285px minmax(0, 1fr) auto;
       align-items: center;
       gap: 9px;
       min-height: 44px;
@@ -58,6 +58,12 @@
     .structural-plan-title-row .drawing-title-suffix {
       color: #ff8112;
       text-transform: none;
+    }
+    .structural-plan-actions {
+      grid-column: 4;
+      grid-row: 1;
+      justify-self: end;
+      margin-left: 0;
     }
     #structuralSequence {
       padding: 0;
@@ -2320,7 +2326,7 @@
       .tutorial-drawer:hover,
       .tutorial-drawer:focus-within { top: 76px; }
       .structural-plan-title-row {
-        grid-template-columns: 42px 220px max-content;
+        grid-template-columns: 42px 220px max-content auto;
         overflow-x: auto;
         overflow-y: hidden;
         overscroll-behavior-inline: contain;
@@ -2333,6 +2339,7 @@
         width: max-content;
         margin-left: 0;
       }
+      .structural-plan-actions { grid-column: 4; grid-row: 1; }
     }
     @media (min-width: 901px) and (max-width: 1180px) {
       .topbar {
@@ -2356,8 +2363,9 @@
       .tutorial-drawer,
       .tutorial-drawer:hover,
       .tutorial-drawer:focus-within { top: 76px; }
-      .structural-plan-title-row { grid-template-columns: 42px 220px max-content; }
+      .structural-plan-title-row { grid-template-columns: 42px 220px max-content auto; }
       .structural-plan-title-row .topbar-icon-dock { grid-column: 3; grid-row: 1; width: max-content; margin-left: 0; }
+      .structural-plan-actions { grid-column: 4; grid-row: 1; }
     }
   </style>
 </head>
@@ -2865,6 +2873,10 @@
                 <button id="toolbarCalcBtn" class="toolbar-icon-btn app-tool-icon toolbar-calc-icon" type="button" title="Calculate both frames" aria-label="Calculate both frames">Calculate</button>
               </div>
             </div>
+            <span class="member-props-actions structural-plan-actions" aria-label="Structural Plan drawing output tools">
+              <button id="planPrintBtn" class="member-props-action print-icon-btn" type="button" title="PRINT ALL DRAWING VIEWS" aria-label="Print all Structural Plan drawing views" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button>
+              <button id="planPrintPdfBtn" class="member-props-action print-icon-btn" type="button" title="PRINT ALL DRAWING VIEWS TO PDF" aria-label="Print all Structural Plan drawing views to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
+            </span>
           </div>
           <div class="structural-plan-content" id="structuralPlanContent">
             <div class="drawing-control-row plan-control-row">
@@ -2895,9 +2907,6 @@
                 <button id="planAuxGridToolBtn" class="drawing-tool-btn" type="button" title="Aux. Grid Tool" aria-label="Aux. Grid Tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"></path><path d="M2 2h4v4H2z"></path></svg></button>
                 <button id="buildingGridToolBtn" class="drawing-tool-btn" type="button" title="Bldg. Grid Tool" aria-label="Bldg. Grid Tool" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zM7.5 3v18M12 3v18M16.5 3v18M3 7.5h18M3 12h18M3 16.5h18"></path><path d="M1.5 1.5h5v5h-5z" fill="#154f32"></path></svg></button>
                 <button id="planMatchPropertiesToolBtn" class="drawing-tool-btn" type="button" title="Match Properties" aria-label="Match Properties"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 15 8-8 4 4-8 8H5z"></path><path d="m14 6 2-2 4 4-2 2M4 21h8"></path></svg></button>
-                <span class="drawing-toolbar-separator" aria-hidden="true"></span>
-                <button id="planPrintBtn" class="drawing-tool-btn print-icon-btn" type="button" title="PRINT" aria-label="Print Structural Plan" data-tooltip="PRINT"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path></svg></button>
-                <button id="planPrintPdfBtn" class="drawing-tool-btn print-icon-btn" type="button" title="PRINT PDF" aria-label="Print Structural Plan to PDF" data-tooltip="PRINT PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5V9h14v8h-2M7 14h10v6H7z"></path><text x="12" y="12" text-anchor="middle" font-size="4.5" fill="currentColor" stroke="none">PDF</text></svg></button>
               </div>
               <div id="planLevelTabs" class="plan-level-tabs" role="tablist" aria-label="Structural plan level"></div>
             </div>
@@ -32623,8 +32632,8 @@
           planZoomInBtn: `Zoom In ${label}`,
           planZoomOutBtn: `Zoom Out ${label}`,
           planResetViewBtn: `Reset ${label} View`,
-          planPrintBtn: `PRINT ${label}`,
-          planPrintPdfBtn: `PRINT PDF ${label}`
+          planPrintBtn: "PRINT ALL DRAWING VIEWS",
+          planPrintPdfBtn: "PRINT PDF — ALL DRAWING VIEWS"
         };
         Object.entries(labels).forEach(([id, title]) => {
           const button = byId(id);
@@ -32892,9 +32901,7 @@
         const routedTools = {
           planZoomInBtn: {X: "xZoomInBtn", Y: "yZoomInBtn"},
           planZoomOutBtn: {X: "xZoomOutBtn", Y: "yZoomOutBtn"},
-          planResetViewBtn: {X: "xResetViewBtn", Y: "yResetViewBtn"},
-          planPrintBtn: {X: "xPrintBtn", Y: "yPrintBtn"},
-          planPrintPdfBtn: {X: "xPrintPdfBtn", Y: "yPrintPdfBtn"}
+          planResetViewBtn: {X: "xResetViewBtn", Y: "yResetViewBtn"}
         };
         Object.entries(routedTools).forEach(([sharedId, targets]) => {
           byId(sharedId)?.addEventListener("click", event => {
@@ -48997,7 +49004,7 @@
         printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeOutputHtml(title)}</title><style>
           @page{size:landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;color:#111;font-family:Arial,sans-serif}
           header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
-          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{width:100%;height:auto;max-height:175mm;object-fit:contain}
+          h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:158mm;object-fit:contain}.drawing-page{height:165mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-page h2{margin:0 0 4mm;font-size:14px;text-align:center;text-transform:uppercase}.drawing-page .drawing{flex:1;min-height:0}
           .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#39514b;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #9aa5a2}.mpr-solution-section h4{margin:0 0 7px;color:#553c00;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #4c625c;border-radius:50%;color:#173a31;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#111;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#553c00;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #f3ad4b;background:#fff7e8;color:#2a2925;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #8f9d98;background:#fff;color:#151515}.mpr-academic-figure figcaption{margin:0 0 8px;color:#132b25;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#151515;background:#fff}.mpr-academic-figure svg text{fill:#151515;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#151515;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#151515;stroke-width:1.55}.academic-compression-block{fill:#e4e0d5;stroke:#151515;stroke-width:1}.academic-stirrup{fill:none;stroke:#345b50;stroke-width:1.5}.academic-diagram-lines circle{fill:#d58019;stroke:#151515;stroke-width:1}.academic-dimension{fill:none;stroke:#4b5f58;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#666;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#777;stroke-width:.75}.mpr-academic-figure p{margin:7px 0 0;color:#3a453f;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;font-size:9.45px}caption{background:#878181;color:#fff;font-weight:700;padding:4px;border-top:2mm solid #fff}th,td{border:1px solid #777;padding:3px;white-space:nowrap}th{background:#e9e9e9}.design-status.warn,.design-status.fail{color:#F3AD4B!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#303637!important;color:#fff!important;font-weight:700}
         </style></head><body><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
         printDocument.close();
@@ -49022,6 +49029,40 @@
         printStandaloneOutput(title, `<img class="drawing" src="${image}" alt="${title}">`, outputMode);
       }
 
+      function printAllDrawingViews(outputMode = "printer") {
+        const data = makePlanData();
+        const planCanvas = byId("structuralPlanCanvas");
+        const xCanvas = byId("canvas");
+        const yCanvas = byId("yAxisCanvas");
+        const isoCanvas = byId("isometricCanvas");
+        if (![planCanvas, xCanvas, yCanvas, isoCanvas].every(Boolean)) return;
+        const originalView = planState.activeView;
+        const originalLevelIndex = planState.activeLevelIndex;
+        const pages = [];
+        const capture = (title, canvasElement) => pages.push({title, image: canvasElement.toDataURL("image/png")});
+        try {
+          planState.activeView = "PLAN";
+          for (let levelIndex = -1; levelIndex < data.levels.length; levelIndex += 1) {
+            planState.activeLevelIndex = levelIndex;
+            drawPlan(data);
+            capture(levelIndex < 0 ? "Foundation" : titleCaseDrawingLabel(frameLevelLabel(levelIndex + 1, data)), planCanvas);
+          }
+          try { prepareCanvasSizes(); draw({skipMpr: true}); } catch (error) {}
+          capture("X-Axis Frame", xCanvas);
+          drawYAxisCanvas(data);
+          capture("Y-Axis Frame", yCanvas);
+          drawIsometricStructure(data);
+          capture("3D Isometric View", isoCanvas);
+        } finally {
+          planState.activeLevelIndex = originalLevelIndex;
+          planState.activeView = originalView;
+          renderPlanLevelTabs(data);
+          applyUnifiedDrawingView(originalView);
+        }
+        const markup = pages.map(page => `<section class="drawing-page"><h2>${escapeOutputHtml(page.title)}</h2><img class="drawing" src="${page.image}" alt="${escapeOutputHtml(page.title)}"></section>`).join("");
+        printStandaloneOutput("Structural Plan — All Drawing Views", markup, outputMode);
+      }
+
       function exportMprToExcel() {
         if (!window.StrucForgePremium?.require("excelExport", "Excel export is available with an active paid StrucForge Professional plan.")) return;
         const projectTitle = outputProjectTitle();
@@ -49042,8 +49083,6 @@
 
       function setupOutputControls() {
         const canvasOutputs = [
-          ["planPrintBtn", "structuralPlanCanvas", "Structural Plan", "printer"],
-          ["planPrintPdfBtn", "structuralPlanCanvas", "Structural Plan", "pdf"],
           ["xPrintBtn", "canvas", "X-Axis Structural Frame", "printer"],
           ["xPrintPdfBtn", "canvas", "X-Axis Structural Frame", "pdf"],
           ["yPrintBtn", "yAxisCanvas", "Y-Axis Structural Frame", "printer"],
@@ -49052,6 +49091,8 @@
         canvasOutputs.forEach(([buttonId, canvasId, title, outputMode]) => {
           byId(buttonId)?.addEventListener("click", () => printCanvasOutput(canvasId, title, outputMode));
         });
+        byId("planPrintBtn")?.addEventListener("click", () => printAllDrawingViews("printer"));
+        byId("planPrintPdfBtn")?.addEventListener("click", () => printAllDrawingViews("pdf"));
         byId("mprPrintBtn")?.addEventListener("click", () => printStandaloneOutput("Member Properties / Results", outputResultsMarkup(), "printer"));
         byId("mprPrintPdfBtn")?.addEventListener("click", () => printStandaloneOutput("Member Properties / Results", outputResultsMarkup(), "pdf"));
         [
