@@ -16,6 +16,10 @@ assert.match(source, /planAxis === "D" \? "DIAGONAL" : "OFFSET"/,
   "diagonal beams must receive a unique analysis frame line");
 assert.match(source, /rotate: diagonal \? Math\.atan2\(b\.y - a\.y, b\.x - a\.x\)/,
   "diagonal beam labels must follow the beam angle");
+assert.match(source, /function diagonalSlabRegions\([\s\S]*?signedArea[\s\S]*?polygon:/,
+  "closed beam loops containing diagonal members must create polygonal slab regions");
+assert.match(source, /const diagonalRegions = diagonalSlabRegions\(levelIndex, data\);[\s\S]*?if \(diagonalRegions\) return diagonalRegions;/,
+  "slab discovery must use polygonal regions when diagonal beams are present");
 assert.doesNotMatch(source, /Beam endpoints must be horizontally or vertically aligned/,
   "the former coordinate alignment rejection must be removed");
 assert.doesNotMatch(source, /Plan members must follow an X or Y gridline/,

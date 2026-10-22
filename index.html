@@ -32249,7 +32249,7 @@
 
       function slabRegionStateKeys(region) {
         return Array.from(new Set((region?.cells || []).map(cell =>
-          slabPanelKey(Number(region.levelIndex), Number(cell.xIndex), Number(cell.yIndex)))));
+          cell.key || slabPanelKey(Number(region.levelIndex), Number(cell.xIndex), Number(cell.yIndex)))));
       }
 
       function nextSlabRegionUsage(currentState) {
@@ -32259,6 +32259,19 @@
       }
 
       function slabRegionCentroid(region, data = makePlanData()) {
+        if (Array.isArray(region?.polygon) && region.polygon.length >= 3) {
+          let twiceArea = 0;
+          let weightedX = 0;
+          let weightedY = 0;
+          region.polygon.forEach((pointValue, index) => {
+            const next = region.polygon[(index + 1) % region.polygon.length];
+            const cross = Number(pointValue.x) * Number(next.y) - Number(next.x) * Number(pointValue.y);
+            twiceArea += cross;
+            weightedX += (Number(pointValue.x) + Number(next.x)) * cross;
+            weightedY += (Number(pointValue.y) + Number(next.y)) * cross;
+          });
+          if (Math.abs(twiceArea) > 1e-9) return {x: weightedX / (3 * twiceArea), y: weightedY / (3 * twiceArea)};
+        }
         let weightedX = 0;
         let weightedY = 0;
         let totalArea = 0;
@@ -32300,7 +32313,131 @@
         };
       }
 
+      function diagonalSlabRegions(levelIndex, data = makePlanData()) {
+        const tolerance = 1e-6;
+        const diagonalMembers = planLevelMembers(levelIndex).filter(member => planMemberAxis(member, data) === "D");
+        if (!diagonalMembers.length) return null;
+        const rawSegments = [];
+        data.yLabels.forEach((yLabel, yIndex) => data.xSpans.forEach((_, xIndex) => {
+          if (planSegmentHasBeam(levelIndex, "X", yLabel, xIndex, data)) rawSegments.push([
+            {x: Number(data.xPos[xIndex]), y: Number(data.yPos[yIndex])},
+            {x: Number(data.xPos[xIndex + 1]), y: Number(data.yPos[yIndex])}
+          ]);
+        }));
+        data.xLabels.forEach((xLabel, xIndex) => data.ySpans.forEach((_, yIndex) => {
+          if (planSegmentHasBeam(levelIndex, "Y", xLabel, yIndex, data)) rawSegments.push([
+            {x: Number(data.xPos[xIndex]), y: Number(data.yPos[yIndex])},
+            {x: Number(data.xPos[xIndex]), y: Number(data.yPos[yIndex + 1])}
+          ]);
+        }));
+        planLevelMembers(levelIndex).forEach(member => {
+          const points = planMemberModelPoints(member, data);
+          if (points) rawSegments.push([
+            {x: Number(points.start.x), y: Number(points.start.y)},
+            {x: Number(points.end.x), y: Number(points.end.y)}
+          ]);
+        });
+
+        const pointKey = pointValue => `${Number(pointValue.x).toFixed(6)}|${Number(pointValue.y).toFixed(6)}`;
+        const vertices = new Map();
+        const adjacency = new Map();
+        const edgeKeys = new Set();
+        rawSegments.forEach(([start, end]) => {
+          const startKey = pointKey(start);
+          const endKey = pointKey(end);
+          if (startKey === endKey) return;
+          const edgeKey = [startKey, endKey].sort().join("~");
+          if (edgeKeys.has(edgeKey)) return;
+          edgeKeys.add(edgeKey);
+          vertices.set(startKey, start);
+          vertices.set(endKey, end);
+          if (!adjacency.has(startKey)) adjacency.set(startKey, new Set());
+          if (!adjacency.has(endKey)) adjacency.set(endKey, new Set());
+          adjacency.get(startKey).add(endKey);
+          adjacency.get(endKey).add(startKey);
+        });
+        const sortedNeighbors = new Map(Array.from(adjacency.entries()).map(([key, neighbors]) => {
+          const origin = vertices.get(key);
+          return [key, Array.from(neighbors).sort((left, right) => {
+            const a = vertices.get(left);
+            const b = vertices.get(right);
+            return Math.atan2(a.y - origin.y, a.x - origin.x) - Math.atan2(b.y - origin.y, b.x - origin.x);
+          })];
+        }));
+        const visitedDirections = new Set();
+        const polygons = [];
+        const canonicalPolygonKey = polygon => {
+          const values = polygon.map(pointKey);
+          const rotations = values.map((_, index) => values.slice(index).concat(values.slice(0, index)).join("~"));
+          return rotations.sort()[0];
+        };
+        adjacency.forEach((neighbors, startKey) => neighbors.forEach(endKey => {
+          const directedKey = `${startKey}>${endKey}`;
+          if (visitedDirections.has(directedKey)) return;
+          const polygonKeys = [];
+          let from = startKey;
+          let to = endKey;
+          for (let guard = 0; guard < edgeKeys.size * 2 + 4; guard += 1) {
+            const traversalKey = `${from}>${to}`;
+            if (visitedDirections.has(traversalKey)) break;
+            visitedDirections.add(traversalKey);
+            polygonKeys.push(from);
+            const neighborsAtTo = sortedNeighbors.get(to) || [];
+            const reverseIndex = neighborsAtTo.indexOf(from);
+            if (reverseIndex < 0 || !neighborsAtTo.length) break;
+            const next = neighborsAtTo[(reverseIndex - 1 + neighborsAtTo.length) % neighborsAtTo.length];
+            from = to;
+            to = next;
+            if (from === startKey && to === endKey) break;
+          }
+          if (polygonKeys.length < 3 || from !== startKey || to !== endKey) return;
+          const polygon = polygonKeys.map(key => vertices.get(key));
+          const signedArea = polygon.reduce((sum, pointValue, index) => {
+            const next = polygon[(index + 1) % polygon.length];
+            return sum + pointValue.x * next.y - next.x * pointValue.y;
+          }, 0) / 2;
+          if (signedArea <= tolerance) return;
+          polygons.push({polygon, area: signedArea, canonicalKey: canonicalPolygonKey(polygon)});
+        }));
+        const uniqueFaces = Array.from(new Map(polygons.map(face => [face.canonicalKey, face])).values());
+        const primaryIndexAt = (value, coordinates) => {
+          for (let index = 0; index < coordinates.length - 1; index += 1) {
+            if (value >= Math.min(coordinates[index], coordinates[index + 1]) - tolerance && value <= Math.max(coordinates[index], coordinates[index + 1]) + tolerance) return index;
+          }
+          return 0;
+        };
+        let auxiliaryIndex = 0;
+        return uniqueFaces.map(face => {
+          const bounds = {
+            minX: Math.min(...face.polygon.map(pointValue => pointValue.x)),
+            maxX: Math.max(...face.polygon.map(pointValue => pointValue.x)),
+            minY: Math.min(...face.polygon.map(pointValue => pointValue.y)),
+            maxY: Math.max(...face.polygon.map(pointValue => pointValue.y))
+          };
+          const xIndex = primaryIndexAt((bounds.minX + bounds.maxX) / 2, data.xPos);
+          const yIndex = primaryIndexAt((bounds.minY + bounds.maxY) / 2, data.yPos);
+          const hasDiagonalBoundary = face.polygon.some((pointValue, pointIndex) => {
+            const next = face.polygon[(pointIndex + 1) % face.polygon.length];
+            return Math.abs(next.x - pointValue.x) > tolerance && Math.abs(next.y - pointValue.y) > tolerance;
+          });
+          const baseKey = slabPanelKey(levelIndex, xIndex, yIndex);
+          const key = hasDiagonalBoundary ? `slab-polygon|${levelIndex}|${face.canonicalKey}` : baseKey;
+          const auxiliary = hasDiagonalBoundary;
+          const cell = {key, xIndex, yIndex, ...bounds, polygon: face.polygon};
+          return {
+            key, levelIndex, xStart: xIndex, xEnd: xIndex + 1, yStart: yIndex, yEnd: yIndex + 1,
+            cells: [cell], bounds, polygon: face.polygon, area: face.area, auxiliary,
+            auxiliaryIndex: auxiliary ? ++auxiliaryIndex : null,
+            open: planState.deletedSlabs.has(key) || (hasDiagonalBoundary && planState.deletedSlabs.has(baseKey)),
+            earthFilled: planState.earthFilledSlabs.has(key) || (hasDiagonalBoundary && planState.earthFilledSlabs.has(baseKey)),
+            rectangular: !hasDiagonalBoundary && face.polygon.length === 4
+          };
+        });
+      }
+
       function coordinateSlabRegions(levelIndex, data = makePlanData()) {
+        const diagonalRegions = diagonalSlabRegions(levelIndex, data);
+        if (diagonalRegions) return diagonalRegions;
         const customSegments = planLevelMembers(levelIndex).map(member => {
           const points = planMemberModelPoints(member, data);
           const axis = planMemberAxis(member, data);
@@ -36870,7 +37007,14 @@
           y: (canvasPoint.y - planView.pan.y) / planView.zoom
         };
         for (const region of slabRegions(levelIndex, data)) {
-          const hit = region.cells.some(cell => {
+          const modelPoint = {x: (local.x - t.x(0)) / t.scale, y: (t.y(0) - local.y) / t.scale};
+          const polygonHit = Array.isArray(region.polygon) && region.polygon.length >= 3 && region.polygon.reduce((inside, pointValue, index) => {
+            const next = region.polygon[(index + 1) % region.polygon.length];
+            const crosses = (pointValue.y > modelPoint.y) !== (next.y > modelPoint.y) &&
+              modelPoint.x < (next.x - pointValue.x) * (modelPoint.y - pointValue.y) / (next.y - pointValue.y) + pointValue.x;
+            return crosses ? !inside : inside;
+          }, false);
+          const hit = polygonHit || (!region.polygon && region.cells.some(cell => {
             const bounds = slabCellModelBounds(cell, data);
             const x1 = t.x(bounds.minX);
             const x2 = t.x(bounds.maxX);
@@ -36882,7 +37026,7 @@
             const bottom = Math.max(y1, y2);
             const inset = Math.min(4 / planView.zoom, (right - left) * 0.06, (bottom - top) * 0.06);
             return local.x > left + inset && local.x < right - inset && local.y > top + inset && local.y < bottom - inset;
-          });
+          }));
           if (hit) return {...region, name: slabRegionTableId(region, data)};
         }
         return null;
@@ -46017,6 +46161,7 @@
         const regionBounds = slabRegionModelBounds(region, data);
         const spanX = regionBounds.maxX - regionBounds.minX;
         const spanY = regionBounds.maxY - regionBounds.minY;
+        const panelArea = Math.max(0, Number(region.area) || spanX * spanY);
         const shortSpan = Math.max(0.001, Math.min(spanX, spanY));
         const longSpan = Math.max(spanX, spanY);
         const aspectRatio = longSpan / shortSpan;
@@ -46034,6 +46179,7 @@
             aspectRatio,
             spanX,
             spanY,
+            area: panelArea,
             thickness: 0,
             deadLoad: 0,
             liveLoad: 0,
@@ -46199,6 +46345,7 @@
           aspectRatio,
           spanX,
           spanY,
+          area: panelArea,
           thickness,
           maximumThickness: isSlabOnFill ? 100 : null,
           deadLoad: dead,
@@ -46306,7 +46453,7 @@
               bottomSpacingX: design.bottomSpacingX, bottomSpacingY: design.bottomSpacingY,
               minimumThickness: design.minimumThickness, shearRatio: valueCell(design.shearRatio)
             };
-          return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="slab-design" data-slab-key="${escapeHtml(design.key)}"><td>${mprItemNumber(index)}</td><td>${escapeHtml(design.level)}</td><td><input class="member-id-input" data-member-rename="slab" data-name-key="${escapeHtml(design.key)}" value="${escapeHtml(design.slabId)}" aria-label="${escapeHtml(design.level)} slab ID"></td><td><select class="slab-type-select" data-slab-type="${escapeHtml(design.key)}" aria-label="${escapeHtml(design.slabId)} slab type">${slabTypeOptions(design.slabType)}</select></td>` +
+          return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="slab-design" data-slab-key="${escapeHtml(design.key)}" data-slab-area="${Number(design.area || design.spanX * design.spanY).toFixed(6)}"><td>${mprItemNumber(index)}</td><td>${escapeHtml(design.level)}</td><td><input class="member-id-input" data-member-rename="slab" data-name-key="${escapeHtml(design.key)}" value="${escapeHtml(design.slabId)}" aria-label="${escapeHtml(design.level)} slab ID"></td><td><select class="slab-type-select" data-slab-type="${escapeHtml(design.key)}" aria-label="${escapeHtml(design.slabId)} slab type">${slabTypeOptions(design.slabType)}</select></td>` +
           `<td>${valueCell(design.spanX)}</td><td>${valueCell(design.spanY)}</td><td>${designValues.thickness}</td>` +
           `${design.openSpace ? mprUnavailableLoadCell("Open Space is excluded from slab loads and design.") : mprLoadCell(design.deadLoad, "Area dead load used for this slab panel, excluding the separately listed Wall Tool pressure.")}` +
           `${design.openSpace ? mprUnavailableLoadCell("Open Space is excluded from slab loads and design.") : mprLoadCell(design.liveLoad, "Area live load used for this slab panel.")}` +
@@ -46586,18 +46733,20 @@
           const quantity = structuralEstimateLevelBucket(estimates.slabs, structuralEstimateCellText(row, 1));
           const spanX = structuralEstimateCellValue(row, 4);
           const spanY = structuralEstimateCellValue(row, 5);
+          const slabArea = Math.max(0, Number(row.dataset.slabArea) || spanX * spanY);
+          const slabAreaRatio = spanX * spanY > 1e-9 ? slabArea / (spanX * spanY) : 1;
           const thickness = structuralEstimateCellValue(row, 6) / 1000;
           const onFill = slabType.includes("FILL");
-          addStructuralConcrete(quantity, spanX * spanY * thickness, (onFill ? 0 : spanX * spanY) + 2 * (spanX + spanY) * thickness);
+          addStructuralConcrete(quantity, slabArea * thickness, (onFill ? 0 : slabArea) + 2 * (spanX + spanY) * thickness * slabAreaRatio);
           const diameter = structuralEstimateCellValue(row, 16);
           const topSpacingX = structuralEstimateCellValue(row, 17);
           const topSpacingY = structuralEstimateCellValue(row, 19);
           const bottomSpacingX = structuralEstimateCellValue(row, 21);
           const bottomSpacingY = structuralEstimateCellValue(row, 22);
-          if (topSpacingX) addStructuralRebar(quantity, diameter, (Math.ceil(spanY * 1000 / topSpacingX) + 1) * spanX * (onFill ? 1 : 0.5));
-          if (topSpacingY) addStructuralRebar(quantity, diameter, (Math.ceil(spanX * 1000 / topSpacingY) + 1) * spanY * (onFill ? 1 : 0.5));
-          if (bottomSpacingX) addStructuralRebar(quantity, diameter, (Math.ceil(spanY * 1000 / bottomSpacingX) + 1) * spanX);
-          if (bottomSpacingY) addStructuralRebar(quantity, diameter, (Math.ceil(spanX * 1000 / bottomSpacingY) + 1) * spanY);
+          if (topSpacingX) addStructuralRebar(quantity, diameter, (Math.ceil(spanY * 1000 / topSpacingX) + 1) * spanX * (onFill ? 1 : 0.5) * slabAreaRatio);
+          if (topSpacingY) addStructuralRebar(quantity, diameter, (Math.ceil(spanX * 1000 / topSpacingY) + 1) * spanY * (onFill ? 1 : 0.5) * slabAreaRatio);
+          if (bottomSpacingX) addStructuralRebar(quantity, diameter, (Math.ceil(spanY * 1000 / bottomSpacingX) + 1) * spanX * slabAreaRatio);
+          if (bottomSpacingY) addStructuralRebar(quantity, diameter, (Math.ceil(spanX * 1000 / bottomSpacingY) + 1) * spanY * slabAreaRatio);
         });
 
         byId("footingResultsBody")?.querySelectorAll('tr[data-kind="footing-design"]').forEach(row => {
