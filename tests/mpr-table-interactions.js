@@ -12,7 +12,8 @@ assert(html.includes('if (!applyBeams || member.userSectionOverride) return;') &
 assert(html.includes('member.designStatus = "DEFAULT-SIZED - RECALCULATE";'), "Members updated from the sidebar must be marked for recalculation");
 assert(css.includes("font:700 9px/1.3 Arial,sans-serif"), "Member Dimensions hover guidance must use a compact 9 px font");
 assert(html.includes("function installMprTableScrolling()"), "MPR scroll-region installer is missing");
-assert(html.includes("const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([10, 12, 16, 20, 25, 30]);"), "Beam and column MPR bar selectors must use only the requested longitudinal diameters");
+assert(html.includes("const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([16, 20, 25, 30]);"), "Beam and column MPR longitudinal selectors must start at 16 mm");
+assert(!html.includes("const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([10, 12"), "Beam and column MPR longitudinal selectors must exclude 10 mm and 12 mm");
 assert(html.includes("const MPR_SLAB_FOOTING_BAR_DIAMETERS = Object.freeze([10, 12, 16]);"), "Slab and footing MPR bar selectors must use only the requested diameters");
 assert(html.includes("const MPR_TIE_STIRRUP_BAR_DIAMETERS = Object.freeze([10, 12]);"), "Tie and stirrup MPR selectors must use only 10 mm and 12 mm diameters");
 assert(html.includes('id="beamLongSpanSteelDialog"') && html.includes('id="beamLongSpanSteelPercent"'), "Beam-strip long-span steel reserve dialog is missing");
@@ -20,7 +21,7 @@ assert(html.includes("function installBeamLongSpanSteelDialog()") && html.includ
 assert(html.includes("BEAM_LONG_SPAN_DEFAULT_STEEL_RESERVE_PERCENT = 25") && html.includes("BEAM_LONG_SPAN_MAX_STEEL_RESERVE_PERCENT = 25"), "Long-span steel reserve must default to and be limited to 25%");
 assert(html.includes("function applyMemberPropertyReinforcementDefaults(memberType = \"ALL\")") && html.includes("applyMemberPropertyReinforcementDefaults(memberType);"), "Member Properties changes must propagate default detailing into the MPR model");
 assert(html.includes("const STANDARD_LONGITUDINAL_BARS = MPR_COLUMN_BEAM_BAR_DIAMETERS;") && html.includes("const STANDARD_STIRRUP_BARS = MPR_TIE_STIRRUP_BAR_DIAMETERS;"), "Beam optimization must stay within the MPR diameter choices");
-assert(html.includes('const defaultBarDiameter = Math.max(10, detailingValue("columnLongitudinalBarDiameter", 16, 10));') && html.includes('const defaultTieDiameter = Math.max(6, detailingValue("columnTieDiameter", 10, 6));'), "Column optimization must follow the default longitudinal-bar and tie sizes in Member Properties");
+assert(html.includes('const defaultBarDiameter = Math.max(16, detailingValue("columnLongitudinalBarDiameter", 16, 16));') && html.includes('const defaultTieDiameter = Math.max(6, detailingValue("columnTieDiameter", 10, 6));'), "Column optimization must enforce the 16 mm longitudinal minimum and follow the default tie size in Member Properties");
 assert(html.includes("allowedDiameters = MPR_SLAB_FOOTING_BAR_DIAMETERS"), "Slab and footing reinforcement searches must stay within the MPR diameter choices");
 assert((html.match(/mprDiameterOptions\(MPR_COLUMN_BEAM_BAR_DIAMETERS,/g) || []).length === 2, "Both beam and column longitudinal-bar cells must use the discrete diameter selector");
 assert((html.match(/mprDiameterOptions\(MPR_SLAB_FOOTING_BAR_DIAMETERS,/g) || []).length === 3, "Slab plus both footing directions must use the discrete diameter selector");
@@ -72,13 +73,13 @@ assert(html.includes("function academicWalkthroughOutputMarkup()") && html.inclu
 assert(html.includes('printAcademicWalkthrough("printer")') && html.includes('printAcademicWalkthrough("pdf")'), "Academic walkthrough print icons must open the appropriate print workflow");
 assert(css.includes('.mpr-solution-print-btn') && html.includes('.academic-walkthrough-output'), "Academic walkthrough print controls and print layout must be styled");
 assert(html.includes('function mprStatusGuidance(kind, status, details = "")') && html.includes('function mprStatusAttributes(kind, status, details = "")'), "MPR Status cells need member-specific explanations and corrective guidance");
-assert((html.match(/mprStatusAttributes\("(?:beam|column|slab|footing)"/g) || []).length === 4, "Every MPR member table must attach contextual Status guidance");
+assert((html.match(/mprStatusAttributes\("(?:beam|column|slab|footing)"/g) || []).length >= 5, "Every MPR member table, including Wall Footings, must attach contextual Status guidance");
 assert(html.includes("function installMprStatusHelp()") && html.includes("installMprStatusHelp();") && html.includes("data-mpr-status-help"), "MPR Status guidance must appear in the custom hover/focus popup");
 assert(css.includes('#memberPropsTable .member-id-input{color:#008f3b!important;font-weight:800!important}'), "All MPR member IDs must be vibrant green and bold");
 assert(html.includes('slab-on-fill-status') && css.includes('td.design-status.slab-on-fill-status{color:#78e89a!important}'), "Slab-on-Fill Status text must use the requested light green color");
 assert(/\.design-status\.warn,\s*\.design-status\.fail\s*\{\s*color:\s*#F3AD4B;\s*\}/.test(html), "Every warning or failed MPR Status cell must use #F3AD4B text");
 assert(/body\[data-theme="green_teal"\][^{]+td\.design-status\.fail\s*\{\s*color:\s*#F3AD4B\s*!important;/.test(html), "Night theme must not override the #F3AD4B non-passing MPR Status color");
-assert(html.includes('.design-status.warn,.design-status.fail{color:#F3AD4B!important}'), "Printed/PDF MPR tables must preserve the non-passing Status font color");
+assert(html.includes('.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}'), "Printed/PDF MPR status cells must use the required black-on-white print palette");
 assert(html.includes('background:#f8dddd;color:#F3AD4B') && html.includes('background:#fff0c7;color:#F3AD4B'), "Excel-exported warning and failure Status cells must preserve #F3AD4B text");
 assert(html.includes('id="resultCalculationDefault"') && html.includes('id="resultCalculationAutoPass"'), "Load Model & Analysis must offer Default and AUTO-PASS result-calculation modes");
 assert(html.includes('function syncResultCalculationMode(enabled)') && html.includes('window.setTimeout(() => byId("calculateBtn")?.click(), 0);'), "AUTO-PASS must synchronize with the existing automatic design engine and calculate the active model");

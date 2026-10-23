@@ -43079,7 +43079,7 @@
         const length = memberLength(frameModel, member);
         const fc = detailingValue("concreteStrength", 28, 1);
         const fy = Math.min(550, detailingValue("rebarYieldStrength", 415, 200));
-        const barDiameter = Math.max(10, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 10));
+        const barDiameter = Math.max(16, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 16));
         const stirrupDiameter = Math.max(6, Number(member.stirrupDiameter) || detailingValue("beamStirrupDiameter", 10, 6));
         const clearCover = detailingValue("beamClearCover", 40, 20);
         const effectiveDepth = Math.max(0, height - clearCover - stirrupDiameter - barDiameter / 2);
@@ -43143,7 +43143,7 @@
         };
       }
 
-      const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([10, 12, 16, 20, 25, 30]);
+      const MPR_COLUMN_BEAM_BAR_DIAMETERS = Object.freeze([16, 20, 25, 30]);
       const MPR_SLAB_FOOTING_BAR_DIAMETERS = Object.freeze([10, 12, 16]);
       const MPR_TIE_STIRRUP_BAR_DIAMETERS = Object.freeze([10, 12]);
       const STANDARD_LONGITUDINAL_BARS = MPR_COLUMN_BEAM_BAR_DIAMETERS;
@@ -43702,7 +43702,7 @@
         if (!member || member.type === "Column") return null;
         const width = Math.max(100, Number(member.width) || 300);
         const height = Math.max(150, Number(member.height) || 500);
-        const barDiameter = Math.max(10, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 10));
+        const barDiameter = Math.max(16, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 16));
         const stirrupDiameter = Math.max(6, Number(member.stirrupDiameter) || detailingValue("beamStirrupDiameter", 10, 6));
         const design = evaluateBeamCandidate(axis, frameModel, member, width, height, barDiameter, stirrupDiameter);
         const identity = {
@@ -43752,7 +43752,7 @@
         beamDesignGroups(frameModel).filter(group => group.members.length > 1).forEach(group => {
           const width = Math.max(...group.members.map(member => Math.max(100, Number(member.width) || 300)));
           const height = Math.max(...group.members.map(member => Math.max(150, Number(member.height) || 500)));
-          const barDiameter = Math.max(...group.members.map(member => Math.max(10, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 10))));
+          const barDiameter = Math.max(...group.members.map(member => Math.max(16, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 16))));
           const stirrupDiameter = Math.max(...group.members.map(member => Math.max(6, Number(member.stirrupDiameter) || detailingValue("beamStirrupDiameter", 10, 6))));
           group.members.forEach(member => {
             member.width = width;
@@ -43775,7 +43775,7 @@
         let failed = 0;
         const defaultBeamWidth = Math.max(100, numericInput("beamWidth", 300));
         const defaultBeamHeight = Math.max(150, numericInput("beamHeight", 500));
-        const defaultLongitudinalBar = Math.max(10, detailingValue("beamLongitudinalBarDiameter", 16, 10));
+        const defaultLongitudinalBar = Math.max(16, detailingValue("beamLongitudinalBarDiameter", 16, 16));
         const defaultStirrupBar = Math.max(6, detailingValue("beamStirrupDiameter", 10, 6));
         (frameModel?.members || []).filter(member => member.type !== "Column").forEach(member => {
           if (member.analysisUnsupported) {
@@ -43792,7 +43792,7 @@
               member,
               Math.max(100, Number(member.width) || defaultBeamWidth),
               Math.max(150, Number(member.height) || defaultBeamHeight),
-              Math.max(10, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 10)),
+              Math.max(16, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 16)),
               Math.max(6, Number(member.stirrupDiameter) || detailingValue("beamStirrupDiameter", 10, 6)),
               demand
             );
@@ -43811,7 +43811,7 @@
               member,
               Math.max(100, Number(member.width) || 300),
               Math.max(150, Number(member.height) || 500),
-              Math.max(10, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 10)),
+              Math.max(16, Number(member.longitudinalBarDiameter) || detailingValue("beamLongitudinalBarDiameter", 16, 16)),
               Math.max(6, Number(member.stirrupDiameter) || detailingValue("beamStirrupDiameter", 10, 6)),
               demand
             );
@@ -44994,7 +44994,7 @@
         const width = Math.max(200, Number(override.width) || numericInput("columnWidth", 400));
         const height = Math.max(200, Number(override.height) || numericInput("columnHeight", 400));
         const length = Math.max(0.1, levelElevations(makePlanData())[storyIndex + 1] - levelElevations(makePlanData())[storyIndex]);
-        const barDiameter = Math.max(10, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10));
+        const barDiameter = Math.max(16, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 16));
         const tieDiameter = Math.max(6, Number(override.tieDiameter) || detailingValue("columnTieDiameter", 10, 6));
         const cover = detailingValue("columnClearCover", 40, 25);
         const fc = detailingValue("concreteStrength", 28, 1);
@@ -45376,7 +45376,7 @@
         const autoDesign = mprAutoPassEnabled("columns");
         const width = Math.max(columnMinimumDimension(), Number(override.width) || numericInput("columnWidth", 400));
         const height = Math.max(columnMinimumDimension(), Number(override.height) || numericInput("columnHeight", 400));
-        const barDiameter = Math.max(10, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10));
+        const barDiameter = Math.max(16, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 16));
         const tieDiameter = Math.max(6, Number(override.tieDiameter) || detailingValue("columnTieDiameter", 10, 6));
         const grossArea = width * height;
         const barArea = Math.PI * barDiameter * barDiameter / 4;
@@ -45407,7 +45407,7 @@
 
       function bestColumnCandidateForSection(key, storyIndex, width, height) {
         let best = null;
-        const defaultBarDiameter = Math.max(10, detailingValue("columnLongitudinalBarDiameter", 16, 10));
+        const defaultBarDiameter = Math.max(16, detailingValue("columnLongitudinalBarDiameter", 16, 16));
         const defaultTieDiameter = Math.max(6, detailingValue("columnTieDiameter", 10, 6));
         for (const barDiameter of [defaultBarDiameter]) {
           const barArea = Math.PI * barDiameter * barDiameter / 4;
@@ -45482,7 +45482,7 @@
                 storyIndex,
                 Math.max(columnMinimumDimension(), Number(existing.width) || numericInput("columnWidth", 400)),
                 Math.max(columnMinimumDimension(), Number(existing.height) || numericInput("columnHeight", 400)),
-                Math.max(10, Number(existing.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10)),
+                Math.max(16, Number(existing.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 16)),
                 existingCount % 2 === 0 ? existingCount : existingCount + 1,
                 Math.max(6, Number(existing.tieDiameter) || detailingValue("columnTieDiameter", 10, 6))
               );
@@ -47382,9 +47382,9 @@
         const applyColumns = memberType === "ALL" || memberType === "Column";
         const applyFootings = memberType === "ALL" || memberType === "Footing";
         const applySlabs = memberType === "ALL" || memberType === "Slab";
-        const beamBar = Math.max(10, detailingValue("beamLongitudinalBarDiameter", 16, 10));
+        const beamBar = Math.max(16, detailingValue("beamLongitudinalBarDiameter", 16, 16));
         const beamStirrup = Math.max(6, detailingValue("beamStirrupDiameter", 10, 6));
-        const columnBar = Math.max(10, detailingValue("columnLongitudinalBarDiameter", 16, 10));
+        const columnBar = Math.max(16, detailingValue("columnLongitudinalBarDiameter", 16, 16));
         const columnTie = Math.max(6, detailingValue("columnTieDiameter", 10, 6));
         const footingBar = Math.max(10, detailingValue("footingBarDiameter", 12, 10));
 
@@ -48657,7 +48657,7 @@
                   storyIndex,
                   Math.max(columnMinimumDimension(), Number(override.width) || numericInput("columnWidth", 400)),
                   Math.max(columnMinimumDimension(), Number(override.height) || numericInput("columnHeight", 400)),
-                  Math.max(10, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 10)),
+                  Math.max(16, Number(override.barDiameter) || detailingValue("columnLongitudinalBarDiameter", 16, 16)),
                   count % 2 === 0 ? count : count + 1,
                   Math.max(6, Number(override.tieDiameter) || detailingValue("columnTieDiameter", 10, 6))
                 ).pass) return false;
