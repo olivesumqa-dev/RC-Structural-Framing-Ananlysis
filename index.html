@@ -989,10 +989,12 @@
     }
     .mpr-show-only-select option,
     .mpr-show-only-select optgroup {
-      background: #102220;
+      background: #050505;
       color: #fff;
       font: 600 16px/1.35 Arial, sans-serif;
     }
+    .mpr-show-only-select option:nth-of-type(odd) { background: #050505; }
+    .mpr-show-only-select option:nth-of-type(even) { background: #4a4a4a; }
     .mpr-show-only-control.is-active .mpr-show-only-select {
       background: #0d6e58;
       border-color: #c8ffec;
@@ -47467,6 +47469,7 @@
             ? 0
             : Number(structuralQuantityValue(grandTotal, key)) || 0;
           const wall = Number(wallQuantityValue(key)) || 0;
+          if (wallOnlyKeys.has(key)) return Math.ceil(wall);
           if (key === "sand") return (structural + wall).toFixed(3);
           if (key === "cement" || key === "D10") return Math.round(structural + wall);
           return structuralQuantityValue(grandTotal, key);

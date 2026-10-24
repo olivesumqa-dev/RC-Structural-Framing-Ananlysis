@@ -15,6 +15,7 @@ assert(!overallMarkup.includes('"wallCement"'), "The Overall Total Summary must 
 assert(!overallMarkup.includes('"wallSand"'), "The Overall Total Summary must not create a separate wall-sand row");
 assert(overallMarkup.includes('wallMaterialKeys = new Set(["chb4", "chb6", "D10", "cement", "sand"])'), "Wall materials must feed the standard D10, cement, and sand rows");
 assert(overallMarkup.includes('const overallQuantityValue = key =>'), "Overall quantities must combine wall values with structural values");
+assert(overallMarkup.includes('if (wallOnlyKeys.has(key)) return Math.ceil(wall);'), "Overall CHB totals must use the corresponding wall quantities");
 assert(html.includes('data-estimate-toggle aria-expanded="true"'), "Every estimate table must render a Show/Hide control");
 assert(html.includes('class="structural-estimate-content"'), "Each estimate table must have independently collapsible content");
 assert(html.includes('block?.classList.toggle("is-collapsed")'), "Show/Hide controls must toggle only their own estimate table");
@@ -23,5 +24,7 @@ assert(html.includes('"Premix Conc.<br>(cu.m.)"'), "Each Structural Estimate tab
 assert(html.includes('["Premix Conc.", "cu.m.", "concrete"]'), "The Overall Total Summary must use the Premix Conc. material label");
 assert(html.includes('>Premix Conc.</label>'), "The ready-mixed concrete option must be renamed to Premix Conc.");
 assert(!html.includes('>Ready Mixed Concrete</label>'), "The old ready-mixed concrete label must not remain in Structural Estimates");
+assert(html.includes('.mpr-show-only-select option:nth-of-type(odd) { background: #050505; }'), "Show only options must use alternating black rows");
+assert(html.includes('.mpr-show-only-select option:nth-of-type(even) { background: #4a4a4a; }'), "Show only options must use alternating gray rows");
 
 console.log("Structural Estimate summary consolidation and per-table toggle checks passed.");
