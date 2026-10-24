@@ -32095,12 +32095,21 @@
         return `${Number(levelIndex)}|${String(memberId || "")}`;
       }
 
+      function canonicalStructuralMemberName(value) {
+        return String(value || "").trim().toUpperCase().split("-").map((token, index) => {
+          if (index === 0) return token;
+          if (/^[A-Z]{2}$/.test(token)) return token.split("").sort((a, b) => a.localeCompare(b)).join("");
+          if (/^\d{2}$/.test(token)) return token.split("").sort((a, b) => Number(a) - Number(b)).join("");
+          return token;
+        }).join("-");
+      }
+
       function isGeneratedPlanMemberDeleted(levelIndex, memberId) {
         return planState.deletedPlanMembers.has(planMemberDeletionKey(levelIndex, memberId));
       }
 
       function generatedPlanMemberName(levelIndex, memberId, fallback = memberId) {
-        return String(planState.memberNameOverrides[planMemberDeletionKey(levelIndex, memberId)] || fallback || memberId);
+        return canonicalStructuralMemberName(planState.memberNameOverrides[planMemberDeletionKey(levelIndex, memberId)] || fallback || memberId);
       }
 
       function planGirderNodeKey(levelIndex, xLabel, yLabel, axis) {
@@ -32143,7 +32152,7 @@
           components.map(component => planState.memberNameOverrides[planMemberDeletionKey(levelIndex, component)]).find(Boolean);
         return {
           id,
-          name: String(override || id),
+          name: canonicalStructuralMemberName(override || id),
           startIndex,
           endIndex,
           components,
@@ -33056,7 +33065,7 @@
 
       function defaultPlanColumnName(key, storyIndex = 0) {
         const [xLabel, yLabel] = String(key || "").split("|");
-        return memberLabel("Column", storyIndex + 1, String(xLabel || "").toLowerCase(), yLabel || "");
+        return canonicalStructuralMemberName(memberLabel("Column", storyIndex + 1, String(xLabel || "").toUpperCase(), yLabel || ""));
       }
 
       function columnNameOverride(key, storyIndex = 0) {
@@ -33064,7 +33073,7 @@
       }
 
       function planColumnName(key, storyIndex = 0) {
-        return columnNameOverride(key, storyIndex) || defaultPlanColumnName(key, storyIndex);
+        return canonicalStructuralMemberName(columnNameOverride(key, storyIndex) || defaultPlanColumnName(key, storyIndex));
       }
 
       function planColumnStoryKey(key, storyIndex) {
@@ -33118,7 +33127,7 @@
         }
         if (member.sourcePlanMemberId) {
           const source = planMemberByStableId(member.sourcePlanMemberId, member.sourcePlanLevelIndex);
-          if (source?.name) return String(source.name);
+          if (source?.name) return canonicalStructuralMemberName(source.name);
         }
         if (member.sourcePlanGeneratedId || member.designGroupSourceId || member.designGroupComponents?.length) {
           const levelIndex = Number(member.sourcePlanLevelIndex) || 0;
@@ -33129,10 +33138,10 @@
           ].filter(Boolean);
           for (const sourceId of sourceIds) {
             const override = planState.memberNameOverrides[planMemberDeletionKey(levelIndex, sourceId)];
-            if (String(override || "").trim()) return String(override).trim();
+            if (String(override || "").trim()) return canonicalStructuralMemberName(override);
           }
         }
-        return String(member.designGroupName || member.name || "").trim();
+        return canonicalStructuralMemberName(member.designGroupName || member.name || "");
       }
 
       function synchronizeFrameModelNames(frameModel, pointRecords = []) {
@@ -46714,11 +46723,11 @@
           const height = structuralEstimateCellValue(row, 5) / 1000;
           const length = structuralEstimateCellValue(row, 6);
           addStructuralConcrete(quantity, width * height * length, (width + 2 * height) * length);
-          const longitudinalDiameter = structuralEstimateCellValue(row, 18);
+          const longitudinalDiameter = Number(row.querySelector('[data-field="longitudinalBarDiameter"]')?.value) || 0;
           const topCount = Math.max(Number(row.dataset.estimateSupportTop) || 0, Number(row.dataset.estimateMidspanTop) || 0);
           const bottomCount = Math.max(Number(row.dataset.estimateSupportBottom) || 0, Number(row.dataset.estimateMidspanBottom) || 0);
           addStructuralRebar(quantity, longitudinalDiameter, (topCount + bottomCount) * length);
-          const stirrupDiameter = structuralEstimateCellValue(row, 21);
+          const stirrupDiameter = Number(row.querySelector('[data-field="stirrupDiameter"]')?.value) || 0;
           const supportSpacing = Number(row.dataset.estimateStirrupSupportSpacing) || Number(row.dataset.estimateStirrupFieldSpacing) || 0;
           const fieldSpacing = Number(row.dataset.estimateStirrupFieldSpacing) || supportSpacing;
           const supportZone = Math.min(length / 2, (Number(row.dataset.estimateStirrupSupportZone) || 0) / 1000);
@@ -47610,7 +47619,7 @@
       function applyCoordinatedMemberName(target, nextName) {
         if (!target) return false;
         const previousName = String(target.currentName || "").trim();
-        const normalizedName = String(nextName || "").trim();
+        const normalizedName = canonicalStructuralMemberName(nextName);
         if (!normalizedName) {
           if (typeof status === "function") status("Enter a member name before updating the drawing.");
           return false;
