@@ -85,6 +85,11 @@ assert(html.includes('id="resultCalculationDefault"') && html.includes('id="resu
 assert(html.includes('function syncResultCalculationMode(enabled)') && html.includes('window.setTimeout(() => byId("calculateBtn")?.click(), 0);'), "AUTO-PASS must synchronize with the existing automatic design engine and calculate the active model");
 assert(html.includes('n = ceil(As,target / Ab)') && html.includes('Top (support): ${topCount}-D${bar}') && html.includes('Bottom (midspan): ${bottomCount}-D${bar}'), "Beam academic walkthroughs must show whole-bar-count calculation and selected top/bottom bars");
 assert(html.includes('const ratio = heightValue / widthValue;') && !html.includes('<rect x="112" y="35" width="180" height="160" class="academic-beam-outline"/>'), "Beam academic sketches must use the current b:h member proportion rather than a fixed square-like section");
+assert(html.includes('SUPPORT SECTION (−Mu)') && html.includes('MIDSPAN SECTION (+Mu)') && html.includes('layerCounts(topCount).join("+")'), "Beam academic drawings must separate support and midspan sections and show the computed layered bar arrangement");
+assert(html.includes('perimeterBarCoordinates(widthValue, heightValue, coverToCenter, count)') && html.includes('sectionY = 82') && html.includes('<text x="225" y="18">Pu = ${academicNumber(axialLoad)} kN</text>'), "Column academic drawings must place every computed perimeter bar, lower the section, and keep Pu above its dimensions");
+assert(html.includes('L/4 = ${academicNumber(lx / 4)} m') && html.includes('class="academic-cut-zone"') && html.includes('class="academic-cut-bar"'), "Slab academic drawings must dimension L/4 and emphasize the support-bar cut portion");
+assert(html.includes('nX = ceil(Ly / sX) + 1; nY = ceil(Lx / sY) + 1') && html.includes('nX = ceil(L / sX) + 1; nY = ceil(B / sY) + 1'), "Slab and footing walkthroughs must calculate whole panel reinforcement quantities");
+assert(html.includes('font: 600 16px/1.35 Arial, sans-serif;'), "Show only dropdown list options must use twice the former 8 px font size");
 assert(css.includes('#memberPropsTable th,') && css.includes('#memberPropsTable textarea{ text-align:center!important; }'), "All editable and display cells in MPR tables must be centered");
 
 console.log("MPR table interaction regression tests: passed");

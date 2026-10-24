@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=66" />
+  <link rel="stylesheet" href="styles.css?v=67" />
   <!-- Authentication and premium gating are retained in the repository but paused during development. -->
   <style>
     .structural-sequence {
@@ -990,7 +990,7 @@
     .mpr-show-only-select optgroup {
       background: #102220;
       color: #fff;
-      font: 600 8px/1.2 Arial, sans-serif;
+      font: 600 16px/1.35 Arial, sans-serif;
     }
     .mpr-show-only-control.is-active .mpr-show-only-select {
       background: #0d6e58;
@@ -48392,139 +48392,252 @@
         return `<div class="mpr-solution-step"><span class="mpr-solution-step-number">${number}</span><div><span>${escapeOutputHtml(statement)}</span>${equation ? `<span class="mpr-solution-equation">${escapeOutputHtml(equation)}</span>` : ""}${result ? `<span class="mpr-solution-result">${escapeOutputHtml(result)}</span>` : ""}</div></div>`;
       }
 
-      function academicBeamIllustration({width, height, barDiameter, stirrupDiameter, moment, shear, topBars, bottomBars}) {
+      function academicBeamIllustration({width, height, barDiameter, stirrupDiameter, moment, shear, supportTopBars, supportBottomBars, midspanTopBars, midspanBottomBars}) {
         const widthValue = Math.max(1, Number(width) || 1);
         const heightValue = Math.max(1, Number(height) || 1);
+        const clearCover = detailingValue("beamClearCover", 40, 20);
+        const barValue = Math.max(1, Number(barDiameter) || 1);
+        const stirrupValue = Math.max(1, Number(stirrupDiameter) || 1);
         const b = academicNumber(widthValue, 0);
         const h = academicNumber(heightValue, 0);
-        const d = academicNumber(Math.max(0, heightValue - detailingValue("beamClearCover", 40, 20) - Number(stirrupDiameter || 0) - Number(barDiameter || 0) / 2), 0);
-        const bar = academicNumber(barDiameter, 0);
-        const tie = academicNumber(stirrupDiameter, 0);
+        const d = academicNumber(Math.max(0, heightValue - clearCover - stirrupValue - barValue / 2), 0);
+        const bar = academicNumber(barValue, 0);
+        const tie = academicNumber(stirrupValue, 0);
         const ratio = heightValue / widthValue;
-        const sectionHeight = Math.max(78, Math.min(218, ratio >= 1 ? 210 : 150 * ratio));
-        const sectionWidth = Math.max(94, Math.min(235, sectionHeight / Math.max(ratio, 0.25)));
-        const sectionX = 188;
-        const sectionY = 42 + (218 - sectionHeight) / 2;
+        const sectionHeight = Math.max(94, Math.min(205, ratio >= 1 ? 196 : 145 * ratio));
+        const sectionWidth = Math.max(78, Math.min(162, sectionHeight / Math.max(ratio, 0.25)));
+        const sectionY = 50 + (205 - sectionHeight) / 2;
         const sectionBottom = sectionY + sectionHeight;
-        const compressionHeight = Math.max(24, Math.min(sectionHeight * 0.34, 68));
-        const topY = sectionY + Math.min(20, sectionHeight * 0.18);
-        const bottomY = sectionBottom - Math.min(20, sectionHeight * 0.18);
-        const effectiveDepthY = bottomY;
-        const topCount = Math.max(2, Math.round(Number(topBars) || 2));
-        const bottomCount = Math.max(2, Math.round(Number(bottomBars) || 2));
-        const barDots = (count, y, radius) => {
-          const shown = Math.min(8, count);
-          const inset = Math.max(15, Math.min(25, sectionWidth * 0.16));
-          return Array.from({length: shown}, (_, index) => {
-            const x = shown === 1 ? sectionX + sectionWidth / 2 : sectionX + inset + index * ((sectionWidth - 2 * inset) / (shown - 1));
-            return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius}"/>`;
+        const supportX = 122;
+        const midspanX = 385;
+        const compressionHeight = Math.max(18, Math.min(sectionHeight * 0.26, 48));
+        const counts = {
+          supportTop: Math.max(2, Math.round(Number(supportTopBars) || 2)),
+          supportBottom: Math.max(2, Math.round(Number(supportBottomBars) || 2)),
+          midspanTop: Math.max(2, Math.round(Number(midspanTopBars) || 2)),
+          midspanBottom: Math.max(2, Math.round(Number(midspanBottomBars) || 2))
+        };
+        const topCount = counts.supportTop;
+        const bottomCount = counts.midspanBottom;
+        const layerCounts = count => {
+          const fit = beamBarLayout(widthValue, clearCover, stirrupValue, barValue, count);
+          const perLayer = Math.max(2, Number(fit.perLayer) || count);
+          const rows = [];
+          let remaining = count;
+          while (remaining > 0) {
+            rows.push(Math.min(perLayer, remaining));
+            remaining -= rows[rows.length - 1];
+          }
+          return rows;
+        };
+        const barDots = (sectionX, count, edge) => {
+          const rows = layerCounts(count);
+          const inset = Math.max(12, Math.min(20, sectionWidth * 0.17));
+          const rowGap = Math.max(11, Math.min(17, sectionHeight * 0.085));
+          return rows.map((rowCount, rowIndex) => {
+            const y = edge === "top"
+              ? sectionY + inset + rowIndex * rowGap
+              : sectionBottom - inset - rowIndex * rowGap;
+            const usable = Math.max(1, sectionWidth - 2 * inset);
+            return Array.from({length: rowCount}, (_, index) => {
+              const x = rowCount === 1 ? sectionX + sectionWidth / 2 : sectionX + inset + index * usable / (rowCount - 1);
+              return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.2"/>`;
+            }).join("");
           }).join("");
         };
-        return `<figure class="mpr-academic-figure" aria-label="Reinforced concrete beam section and force idealization">
-          <figcaption>REINFORCED-CONCRETE BEAM SECTION · TO-SCALE ASPECT RATIO AND MAIN-REBAR RESULT</figcaption>
-          <svg viewBox="0 0 900 310" role="img" aria-label="Beam section scaled to its width and depth, showing top and bottom bar quantities, dimensions and internal forces">
+        const sectionMarkup = (sectionX, title, topCount, bottomCount, compressionEdge) => {
+          const compressionY = compressionEdge === "top" ? sectionY : sectionBottom - compressionHeight;
+          const neutralY = compressionEdge === "top" ? sectionY + sectionHeight * 0.46 : sectionY + sectionHeight * 0.54;
+          return `<rect x="${sectionX}" y="${sectionY.toFixed(1)}" width="${sectionWidth.toFixed(1)}" height="${sectionHeight.toFixed(1)}" class="academic-beam-outline"/>
+            <rect x="${sectionX}" y="${compressionY.toFixed(1)}" width="${sectionWidth.toFixed(1)}" height="${compressionHeight.toFixed(1)}" class="academic-compression-block"/>
+            <rect x="${(sectionX + 11).toFixed(1)}" y="${(sectionY + 11).toFixed(1)}" width="${(sectionWidth - 22).toFixed(1)}" height="${(sectionHeight - 22).toFixed(1)}" rx="2" class="academic-stirrup"/>
+            ${barDots(sectionX, topCount, "top")}${barDots(sectionX, bottomCount, "bottom")}
+            <path d="M${sectionX} ${neutralY.toFixed(1)}H${(sectionX + sectionWidth).toFixed(1)}" class="academic-neutral-axis"/>
+            <text x="${(sectionX + sectionWidth / 2).toFixed(1)}" y="${(sectionBottom + 18).toFixed(1)}" text-anchor="middle">${title}</text>
+            <text x="${(sectionX + sectionWidth / 2).toFixed(1)}" y="${(sectionBottom + 35).toFixed(1)}" text-anchor="middle">TOP: ${topCount}-D${bar} (${layerCounts(topCount).join("+")})</text>
+            <text x="${(sectionX + sectionWidth / 2).toFixed(1)}" y="${(sectionBottom + 52).toFixed(1)}" text-anchor="middle">BOTTOM: ${bottomCount}-D${bar} (${layerCounts(bottomCount).join("+")})</text>`;
+        };
+        return `<figure class="mpr-academic-figure" aria-label="Reinforced concrete beam support and midspan sections with calculated reinforcement">
+          <figcaption>REINFORCED-CONCRETE BEAM · SUPPORT AND MIDSPAN MAIN-REBAR ARRANGEMENT</figcaption>
+          <svg viewBox="0 0 980 350" role="img" aria-label="Beam support and midspan sections scaled to width and depth with every calculated top and bottom bar arranged in layers">
             <defs><marker id="academic-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 Z" fill="currentColor"/></marker></defs>
             <g class="academic-diagram-lines">
-              <rect x="${sectionX}" y="${sectionY.toFixed(1)}" width="${sectionWidth.toFixed(1)}" height="${sectionHeight.toFixed(1)}" class="academic-beam-outline"/>
-              <rect x="${sectionX}" y="${sectionY.toFixed(1)}" width="${sectionWidth.toFixed(1)}" height="${compressionHeight.toFixed(1)}" class="academic-compression-block"/>
-              <path d="M${(sectionX + 15).toFixed(1)} ${(sectionY + 15).toFixed(1)}V${(sectionBottom - 15).toFixed(1)}M${(sectionX + sectionWidth - 15).toFixed(1)} ${(sectionY + 15).toFixed(1)}V${(sectionBottom - 15).toFixed(1)}" class="academic-stirrup"/>
-              ${barDots(topCount, topY, 5.5)}${barDots(bottomCount, bottomY, 6)}
-              <path d="M${sectionX} ${(sectionY - 13).toFixed(1)}H${(sectionX + sectionWidth).toFixed(1)}" class="academic-dimension" marker-start="url(#academic-arrow)" marker-end="url(#academic-arrow)"/>
-              <path d="M${sectionX} ${(sectionY - 9).toFixed(1)}V${sectionY.toFixed(1)}M${(sectionX + sectionWidth).toFixed(1)} ${(sectionY - 9).toFixed(1)}V${sectionY.toFixed(1)}" class="academic-dimension"/>
-              <text x="${(sectionX + sectionWidth / 2).toFixed(1)}" y="${(sectionY - 21).toFixed(1)}" text-anchor="middle">b = ${b} mm</text>
-              <path d="M${(sectionX - 24).toFixed(1)} ${sectionY.toFixed(1)}V${sectionBottom.toFixed(1)}" class="academic-dimension" marker-start="url(#academic-arrow)" marker-end="url(#academic-arrow)"/>
-              <path d="M${(sectionX - 20).toFixed(1)} ${sectionY.toFixed(1)}H${sectionX}M${(sectionX - 20).toFixed(1)} ${sectionBottom.toFixed(1)}H${sectionX}" class="academic-dimension"/>
-              <text x="${(sectionX - 37).toFixed(1)}" y="${(sectionY + sectionHeight / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${(sectionX - 37).toFixed(1)} ${(sectionY + sectionHeight / 2).toFixed(1)})">h = ${h} mm</text>
-              <path d="M${(sectionX + sectionWidth + 26).toFixed(1)} ${sectionY.toFixed(1)}V${effectiveDepthY.toFixed(1)}" class="academic-dimension" marker-start="url(#academic-arrow)" marker-end="url(#academic-arrow)"/>
-              <text x="${(sectionX + sectionWidth + 42).toFixed(1)}" y="${((sectionY + effectiveDepthY) / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${(sectionX + sectionWidth + 42).toFixed(1)} ${((sectionY + effectiveDepthY) / 2).toFixed(1)})">d = ${d} mm</text>
-              <path d="M${sectionX} ${(sectionY + sectionHeight * 0.56).toFixed(1)}H${(sectionX + sectionWidth).toFixed(1)}" class="academic-neutral-axis"/>
-              <text x="${(sectionX + sectionWidth + 8).toFixed(1)}" y="${(sectionY + sectionHeight * 0.56 + 4).toFixed(1)}">N.A.</text>
-              <text x="${(sectionX + sectionWidth / 2).toFixed(1)}" y="${(sectionY + compressionHeight - 8).toFixed(1)}" text-anchor="middle">0.85 f′c</text>
-              <path d="M${(sectionX + sectionWidth).toFixed(1)} ${topY.toFixed(1)}H${(sectionX + sectionWidth + 56).toFixed(1)}" class="academic-neutral-axis"/>
-              <text x="${(sectionX + sectionWidth + 62).toFixed(1)}" y="${(topY + 4).toFixed(1)}">Top (support): ${topCount}-D${bar}</text>
-              <path d="M${(sectionX + sectionWidth).toFixed(1)} ${bottomY.toFixed(1)}H${(sectionX + sectionWidth + 56).toFixed(1)}" class="academic-neutral-axis"/>
-              <text x="${(sectionX + sectionWidth + 62).toFixed(1)}" y="${(bottomY + 4).toFixed(1)}">Bottom (midspan): ${bottomCount}-D${bar}</text>
-              <text x="${sectionX}" y="${(sectionBottom + 19).toFixed(1)}">stirrups: D${tie}</text>
+              ${sectionMarkup(supportX, "SUPPORT SECTION (−Mu)", counts.supportTop, counts.supportBottom, "bottom")}
+              ${sectionMarkup(midspanX, "MIDSPAN SECTION (+Mu)", counts.midspanTop, counts.midspanBottom, "top")}
+              <path d="M${supportX} ${(sectionY - 15).toFixed(1)}H${(supportX + sectionWidth).toFixed(1)}" class="academic-dimension" marker-start="url(#academic-arrow)" marker-end="url(#academic-arrow)"/>
+              <path d="M${supportX} ${(sectionY - 11).toFixed(1)}V${sectionY.toFixed(1)}M${(supportX + sectionWidth).toFixed(1)} ${(sectionY - 11).toFixed(1)}V${sectionY.toFixed(1)}" class="academic-dimension"/>
+              <text x="${(supportX + sectionWidth / 2).toFixed(1)}" y="${(sectionY - 23).toFixed(1)}" text-anchor="middle">b = ${b} mm</text>
+              <path d="M${(supportX - 23).toFixed(1)} ${sectionY.toFixed(1)}V${sectionBottom.toFixed(1)}" class="academic-dimension" marker-start="url(#academic-arrow)" marker-end="url(#academic-arrow)"/>
+              <text x="${(supportX - 37).toFixed(1)}" y="${(sectionY + sectionHeight / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${(supportX - 37).toFixed(1)} ${(sectionY + sectionHeight / 2).toFixed(1)})">h = ${h} mm</text>
+              <path d="M${(supportX + sectionWidth + 22).toFixed(1)} ${sectionY.toFixed(1)}V${(sectionBottom - Math.min(20, sectionHeight * 0.18)).toFixed(1)}" class="academic-dimension" marker-start="url(#academic-arrow)" marker-end="url(#academic-arrow)"/>
+              <text x="${(supportX + sectionWidth + 37).toFixed(1)}" y="${(sectionY + sectionHeight / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${(supportX + sectionWidth + 37).toFixed(1)} ${(sectionY + sectionHeight / 2).toFixed(1)})">d = ${d} mm</text>
+              <text x="${supportX}" y="${(sectionBottom + 70).toFixed(1)}">closed stirrup: D${tie}</text>
             </g>
             <g class="academic-force-block">
-              <line x1="620" y1="78" x2="620" y2="136" marker-end="url(#academic-arrow)"/><text x="634" y="100">C = 0.85 f′c ab</text>
-              <line x1="620" y1="199" x2="620" y2="143" marker-end="url(#academic-arrow)"/><text x="634" y="194">T = As fy</text>
-              <path d="M714 105 A52 52 0 0 1 755 163" fill="none" marker-end="url(#academic-arrow)"/><text x="767" y="137">Mu = ${academicNumber(moment)} kN·m</text>
-              <line x1="832" y1="190" x2="832" y2="126" marker-end="url(#academic-arrow)"/><text x="844" y="161">Vu = ${academicNumber(shear)} kN</text>
-              <line x1="579" y1="222" x2="872" y2="222" class="academic-baseline"/>
+              <line x1="670" y1="78" x2="670" y2="139" marker-end="url(#academic-arrow)"/><text x="684" y="101">C = 0.85 f′c ab</text>
+              <line x1="670" y1="208" x2="670" y2="147" marker-end="url(#academic-arrow)"/><text x="684" y="203">T = As fy</text>
+              <path d="M775 101 A55 55 0 0 1 818 165" fill="none" marker-end="url(#academic-arrow)"/><text x="829" y="136">Mu = ${academicNumber(moment)} kN·m</text>
+              <line x1="902" y1="202" x2="902" y2="128" marker-end="url(#academic-arrow)"/><text x="914" y="165">Vu = ${academicNumber(shear)} kN</text>
+              <line x1="628" y1="232" x2="948" y2="232" class="academic-baseline"/>
+              <text x="670" y="261">Top (support): ${topCount}-D${bar}</text>
+              <text x="670" y="281">Bottom (midspan): ${bottomCount}-D${bar}</text>
             </g>
           </svg>
-          <p>The section outline preserves this member's current b:h proportion. Bar circles and callouts show the selected whole-bar quantities; this is an instructional calculation sketch, not a shop drawing.</p>
+          <p>Support and midspan are separated so the negative- and positive-moment bar arrangements are not mixed. Every computed bar is shown, with layer notation in parentheses; this remains an instructional section rather than a fabrication drawing.</p>
         </figure>`;
       }
 
-      function academicColumnIllustration({width, height, barDiameter, barCount, axialLoad, momentX, momentY}) {
-        const b = academicNumber(width, 0), h = academicNumber(height, 0);
+      function academicColumnIllustration({width, height, barDiameter, barCount, tieDiameter, axialLoad, momentX, momentY}) {
+        const widthValue = Math.max(1, Number(width) || 1);
+        const heightValue = Math.max(1, Number(height) || 1);
+        const count = Math.max(4, Math.round(Number(barCount) || 4));
+        const barValue = Math.max(1, Number(barDiameter) || 1);
+        const tieValue = Math.max(1, Number(tieDiameter) || detailingValue("columnTieDiameter", 10, 6));
+        const b = academicNumber(widthValue, 0), h = academicNumber(heightValue, 0);
+        const scale = Math.min(190 / widthValue, 150 / heightValue);
+        const sectionWidth = widthValue * scale;
+        const sectionHeight = heightValue * scale;
+        const sectionX = 210 - sectionWidth / 2;
+        const sectionY = 82;
+        const sectionBottom = sectionY + sectionHeight;
+        const coverToCenter = detailingValue("columnClearCover", 40, 25) + tieValue + barValue / 2;
+        const bars = perimeterBarCoordinates(widthValue, heightValue, coverToCenter, count).map(point =>
+          `<circle cx="${(210 + point.x * scale).toFixed(1)}" cy="${(sectionY + sectionHeight / 2 - point.y * scale).toFixed(1)}" r="5.7"/>`
+        ).join("");
+        const tieInset = Math.max(9, Math.min(18, (detailingValue("columnClearCover", 40, 25) + tieValue / 2) * scale));
         return `<figure class="mpr-academic-figure" aria-label="Reinforced concrete column section and P-M interaction idealization">
-          <figcaption>REINFORCED-CONCRETE COLUMN SECTION · P-M INTERACTION IDEALIZATION</figcaption>
-          <svg viewBox="0 0 720 240" role="img" aria-label="Column section showing perimeter bars, axial load, biaxial moments, and interaction axes">
+          <figcaption>REINFORCED-CONCRETE COLUMN SECTION · COMPUTED PERIMETER REBARS AND P-M INTERACTION</figcaption>
+          <svg viewBox="0 0 720 300" role="img" aria-label="Column section shifted below its dimensions, showing every computed perimeter bar, axial load above the dimensions, biaxial moments, and interaction axes">
             <defs><marker id="academic-column-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 Z" fill="currentColor"/></marker></defs>
             <g class="academic-diagram-lines">
-              <rect x="125" y="38" width="170" height="160" class="academic-beam-outline"/>
-              <path d="M151 50H269M151 186H269M139 64V172M281 64V172" class="academic-stirrup"/>
-              <circle cx="151" cy="64" r="7"/><circle cx="210" cy="64" r="7"/><circle cx="269" cy="64" r="7"/><circle cx="151" cy="118" r="7"/><circle cx="269" cy="118" r="7"/><circle cx="151" cy="172" r="7"/><circle cx="210" cy="172" r="7"/><circle cx="269" cy="172" r="7"/>
-              <path d="M125 21H295M125 27V8M295 27V8" class="academic-dimension"/><path d="M125 14H295" class="academic-dimension" marker-start="url(#academic-column-arrow)" marker-end="url(#academic-column-arrow)"/>
-              <text x="210" y="11" text-anchor="middle">b = ${b} mm</text>
-              <path d="M94 38V198" class="academic-dimension" marker-start="url(#academic-column-arrow)" marker-end="url(#academic-column-arrow)"/><text x="80" y="122" text-anchor="middle" transform="rotate(-90 80 122)">h = ${h} mm</text>
-              <text x="210" y="220" text-anchor="middle">${academicNumber(barCount, 0)} bars · D${academicNumber(barDiameter, 0)}</text>
+              <rect x="${sectionX.toFixed(1)}" y="${sectionY.toFixed(1)}" width="${sectionWidth.toFixed(1)}" height="${sectionHeight.toFixed(1)}" class="academic-beam-outline"/>
+              <rect x="${(sectionX + tieInset).toFixed(1)}" y="${(sectionY + tieInset).toFixed(1)}" width="${(sectionWidth - 2 * tieInset).toFixed(1)}" height="${(sectionHeight - 2 * tieInset).toFixed(1)}" rx="2" class="academic-stirrup"/>
+              ${bars}
+              <path d="M${sectionX.toFixed(1)} 57H${(sectionX + sectionWidth).toFixed(1)}" class="academic-dimension" marker-start="url(#academic-column-arrow)" marker-end="url(#academic-column-arrow)"/>
+              <path d="M${sectionX.toFixed(1)} 62V${sectionY.toFixed(1)}M${(sectionX + sectionWidth).toFixed(1)} 62V${sectionY.toFixed(1)}" class="academic-dimension"/>
+              <text x="210" y="49" text-anchor="middle">b = ${b} mm</text>
+              <path d="M${(sectionX - 28).toFixed(1)} ${sectionY.toFixed(1)}V${sectionBottom.toFixed(1)}" class="academic-dimension" marker-start="url(#academic-column-arrow)" marker-end="url(#academic-column-arrow)"/>
+              <path d="M${(sectionX - 23).toFixed(1)} ${sectionY.toFixed(1)}H${sectionX.toFixed(1)}M${(sectionX - 23).toFixed(1)} ${sectionBottom.toFixed(1)}H${sectionX.toFixed(1)}" class="academic-dimension"/>
+              <text x="${(sectionX - 42).toFixed(1)}" y="${(sectionY + sectionHeight / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${(sectionX - 42).toFixed(1)} ${(sectionY + sectionHeight / 2).toFixed(1)})">h = ${h} mm</text>
+              <text x="210" y="${(sectionBottom + 22).toFixed(1)}" text-anchor="middle">${count}-D${academicNumber(barValue, 0)} LONGITUDINAL BARS · D${academicNumber(tieValue, 0)} CLOSED TIE</text>
             </g>
             <g class="academic-force-block">
-              <line x1="210" y1="2" x2="210" y2="35" marker-end="url(#academic-column-arrow)"/><text x="222" y="23">Pu = ${academicNumber(axialLoad)} kN</text>
-              <path d="M382 96 A47 47 0 0 1 424 143" fill="none" marker-end="url(#academic-column-arrow)"/><text x="431" y="121">Mux = ${academicNumber(momentX)} kN·m</text>
-              <path d="M382 155 A47 47 0 0 0 424 108" fill="none" marker-end="url(#academic-column-arrow)"/><text x="431" y="167">Muy = ${academicNumber(momentY)} kN·m</text>
-              <line x1="570" y1="51" x2="570" y2="187" class="academic-baseline"/><line x1="500" y1="149" x2="666" y2="149" class="academic-baseline"/>
-              <path d="M515 170 Q548 72 639 78" fill="none" class="academic-compression-block"/><circle cx="586" cy="120" r="5"/><text x="592" y="116">governing P-M point</text><text x="651" y="164">M</text><text x="576" y="62">P</text>
+              <line x1="210" y1="8" x2="210" y2="76" marker-end="url(#academic-column-arrow)"/><text x="225" y="18">Pu = ${academicNumber(axialLoad)} kN</text>
+              <path d="M382 116 A47 47 0 0 1 424 163" fill="none" marker-end="url(#academic-column-arrow)"/><text x="431" y="141">Mux = ${academicNumber(momentX)} kN·m</text>
+              <path d="M382 175 A47 47 0 0 0 424 128" fill="none" marker-end="url(#academic-column-arrow)"/><text x="431" y="187">Muy = ${academicNumber(momentY)} kN·m</text>
+              <line x1="570" y1="71" x2="570" y2="207" class="academic-baseline"/><line x1="500" y1="169" x2="666" y2="169" class="academic-baseline"/>
+              <path d="M515 190 Q548 92 639 98" fill="none" class="academic-compression-block"/><circle cx="586" cy="140" r="5"/><text x="592" y="136">governing P-M point</text><text x="651" y="184">M</text><text x="576" y="82">P</text>
             </g>
           </svg>
-          <p>The perimeter reinforcement and the axial-flexural interaction sketch are an instructional idealization using the current MPR result.</p>
+          <p>The section is drawn to the current b:h proportion. Every computed longitudinal bar is placed on the tied perimeter; Pu is kept above the dimension line so the design information remains legible.</p>
         </figure>`;
       }
 
-      function academicSlabIllustration({spanX, spanY, thickness, load, momentX, momentY, barDiameter}) {
-        return `<figure class="mpr-academic-figure" aria-label="Reinforced concrete slab panel and strip design idealization">
-          <figcaption>REINFORCED-CONCRETE SLAB PANEL · STRIP DESIGN IDEALIZATION</figcaption>
-          <svg viewBox="0 0 720 240" role="img" aria-label="Slab panel showing orthogonal spans, load arrows, strip moments, thickness and reinforcement">
+      function academicSlabIllustration({spanX, spanY, thickness, load, momentX, momentY, barDiameter, topSpacingX, topSpacingY, bottomSpacingX, bottomSpacingY}) {
+        const lx = Math.max(0, Number(spanX) || 0), ly = Math.max(0, Number(spanY) || 0);
+        const countAtSpacing = (crossSpan, spacing) => Number(spacing) > 0 ? Math.ceil(crossSpan * 1000 / Number(spacing)) + 1 : 0;
+        const counts = {
+          topX: countAtSpacing(ly, topSpacingX),
+          topY: countAtSpacing(lx, topSpacingY),
+          bottomX: countAtSpacing(ly, bottomSpacingX),
+          bottomY: countAtSpacing(lx, bottomSpacingY)
+        };
+        const meshLines = (count, orientation) => {
+          const shown = Math.max(0, Math.min(100, count));
+          if (!shown) return "";
+          return Array.from({length: shown}, (_, index) => {
+            const fraction = shown === 1 ? 0.5 : index / (shown - 1);
+            return orientation === "x"
+              ? `<line x1="95" y1="${(46 + fraction * 132).toFixed(1)}" x2="345" y2="${(46 + fraction * 132).toFixed(1)}"/>`
+              : `<line x1="${(95 + fraction * 250).toFixed(1)}" y1="46" x2="${(95 + fraction * 250).toFixed(1)}" y2="178"/>`;
+          }).join("");
+        };
+        const sectionX = 438, sectionY = 76, sectionWidth = 236, sectionHeight = 50;
+        const quarter = sectionWidth / 4;
+        const leftCut = sectionX + quarter, rightCut = sectionX + sectionWidth - quarter;
+        return `<figure class="mpr-academic-figure" aria-label="Reinforced concrete slab panel, bar counts and quarter-span cutoff detail">
+          <figcaption>REINFORCED-CONCRETE SLAB PANEL · COMPUTED BAR QUANTITIES AND L/4 CUT-OFF DETAIL</figcaption>
+          <svg viewBox="0 0 760 310" role="img" aria-label="Slab panel showing every calculated top bar in orthogonal directions and a section emphasizing the top-bar cutoff at one quarter span">
             <defs><marker id="academic-slab-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 Z" fill="currentColor"/></marker></defs>
             <g class="academic-diagram-lines">
               <rect x="95" y="46" width="250" height="132" class="academic-beam-outline"/>
-              <path d="M178 46V178M262 46V178M95 90H345M95 134H345" class="academic-neutral-axis"/>
-              <path d="M95 30H345" class="academic-dimension" marker-start="url(#academic-slab-arrow)" marker-end="url(#academic-slab-arrow)"/><text x="220" y="24" text-anchor="middle">Lx = ${academicNumber(spanX)} m</text>
-              <path d="M73 46V178" class="academic-dimension" marker-start="url(#academic-slab-arrow)" marker-end="url(#academic-slab-arrow)"/><text x="58" y="119" text-anchor="middle" transform="rotate(-90 58 119)">Ly = ${academicNumber(spanY)} m</text>
+              <g class="academic-rebar-mesh">${meshLines(counts.topX, "x")}${meshLines(counts.topY, "y")}</g>
+              <path d="M95 30H345" class="academic-dimension" marker-start="url(#academic-slab-arrow)" marker-end="url(#academic-slab-arrow)"/><text x="220" y="24" text-anchor="middle">Lx = ${academicNumber(lx)} m</text>
+              <path d="M73 46V178" class="academic-dimension" marker-start="url(#academic-slab-arrow)" marker-end="url(#academic-slab-arrow)"/><text x="58" y="119" text-anchor="middle" transform="rotate(-90 58 119)">Ly = ${academicNumber(ly)} m</text>
               <line x1="133" y1="5" x2="133" y2="42" marker-end="url(#academic-slab-arrow)"/><line x1="190" y1="5" x2="190" y2="42" marker-end="url(#academic-slab-arrow)"/><line x1="247" y1="5" x2="247" y2="42" marker-end="url(#academic-slab-arrow)"/><line x1="304" y1="5" x2="304" y2="42" marker-end="url(#academic-slab-arrow)"/>
-              <text x="220" y="199" text-anchor="middle">wu = ${academicNumber(load)} kPa · D${academicNumber(barDiameter, 0)} reinforcement</text>
+              <text x="220" y="198" text-anchor="middle">TOP X: ${counts.topX}-D${academicNumber(barDiameter, 0)} @${academicNumber(topSpacingX, 0)} mm</text>
+              <text x="220" y="215" text-anchor="middle">TOP Y: ${counts.topY}-D${academicNumber(barDiameter, 0)} @${academicNumber(topSpacingY, 0)} mm</text>
+              <text x="220" y="238" text-anchor="middle">wu = ${academicNumber(load)} kPa</text>
             </g>
             <g class="academic-force-block">
-              <rect x="462" y="61" width="157" height="48" class="academic-beam-outline"/><path d="M462 77H619M462 93H619" class="academic-stirrup"/><path d="M438 61V109" class="academic-dimension" marker-start="url(#academic-slab-arrow)" marker-end="url(#academic-slab-arrow)"/><text x="425" y="93" text-anchor="middle" transform="rotate(-90 425 93)">h = ${academicNumber(thickness, 0)} mm</text>
-              <line x1="486" y1="129" x2="594" y2="129" class="academic-neutral-axis"/><text x="540" y="150" text-anchor="middle">design strip</text>
-              <text x="462" y="181">Mux = ${academicNumber(momentX)} kN·m/m</text><text x="462" y="207">Muy = ${academicNumber(momentY)} kN·m/m</text>
+              <rect x="${sectionX}" y="${sectionY}" width="${sectionWidth}" height="${sectionHeight}" class="academic-beam-outline"/>
+              <rect x="${sectionX}" y="${sectionY}" width="${quarter.toFixed(1)}" height="${sectionHeight}" class="academic-cut-zone"/>
+              <rect x="${rightCut.toFixed(1)}" y="${sectionY}" width="${quarter.toFixed(1)}" height="${sectionHeight}" class="academic-cut-zone"/>
+              <line x1="${(sectionX + 6).toFixed(1)}" y1="${(sectionY + 12).toFixed(1)}" x2="${(leftCut - 5).toFixed(1)}" y2="${(sectionY + 12).toFixed(1)}" class="academic-cut-bar"/>
+              <path d="M${(leftCut - 5).toFixed(1)} ${(sectionY + 8).toFixed(1)}l5 4l-5 4" class="academic-cut-mark"/>
+              <line x1="${(rightCut + 5).toFixed(1)}" y1="${(sectionY + 12).toFixed(1)}" x2="${(sectionX + sectionWidth - 6).toFixed(1)}" y2="${(sectionY + 12).toFixed(1)}" class="academic-cut-bar"/>
+              <path d="M${(rightCut + 5).toFixed(1)} ${(sectionY + 8).toFixed(1)}l-5 4l5 4" class="academic-cut-mark"/>
+              <line x1="${(sectionX + 7).toFixed(1)}" y1="${(sectionY + sectionHeight - 11).toFixed(1)}" x2="${(sectionX + sectionWidth - 7).toFixed(1)}" y2="${(sectionY + sectionHeight - 11).toFixed(1)}" class="academic-stirrup"/>
+              <path d="M${sectionX} 54H${leftCut.toFixed(1)}" class="academic-dimension" marker-start="url(#academic-slab-arrow)" marker-end="url(#academic-slab-arrow)"/>
+              <path d="M${sectionX} 59V${sectionY}M${leftCut.toFixed(1)} 59V${sectionY}" class="academic-dimension"/>
+              <text x="${(sectionX + quarter / 2).toFixed(1)}" y="46" text-anchor="middle">L/4 = ${academicNumber(lx / 4)} m</text>
+              <text x="${leftCut.toFixed(1)}" y="70" text-anchor="middle">CUT</text>
+              <path d="M414 ${sectionY}V${sectionY + sectionHeight}" class="academic-dimension" marker-start="url(#academic-slab-arrow)" marker-end="url(#academic-slab-arrow)"/><text x="401" y="${sectionY + 34}" text-anchor="middle" transform="rotate(-90 401 ${sectionY + 34})">h = ${academicNumber(thickness, 0)} mm</text>
+              <text x="438" y="151">TOP X: ${counts.topX}-D${academicNumber(barDiameter, 0)} @${academicNumber(topSpacingX, 0)}</text>
+              <text x="438" y="169">TOP Y: ${counts.topY}-D${academicNumber(barDiameter, 0)} @${academicNumber(topSpacingY, 0)}</text>
+              <text x="438" y="194">BOTTOM X: ${counts.bottomX}-D${academicNumber(barDiameter, 0)} @${academicNumber(bottomSpacingX, 0)}</text>
+              <text x="438" y="212">BOTTOM Y: ${counts.bottomY}-D${academicNumber(barDiameter, 0)} @${academicNumber(bottomSpacingY, 0)}</text>
+              <text x="438" y="244">Mux = ${academicNumber(momentX)} kN·m/m</text><text x="438" y="265">Muy = ${academicNumber(momentY)} kN·m/m</text>
             </g>
           </svg>
-          <p>Panel spans, factored surface load, orthogonal strip moments, thickness and bar size are drawn from the active MPR slab result.</p>
+          <p>The panel mesh reports the computed whole-bar quantities from the current MPR spacings. The shaded quarter-span zones and heavy top-bar lines emphasize the L/4 support reinforcement and its cut-off location; bottom bars continue through the span.</p>
         </figure>`;
       }
 
-      function academicFootingIllustration({width, length, thickness, serviceLoad, ultimateLoad, soilPressure}) {
-        return `<figure class="mpr-academic-figure" aria-label="Isolated footing bearing and shear design idealization">
-          <figcaption>ISOLATED FOOTING · SOIL PRESSURE AND CRITICAL-SECTION IDEALIZATION</figcaption>
-          <svg viewBox="0 0 720 240" role="img" aria-label="Footing section showing column, soil pressure, footing dimensions and shear critical sections">
+      function academicFootingIllustration({width, length, thickness, serviceLoad, ultimateLoad, soilPressure, barDiameterX, spacingX, barDiameterY, spacingY}) {
+        const widthValue = Math.max(0.1, Number(width) || 0.1), lengthValue = Math.max(0.1, Number(length) || 0.1);
+        const countX = Number(spacingX) > 0 ? Math.ceil(lengthValue * 1000 / Number(spacingX)) + 1 : 0;
+        const countY = Number(spacingY) > 0 ? Math.ceil(widthValue * 1000 / Number(spacingY)) + 1 : 0;
+        const scale = Math.min(250 / widthValue, 145 / lengthValue);
+        const planWidth = widthValue * scale, planHeight = lengthValue * scale;
+        const planX = 210 - planWidth / 2, planY = 40 + (145 - planHeight) / 2;
+        const footingBars = (count, orientation) => {
+          const shown = Math.max(0, Math.min(100, count));
+          if (!shown) return "";
+          return Array.from({length: shown}, (_, index) => {
+            const fraction = shown === 1 ? 0.5 : index / (shown - 1);
+            return orientation === "x"
+              ? `<line x1="${(planX + 8).toFixed(1)}" y1="${(planY + 8 + fraction * Math.max(1, planHeight - 16)).toFixed(1)}" x2="${(planX + planWidth - 8).toFixed(1)}" y2="${(planY + 8 + fraction * Math.max(1, planHeight - 16)).toFixed(1)}"/>`
+              : `<line x1="${(planX + 8 + fraction * Math.max(1, planWidth - 16)).toFixed(1)}" y1="${(planY + 8).toFixed(1)}" x2="${(planX + 8 + fraction * Math.max(1, planWidth - 16)).toFixed(1)}" y2="${(planY + planHeight - 8).toFixed(1)}"/>`;
+          }).join("");
+        };
+        const columnWidth = Math.max(34, Math.min(70, planWidth * 0.28)), columnHeight = Math.max(34, Math.min(70, planHeight * 0.28));
+        return `<figure class="mpr-academic-figure" aria-label="Isolated footing plan reinforcement, bearing and shear idealization">
+          <figcaption>ISOLATED FOOTING · COMPUTED BOTTOM REBAR ARRANGEMENT AND CRITICAL SECTIONS</figcaption>
+          <svg viewBox="0 0 780 310" role="img" aria-label="Footing plan showing every calculated X and Y bottom bar together with section, loads, soil pressure and shear critical sections">
             <defs><marker id="academic-footing-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 Z" fill="currentColor"/></marker></defs>
             <g class="academic-diagram-lines">
-              <rect x="182" y="32" width="78" height="77" class="academic-beam-outline"/><rect x="86" y="109" width="270" height="58" class="academic-beam-outline"/>
-              <path d="M86 134H356" class="academic-neutral-axis"/><path d="M133 159H309" class="academic-stirrup"/>
-              <path d="M86 190H356" class="academic-dimension" marker-start="url(#academic-footing-arrow)" marker-end="url(#academic-footing-arrow)"/><text x="221" y="211" text-anchor="middle">B = ${academicNumber(width)} m · L = ${academicNumber(length)} m</text>
-              <path d="M385 109V167" class="academic-dimension" marker-start="url(#academic-footing-arrow)" marker-end="url(#academic-footing-arrow)"/><text x="400" y="141" transform="rotate(-90 400 141)">h = ${academicNumber(thickness, 0)} mm</text>
-              <line x1="221" y1="4" x2="221" y2="29" marker-end="url(#academic-footing-arrow)"/><text x="235" y="21">Pu = ${academicNumber(ultimateLoad)} kN</text>
-              <line x1="121" y1="184" x2="121" y2="170" marker-end="url(#academic-footing-arrow)"/><line x1="172" y1="184" x2="172" y2="170" marker-end="url(#academic-footing-arrow)"/><line x1="270" y1="184" x2="270" y2="170" marker-end="url(#academic-footing-arrow)"/><line x1="321" y1="184" x2="321" y2="170" marker-end="url(#academic-footing-arrow)"/>
-              <text x="221" y="232" text-anchor="middle">upward qu = ${academicNumber(soilPressure)} kPa</text>
+              <rect x="${planX.toFixed(1)}" y="${planY.toFixed(1)}" width="${planWidth.toFixed(1)}" height="${planHeight.toFixed(1)}" class="academic-beam-outline"/>
+              <g class="academic-rebar-mesh">${footingBars(countX, "x")}${footingBars(countY, "y")}</g>
+              <rect x="${(210 - columnWidth / 2).toFixed(1)}" y="${(planY + planHeight / 2 - columnHeight / 2).toFixed(1)}" width="${columnWidth.toFixed(1)}" height="${columnHeight.toFixed(1)}" class="academic-compression-block"/>
+              <path d="M${planX.toFixed(1)} ${(planY - 17).toFixed(1)}H${(planX + planWidth).toFixed(1)}" class="academic-dimension" marker-start="url(#academic-footing-arrow)" marker-end="url(#academic-footing-arrow)"/><text x="210" y="${(planY - 24).toFixed(1)}" text-anchor="middle">B = ${academicNumber(widthValue)} m</text>
+              <path d="M${(planX - 20).toFixed(1)} ${planY.toFixed(1)}V${(planY + planHeight).toFixed(1)}" class="academic-dimension" marker-start="url(#academic-footing-arrow)" marker-end="url(#academic-footing-arrow)"/><text x="${(planX - 34).toFixed(1)}" y="${(planY + planHeight / 2).toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${(planX - 34).toFixed(1)} ${(planY + planHeight / 2).toFixed(1)})">L = ${academicNumber(lengthValue)} m</text>
+              <text x="210" y="212" text-anchor="middle">X BARS: ${countX}-D${academicNumber(barDiameterX, 0)} @${academicNumber(spacingX, 0)} mm</text>
+              <text x="210" y="231" text-anchor="middle">Y BARS: ${countY}-D${academicNumber(barDiameterY, 0)} @${academicNumber(spacingY, 0)} mm</text>
             </g>
-            <g class="academic-force-block"><line x1="495" y1="46" x2="495" y2="192" class="academic-baseline"/><line x1="438" y1="164" x2="656" y2="164" class="academic-baseline"/><path d="M453 159 Q486 78 538 96 Q590 116 638 159" fill="none" class="academic-compression-block"/><text x="458" y="53">Punching-shear perimeter</text><text x="462" y="191">one-way shear at d from face</text><text x="454" y="213">Pservice = ${academicNumber(serviceLoad)} kN</text></g>
+            <g class="academic-force-block">
+              <rect x="512" y="34" width="72" height="75" class="academic-beam-outline"/><rect x="430" y="109" width="236" height="56" class="academic-beam-outline"/>
+              <path d="M430 134H666" class="academic-neutral-axis"/><path d="M446 154H650" class="academic-cut-bar"/>
+              <path d="M692 109V165" class="academic-dimension" marker-start="url(#academic-footing-arrow)" marker-end="url(#academic-footing-arrow)"/><text x="707" y="140" transform="rotate(-90 707 140)">h = ${academicNumber(thickness, 0)} mm</text>
+              <line x1="548" y1="5" x2="548" y2="30" marker-end="url(#academic-footing-arrow)"/><text x="562" y="21">Pu = ${academicNumber(ultimateLoad)} kN</text>
+              <line x1="465" y1="187" x2="465" y2="168" marker-end="url(#academic-footing-arrow)"/><line x1="520" y1="187" x2="520" y2="168" marker-end="url(#academic-footing-arrow)"/><line x1="576" y1="187" x2="576" y2="168" marker-end="url(#academic-footing-arrow)"/><line x1="631" y1="187" x2="631" y2="168" marker-end="url(#academic-footing-arrow)"/>
+              <text x="548" y="205" text-anchor="middle">upward qu = ${academicNumber(soilPressure)} kPa</text>
+              <path d="M473 109V165M623 109V165" class="academic-neutral-axis"/><text x="548" y="229" text-anchor="middle">punching perimeter around column</text>
+              <text x="548" y="250" text-anchor="middle">one-way shear at d from column face</text>
+              <text x="548" y="273" text-anchor="middle">Pservice = ${academicNumber(serviceLoad)} kN</text>
+            </g>
           </svg>
-          <p>Footing dimensions, loads and soil pressure come from the selected MPR footing row; critical sections are shown only to explain the calculation sequence.</p>
+          <p>The plan is scaled to the current B:L ratio and shows the calculated whole bottom-bar quantities in both directions. The section identifies the same reinforcement layer, soil reaction and shear-check locations.</p>
         </figure>`;
       }
 
@@ -48579,7 +48692,18 @@
           const supportTopBars = supportBars.top || negativeFlexure?.count || 2;
           const midspanBottomBars = midspanBars.bottom || positiveFlexure?.count || 2;
           subtitle = `${level} · ${type} · ${academicNumber(length)} m span`;
-          illustration = academicBeamIllustration({width: b, height: h, barDiameter: bar, stirrupDiameter: stirrup, moment, shear, topBars: supportTopBars, bottomBars: midspanBottomBars});
+          illustration = academicBeamIllustration({
+            width: b,
+            height: h,
+            barDiameter: bar,
+            stirrupDiameter: stirrup,
+            moment,
+            shear,
+            supportTopBars,
+            supportBottomBars: supportBars.bottom,
+            midspanTopBars: midspanBars.top,
+            midspanBottomBars
+          });
           sections.push({title: "1. Section properties", steps: [
             academicStep(1, "Rectangular gross area", `A = b h = ${academicNumber(b, 0)} × ${academicNumber(h, 0)} = ${academicNumber(b * h, 0)} mm²`, `MPR value: ${academicNumber(area, 0)} mm²`),
             academicStep(2, "Strong-axis second moment of area", `I = b h³ / 12 = ${academicNumber(b, 0)} × ${academicNumber(h, 0)}³ / 12`, `I = ${academicNumber(inertia, 0)} mm⁴; E = ${academicNumber(elasticModulus, 0)} MPa`)
@@ -48611,7 +48735,7 @@
           const calculatedAst = count * barArea;
           const minimumAst = Math.max(0.01 * ag, 4 * barArea);
           subtitle = `${level} · ${academicNumber(length)} m clear/member length`;
-          illustration = academicColumnIllustration({width: b, height: h, barDiameter: bar, barCount: count, axialLoad: pu, momentX: mux, momentY: muy});
+          illustration = academicColumnIllustration({width: b, height: h, barDiameter: bar, barCount: count, tieDiameter: tie, axialLoad: pu, momentX: mux, momentY: muy});
           sections.push({title: "1. Geometry and reinforcement", steps: [
             academicStep(1, "Gross concrete area", `Ag = b h = ${academicNumber(b, 0)} × ${academicNumber(h, 0)}`, `Ag = ${academicNumber(ag, 0)} mm²`),
             academicStep(2, "Area of one longitudinal bar", `Ab = πdb² / 4 = π × ${academicNumber(bar, 0)}² / 4`, `Ab = ${academicNumber(barArea, 1)} mm² for one D${academicNumber(bar, 0)} bar.`),
@@ -48637,8 +48761,12 @@
           const providedY = barArea * 1000 / Math.max(1, topSpacingY);
           const bottomProvidedX = barArea * 1000 / Math.max(1, bottomSpacingX);
           const bottomProvidedY = barArea * 1000 / Math.max(1, bottomSpacingY);
+          const topCountX = topSpacingX > 0 ? Math.ceil(ly * 1000 / topSpacingX) + 1 : 0;
+          const topCountY = topSpacingY > 0 ? Math.ceil(lx * 1000 / topSpacingY) + 1 : 0;
+          const bottomCountX = bottomSpacingX > 0 ? Math.ceil(ly * 1000 / bottomSpacingX) + 1 : 0;
+          const bottomCountY = bottomSpacingY > 0 ? Math.ceil(lx * 1000 / bottomSpacingY) + 1 : 0;
           subtitle = `${level} · ${type} · ${academicNumber(lx)} m × ${academicNumber(ly)} m panel`;
-          illustration = academicSlabIllustration({spanX: lx, spanY: ly, thickness, load: wu, momentX: mux, momentY: muy, barDiameter: bar});
+          illustration = academicSlabIllustration({spanX: lx, spanY: ly, thickness, load: wu, momentX: mux, momentY: muy, barDiameter: bar, topSpacingX, topSpacingY, bottomSpacingX, bottomSpacingY});
           sections.push({title: "1. Panel action", steps: [
             academicStep(1, "Determine panel behavior from support geometry and aspect ratio", `Ly/Lx = ${academicNumber(ly)} / ${academicNumber(lx)} = ${academicNumber(ly / Math.max(lx, 1e-9))}`, `Selected behavior: ${type}`),
             academicStep(2, "Build the factored surface load", "wu = governing code load combination of dead and live loads", `wu = ${academicNumber(wu)} kPa`),
@@ -48650,7 +48778,9 @@
             academicStep(11, "Calculate one selected slab-bar area", `Ab = πdb² / 4 = π × ${academicNumber(bar, 0)}² / 4`, `Ab = ${academicNumber(barArea, 1)} mm² for one D${academicNumber(bar, 0)} bar.`),
             academicStep(12, "Convert each selected spacing to main steel per metre", "As,provided/m = Ab (1000 / s)", `Top X: ${academicNumber(barArea, 1)}(1000/${academicNumber(topSpacingX, 0)}) = ${academicNumber(providedX, 1)} mm²/m; Top Y: ${academicNumber(barArea, 1)}(1000/${academicNumber(topSpacingY, 0)}) = ${academicNumber(providedY, 1)} mm²/m.`),
             academicStep(13, "Show the selected bottom main reinforcement", "As,provided/m = Ab (1000 / s)", `Bottom X: D${academicNumber(bar, 0)} @ ${academicNumber(bottomSpacingX, 0)} = ${academicNumber(bottomProvidedX, 1)} mm²/m; Bottom Y: D${academicNumber(bar, 0)} @ ${academicNumber(bottomSpacingY, 0)} = ${academicNumber(bottomProvidedY, 1)} mm²/m.`),
-            academicStep(14, "Verify one-way shear", "Shear D/C = Vu / φVc ≤ 1.00", `Shear D/C = ${mprRowCellText(row, 24)}; status: ${mprRowCellText(row, 25)}`)
+            academicStep(14, "Convert slab spacing into whole panel bar quantities", "nX = ceil(Ly / sX) + 1; nY = ceil(Lx / sY) + 1", `Top: X = ${topCountX}-D${academicNumber(bar, 0)}, Y = ${topCountY}-D${academicNumber(bar, 0)}. Bottom: X = ${bottomCountX}-D${academicNumber(bar, 0)}, Y = ${bottomCountY}-D${academicNumber(bar, 0)}.`),
+            academicStep(15, "Detail support top bars to the quarter-span cut-off", "Lcut = L / 4", `The drawing emphasizes the top support-bar cut portion at L/4 = ${academicNumber(lx / 4)} m in the X strip and ${academicNumber(ly / 4)} m in the Y strip.`),
+            academicStep(16, "Verify one-way shear", "Shear D/C = Vu / φVc ≤ 1.00", `Shear D/C = ${mprRowCellText(row, 24)}; status: ${mprRowCellText(row, 25)}`)
           ]});
           const currentSlabDesign = slabDesignResults().find(design => String(design.key) === String(input.dataset.nameKey));
           const wallFailure = currentSlabDesign?.wallSupportFailures?.[0];
@@ -48674,8 +48804,10 @@
           const barX = mprRowNumber(row, 18), spacingX = mprRowNumber(row, 19), barY = mprRowNumber(row, 20), spacingY = mprRowNumber(row, 21);
           const barAreaX = academicBarArea(barX), barAreaY = academicBarArea(barY);
           const steelX = barAreaX * 1000 / Math.max(1, spacingX), steelY = barAreaY * 1000 / Math.max(1, spacingY);
+          const countX = spacingX > 0 ? Math.ceil(length * 1000 / spacingX) + 1 : 0;
+          const countY = spacingY > 0 ? Math.ceil(width * 1000 / spacingY) + 1 : 0;
           subtitle = `Isolated footing · ${academicNumber(width)} m × ${academicNumber(length)} m × ${academicNumber(thickness, 0)} mm`;
-          illustration = academicFootingIllustration({width, length, thickness, serviceLoad: service, ultimateLoad: pu, soilPressure: qu});
+          illustration = academicFootingIllustration({width, length, thickness, serviceLoad: service, ultimateLoad: pu, soilPressure: qu, barDiameterX: barX, spacingX, barDiameterY: barY, spacingY});
           sections.push({title: "1. Bearing pressures", steps: [
             academicStep(1, "Footing bearing area", `A = B L = ${academicNumber(width)} × ${academicNumber(length)}`, `A = ${academicNumber(area)} m²`),
             academicStep(2, "Service bearing pressure", `qservice = Pservice / A = ${academicNumber(service)} / ${academicNumber(area)}`, `qservice(calc.) = ${academicNumber(service / Math.max(area, 1e-9))} kPa; MPR = ${academicNumber(qService)} kPa`),
@@ -48686,7 +48818,8 @@
             academicStep(10, "Design two orthogonal footing strips at the column face", "Mu = resultant soil pressure × cantilever lever arm", `Mux = ${mprRowCellText(row, 16)} kN·m/m; Muy = ${mprRowCellText(row, 17)} kN·m/m`),
             academicStep(11, "Calculate the selected bottom-bar areas", "Ab = πdb² / 4", `X: D${academicNumber(barX, 0)} → Ab = ${academicNumber(barAreaX, 1)} mm²; Y: D${academicNumber(barY, 0)} → Ab = ${academicNumber(barAreaY, 1)} mm².`),
             academicStep(12, "Convert the selected spacings to bottom main steel", "As,provided/m = Ab (1000 / s) ≥ As,required", `X: ${academicNumber(barAreaX, 1)}(1000/${academicNumber(spacingX, 0)}) = ${academicNumber(steelX, 1)} mm²/m; Y: ${academicNumber(barAreaY, 1)}(1000/${academicNumber(spacingY, 0)}) = ${academicNumber(steelY, 1)} mm²/m.`),
-            academicStep(13, "Check one-way and punching shear at their critical perimeters", "D/C = Vu / φVc ≤ 1.00", `One-way = ${mprRowCellText(row, 22)}; punching = ${mprRowCellText(row, 23)}; status: ${mprRowCellText(row, 24)}`)
+            academicStep(13, "Convert footing spacing into whole bottom-bar quantities", "nX = ceil(L / sX) + 1; nY = ceil(B / sY) + 1", `Provide ${countX}-D${academicNumber(barX, 0)} X-direction bars and ${countY}-D${academicNumber(barY, 0)} Y-direction bars in the bottom mat.`),
+            academicStep(14, "Check one-way and punching shear at their critical perimeters", "D/C = Vu / φVc ≤ 1.00", `One-way = ${mprRowCellText(row, 22)}; punching = ${mprRowCellText(row, 23)}; status: ${mprRowCellText(row, 24)}`)
           ]});
         }
         return {name, kind, subtitle, sections, illustration};
@@ -49523,7 +49656,7 @@
           @page{size:297mm 210mm;margin:5mm}*{box-sizing:border-box}html,body{width:287mm;min-width:287mm;background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
           header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}body.drawing-output>header{display:none}
           h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:176mm;object-fit:contain}.drawing-page{width:287mm;height:200mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always;overflow:hidden}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-sheet-header{flex:0 0 18mm;display:grid;grid-template-columns:56mm 1fr;align-items:center;border:1px solid #000;border-bottom:1.5px solid #000;background:#fff;color:#000;overflow:hidden}.drawing-sheet-logo-wrap{height:18mm;display:flex;align-items:center;padding:1.5mm 4mm;border-right:1px solid #000}.drawing-sheet-logo{display:block;max-width:47mm;max-height:14mm;object-fit:contain;filter:drop-shadow(.25mm 0 #000) drop-shadow(-.25mm 0 #000) drop-shadow(0 .25mm #000) drop-shadow(0 -.25mm #000)}.drawing-project-details{display:grid;grid-template-columns:1fr 1fr;gap:1.2mm 7mm;padding:1.5mm 4mm;font-size:8px}.drawing-project-field{display:grid;grid-template-columns:23mm minmax(0,1fr);align-items:center;gap:1.5mm}.drawing-project-field b{text-align:right;text-transform:uppercase}.drawing-project-field span{min-height:4.5mm;padding:.7mm 1.2mm;border:1px solid #222;background:#fff;color:#000;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.drawing-page h2{flex:0 0 6mm;margin:0;font-size:13px;line-height:6mm;text-align:left;text-transform:uppercase}.drawing-page .drawing{display:block;flex:1 1 auto;width:287mm;height:176mm;min-height:0;max-width:287mm;max-height:176mm;object-fit:contain;object-position:center center}
-          .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#000;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #555}.mpr-solution-section h4{margin:0 0 7px;color:#000;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #000;border-radius:50%;color:#000;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#000;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#000;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #000;background:#fff;color:#000;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #000;background:#fff;color:#000}.mpr-academic-figure figcaption{margin:0 0 8px;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#000;background:#fff}.mpr-academic-figure svg text{fill:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#000;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#000;stroke-width:1.55}.academic-compression-block{fill:#ddd;stroke:#000;stroke-width:1}.academic-stirrup{fill:none;stroke:#000;stroke-width:1.5}.academic-diagram-lines circle{fill:#fff;stroke:#000;stroke-width:1}.academic-dimension{fill:none;stroke:#000;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#000;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#000;stroke-width:.75}.mpr-academic-figure p{margin:7px 0 0;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;background:#fff!important;color:#000!important;font-size:9.45px}caption{background:#fff!important;color:#000!important;font-weight:700;padding:4px;border:1px solid #000;border-top:2mm solid #fff}th,td{border:1px solid #000!important;background:#fff!important;color:#000!important;padding:3px;white-space:nowrap}th{font-weight:700}.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;color:#000;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#fff!important;color:#000!important;font-weight:700}
+          .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#000;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #555}.mpr-solution-section h4{margin:0 0 7px;color:#000;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #000;border-radius:50%;color:#000;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#000;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#000;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #000;background:#fff;color:#000;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #000;background:#fff;color:#000}.mpr-academic-figure figcaption{margin:0 0 8px;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#000;background:#fff}.mpr-academic-figure svg text{fill:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#151515;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#151515;stroke-width:1.55}.academic-compression-block{fill:#e4e0d5;stroke:#151515;stroke-width:1}.academic-stirrup{fill:none;stroke:#151515;stroke-width:1.5}.academic-diagram-lines circle{fill:#fff;stroke:#151515;stroke-width:1}.academic-dimension{fill:none;stroke:#151515;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#151515;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#151515;stroke-width:.75}.academic-rebar-mesh{fill:none;stroke:#151515;stroke-width:.65}.academic-cut-zone{fill:#eee;stroke:#151515;stroke-width:.8;stroke-dasharray:4 3}.academic-cut-bar{fill:none;stroke:#151515;stroke-width:2.5;stroke-linecap:round}.academic-cut-mark{fill:none;stroke:#151515;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.mpr-academic-figure p{margin:7px 0 0;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;background:#fff!important;color:#000!important;font-size:9.45px}caption{background:#fff!important;color:#000!important;font-weight:700;padding:4px;border:1px solid #000;border-top:2mm solid #fff}th,td{border:1px solid #000!important;background:#fff!important;color:#000!important;padding:3px;white-space:nowrap}th{font-weight:700}.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;color:#000;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#fff!important;color:#000!important;font-weight:700}
         </style></head><body class="${outputBodyClass}"><header><h1>${escapeOutputHtml(title)}</h1><p>${escapeOutputHtml(outputProjectTitle())} | ${escapeOutputHtml(new Date().toLocaleString())}</p></header>${content}</body></html>`);
         printDocument.close();
         const cleanup = () => window.setTimeout(() => frame.remove(), 400);

@@ -424,6 +424,7 @@ main{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:c
 .academic-diagram-lines,.academic-force-block{fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
 .academic-beam-outline{fill:#fff;stroke:currentColor;stroke-width:1.7}.academic-compression-block{fill:#e4e0d5;stroke:currentColor;stroke-width:1.05}.academic-stirrup{stroke:#345b50;stroke-width:1.65}
 .academic-diagram-lines circle{fill:#d58019;stroke:currentColor;stroke-width:1.05}.academic-dimension{stroke:#4b5f58;stroke-width:.9}.academic-neutral-axis{stroke:#666;stroke-width:.8;stroke-dasharray:5 4}.academic-baseline{stroke:#777;stroke-width:.8}
+.academic-rebar-mesh{fill:none;stroke:#345b50;stroke-width:.78}.academic-cut-zone{fill:#f3e8c9;stroke:#8a6f2b;stroke-width:1;stroke-dasharray:4 3}.academic-cut-bar{fill:none;stroke:#9a4d00;stroke-width:3.2;stroke-linecap:round}.academic-cut-mark{fill:none;stroke:#9a4d00;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .mpr-academic-figure p{margin:11px 0 0;color:#3a453f;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:10px;font-weight:300!important;line-height:1.45}
 .mpr-solution-note{margin:10px 0 0;padding:8px 10px;border-left:3px solid #f3ad4b;background:rgba(0,0,0,.16);color:#e9e3cf;font-size:10px;line-height:1.4}
 .mpr-solution-shell>footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;border-top:1px solid rgba(244,240,223,.25);background:#173a31;color:#bdd3cb;font-size:9px}
