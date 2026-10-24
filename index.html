@@ -972,6 +972,7 @@
     .mpr-show-only-control {
       display: inline-flex;
       align-items: center;
+      gap: 5px;
     }
     .mpr-show-only-select {
       width: 78px;
@@ -995,6 +996,15 @@
     .mpr-show-only-control.is-active .mpr-show-only-select {
       background: #0d6e58;
       border-color: #c8ffec;
+    }
+    .mpr-shown-members {
+      display: inline-block;
+      max-width: 168px;
+      overflow: hidden;
+      color: #fff;
+      font: 700 8px/1.15 Arial, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .mpr-show-only-filtered { display: none !important; }
     .mpr-soil-status-primary {
@@ -44119,6 +44129,7 @@
             : "Hide/Unhide MPR rows";
           toolbarButton.setAttribute("aria-label", toolbarButton.title);
         }
+        updateAllMprShownMemberCounts();
       }
 
       function parseMprHideMemberNumbers(value, total) {
@@ -44260,6 +44271,44 @@
         select.setAttribute("aria-label", `Show only filter for ${config.label}. Current selection: ${selectedLabel}`);
       }
 
+      function mprShownMembersScope(tableKey) {
+        const selection = String(mprShowOnlyState[tableKey] || "all");
+        if (selection === "all") return "ALL";
+        if (selection === "axis-selected") return "Selected X & Y Frames";
+        if (selection.startsWith("frame:")) {
+          const [, , ...lineParts] = selection.split(":");
+          return `Along Grid-${lineParts.join(":")}`;
+        }
+        if (selection === "level:-1") return "Foundation";
+        if (selection.startsWith("level:")) {
+          const levelIndex = Number(selection.slice(6));
+          return frameLevelLabel(levelIndex + 1, makePlanData());
+        }
+        return "ALL";
+      }
+
+      function updateMprShownMemberCount(tableKey) {
+        const config = MPR_SHOW_ONLY_TABLES[tableKey];
+        const table = config ? byId(config.tableId) : null;
+        const label = document.querySelector(`[data-mpr-shown-members="${tableKey}"]`);
+        if (!config || !table || !label) return;
+        const shownCount = Array.from(table.tBodies).flatMap(body => Array.from(body.rows))
+          .filter(row => row.dataset.mprRowKey)
+          .filter(row => !row.classList.contains("mpr-show-only-filtered"))
+          .filter(row => !row.classList.contains("mpr-row-hidden") || mprVisibilityState.revealHidden)
+          .length;
+        const memberLabel = config.label.toLowerCase().replace(/s$/, "");
+        const scope = mprShownMembersScope(tableKey);
+        const text = `${scope} · ${shownCount} ${memberLabel}${shownCount === 1 ? "" : "s"}`;
+        label.textContent = text;
+        label.title = `${shownCount} shown ${memberLabel}${shownCount === 1 ? "" : "s"}: ${scope}`;
+        label.setAttribute("aria-label", label.title);
+      }
+
+      function updateAllMprShownMemberCounts() {
+        Object.keys(MPR_SHOW_ONLY_TABLES).forEach(updateMprShownMemberCount);
+      }
+
       function applyMprShowOnlyFilter(tableKey, announce = false) {
         const config = MPR_SHOW_ONLY_TABLES[tableKey];
         const table = config ? byId(config.tableId) : null;
@@ -44280,6 +44329,7 @@
           if (visible) visibleCount += 1;
         });
         refreshMprShowOnlyControl(tableKey);
+        updateMprShownMemberCount(tableKey);
         if (announce && typeof status === "function") {
           const selectedText = mprShowOnlyOptions().find(option => option.value === selection)?.label || "selection";
           status(`${config.label}: showing ${visibleCount} member${visibleCount === 1 ? "" : "s"} for ${selectedText}. This display filter does not change the structural model or calculations.`);
@@ -44298,9 +44348,14 @@
         select.className = "mpr-show-only-select";
         select.dataset.mprShowOnlySelect = tableKey;
         select.setAttribute("aria-label", `${label} show only selection`);
-        wrapper.append(select);
+        const shownMembers = document.createElement("span");
+        shownMembers.className = "mpr-shown-members";
+        shownMembers.dataset.mprShownMembers = tableKey;
+        shownMembers.setAttribute("aria-live", "polite");
+        wrapper.append(select, shownMembers);
         actions.insertBefore(wrapper, beforeElement || actions.firstChild);
         refreshMprShowOnlyControl(tableKey);
+        updateMprShownMemberCount(tableKey);
         select.addEventListener("change", () => {
           if (!select.value) return;
           mprShowOnlyState[tableKey] = select.value;
