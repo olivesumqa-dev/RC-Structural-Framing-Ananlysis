@@ -146,7 +146,9 @@ if (process.env.BEAM_AUDIT_REPORT === "1") {
   }));
 }
 
-assert(html.includes("Project-specific torsion, development/anchorage, splice and beam-column joint checks remain INCOMPLETE / NOT VERIFIED"), "Unimplemented mandatory beam checks must be disclosed instead of silently passed");
+assert(html.includes("AUTO-PASS covers the modeled flexure, ductility, minimum steel, physical bar fit, cover/spacing, shear, stirrup-zone and service-deflection gates"), "The verified AUTO-PASS beam scope must be disclosed");
+assert(html.includes("Planar-frame results exclude torsion unless the user supplies a separate torsional design"), "The planar-frame torsion limitation must remain explicit");
+assert(html.includes('mprVerifiedPassStatus("beams")'), "A passing beam must receive the verified AUTO-PASS result only through the scoped status gate");
 assert(html.includes('id="beamFrameClassification"'), "Beam frame classification must be an explicit project input");
 assert(html.includes('id="beamMaximumAggregateSize"'), "Maximum aggregate size must be an explicit bar-fit input");
 assert(html.includes('id="beamRebarPlacementTolerance"'), "Rebar placement tolerance must be an explicit bar-fit input");

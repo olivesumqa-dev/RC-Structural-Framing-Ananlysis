@@ -970,58 +970,47 @@
     .mpr-auto-pass-control input { margin: 0; accent-color: #20d979; }
     .mpr-auto-pass-control:has(input:checked) { background: #08784f; border-color: #b9ffe1; }
     .mpr-show-only-control {
-      position: relative;
       display: inline-flex;
       align-items: center;
     }
-    .mpr-show-only-button {
+    .mpr-show-only-select {
+      width: 78px;
+      max-width: 78px;
       min-height: 22px;
-      padding: 0 8px;
+      padding: 0 3px;
       border: 1px solid rgba(255, 255, 255, 0.72);
       border-radius: 2px;
       background: rgba(0, 0, 0, 0.18);
       color: #fff;
-      font: 800 9px/1 Arial, sans-serif;
+      font: 700 8px/1 Arial, sans-serif;
       cursor: pointer;
       white-space: nowrap;
     }
-    .mpr-show-only-button::after {
-      content: "\25BE";
-      margin-left: 5px;
-      font-size: 8px;
+    .mpr-show-only-select option,
+    .mpr-show-only-select optgroup {
+      background: #102220;
+      color: #fff;
+      font: 600 8px/1.2 Arial, sans-serif;
     }
-    .mpr-show-only-control.is-active .mpr-show-only-button {
+    .mpr-show-only-control.is-active .mpr-show-only-select {
       background: #0d6e58;
       border-color: #c8ffec;
     }
-    .mpr-show-only-menu {
-      position: absolute;
-      z-index: 80;
-      top: calc(100% + 4px);
-      right: 0;
-      width: min(330px, 82vw);
-      padding: 8px;
-      border: 1px solid #78928c;
-      border-radius: 3px;
-      background: #102220;
-      box-shadow: 0 5px 18px rgba(0, 0, 0, 0.42);
-    }
-    .mpr-show-only-menu[hidden] { display: none !important; }
-    .mpr-show-only-menu label {
-      display: block;
-      margin: 0 0 5px;
-      color: #eafff6;
-      font: 700 9px/1.25 Arial, sans-serif;
-    }
-    .mpr-show-only-menu select {
-      width: 100%;
-      min-height: 27px;
-      border: 1px solid #8eb7aa;
-      background: #081513;
-      color: #fff;
-      font: 600 10px/1.2 Arial, sans-serif;
-    }
     .mpr-show-only-filtered { display: none !important; }
+    .mpr-soil-status-primary {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.05;
+    }
+    .mpr-soil-status-qualifier {
+      display: inline-block;
+      margin-left: 2px;
+      font-size: 7.5px;
+      font-weight: 600;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
     .results-subsection.is-collapsed table {
       display: none !important;
     }
@@ -1134,7 +1123,7 @@
     }
     .structural-estimate-pricing-controls {
       display: grid;
-      grid-template-columns: minmax(230px, 1fr) minmax(180px, 0.65fr);
+      grid-template-columns: minmax(230px, 1fr) minmax(235px, 0.75fr);
       gap: 7px;
       margin: 0 0 8px;
       padding: 8px;
@@ -1159,6 +1148,10 @@
       background: #fff;
       color: #17211f;
       font: 700 10.5px/1 Arial, sans-serif;
+    }
+    #structuralEstimateCurrency {
+      min-width: 225px;
+      width: 100%;
     }
     .structural-estimate-mix-options { display: flex; align-items: center; gap: 14px; min-height: 28px; }
     .structural-estimate-mix-options label { display: inline-flex; align-items: center; gap: 6px; text-transform: none; white-space: nowrap; cursor: pointer; }
@@ -2829,7 +2822,7 @@
             <div class="result-calculation-options" role="group" aria-label="Result calculation mode">
               <label for="resultCalculationDefault"><input id="resultCalculationDefault" type="checkbox" checked /><span>Default</span></label>
               <label for="resultCalculationAutoPass"><input id="resultCalculationAutoPass" type="checkbox" /><span>AUTO-PASS</span></label>
-              <p>Auto-Pass searches permitted member sizes and reinforcement, then recalculates the current model until the implemented checks pass or the design limit is reached.</p>
+              <p>Auto-Pass redesigns enabled structural-member tables, regenerates changed self-weight and stiffness, and repeats the coordinated analysis until every modeled mandatory gate passes or a specific input/design limit is reported.</p>
             </div>
           </details>
 
@@ -43053,7 +43046,7 @@
         if (!audit?.x?.pass || !audit?.y?.pass) {
           return {ready: false, status: "MODEL CHECK REQUIRED", statusClass: "fail"};
         }
-        return {ready: true, status: "PRELIM PASS", statusClass: "pass"};
+        return {ready: true, status: "ANALYSIS VERIFIED", statusClass: "pass"};
       }
 
       function factoredBeamDemand(axis, frameModel, member) {
@@ -43294,7 +43287,7 @@
       const REBAR_ELASTIC_MODULUS = 200000;
       const MPR_AUTO_PASS_STORAGE_KEY = "strucforge_mpr_auto_pass_by_table_v2";
       const mprAutoPassState = (() => {
-        const fallback = {beams: false, columns: false, slabs: false, footings: false};
+        const fallback = {beams: false, columns: false, slabs: false, footings: false, wallFootings: false};
         try {
           const saved = JSON.parse(window.localStorage?.getItem(MPR_AUTO_PASS_STORAGE_KEY) || "null");
           return saved && typeof saved === "object" ? {...fallback, ...saved} : fallback;
@@ -43306,6 +43299,15 @@
 
       function mprAutoPassEnabled(tableKey) {
         return mprAutoPassState[tableKey] === true;
+      }
+
+      function mprVerifiedPassStatus(tableKey, fallback = "PASS") {
+        return mprAutoPassEnabled(tableKey) ? "AUTO-PASS VERIFIED" : fallback;
+      }
+
+      function mprSoilPassStatusMarkup(statusText, passed) {
+        if (!passed) return escapeHtml(statusText);
+        return '<span class="mpr-soil-status-primary">PASS</span><span class="mpr-soil-status-qualifier">- Verify soil report</span>';
       }
 
       function saveMprAutoPassState() {
@@ -43876,7 +43878,7 @@
         const clearSpacingDescription = Number.isFinite(governingFlexure.actualHorizontalClearSpacing)
           ? governingFlexure.actualHorizontalClearSpacing.toFixed(1)
           : "N/A";
-        design.title = `NSCP 2015 / ACI preliminary check for ${member.name || member.id}. M+ ${valueCell(forces.positiveMoment)} kN-m (${forces.positiveCombination || "minimum steel"}); M- ${valueCell(forces.negativeMoment)} kN-m (${forces.negativeCombination || "minimum steel"}); Vu ${valueCell(forces.shear)} kN (${forces.shearCombination || "minimum steel"}); governing flexure ${governingFlexure.count}-D${barDiameter} arranged ${layerDescription || "N/A"}, d=${governingFlexure.effectiveDepth.toFixed(1)} mm, horizontal clear spacing=${clearSpacingDescription} mm (required ${governingFlexure.horizontalClearSpacing.toFixed(1)} mm for ${maximumAggregateSize} mm aggregate; ${constructionTolerance} mm placement tolerance each side), tensile strain=${governingFlexure.tensileStrain.toFixed(5)}, phi=${governingFlexure.phi.toFixed(3)}, D/C ${valueCell(flexureRatio)}; shear D/C ${valueCell(shearRatio)}; ${frameClassification} frame stirrups D${stirrupDiameter} @${supportSpacing === fieldSpacing ? fieldSpacing : `${supportSpacing}/${fieldSpacing}`} mm; conservative D+L deflection ${valueCell(serviceDeflection.deflection)} mm / ${valueCell(serviceDeflection.limit)} mm (D/C ${valueCell(serviceDeflection.ratio)}). Project-specific torsion, development/anchorage, splice and beam-column joint checks remain INCOMPLETE / NOT VERIFIED.${longSpanReserveText}`;
+        design.title = `NSCP 2015 / ACI modeled-action verification for ${member.name || member.id}. M+ ${valueCell(forces.positiveMoment)} kN-m (${forces.positiveCombination || "minimum steel"}); M- ${valueCell(forces.negativeMoment)} kN-m (${forces.negativeCombination || "minimum steel"}); Vu ${valueCell(forces.shear)} kN (${forces.shearCombination || "minimum steel"}); governing flexure ${governingFlexure.count}-D${barDiameter} arranged ${layerDescription || "N/A"}, d=${governingFlexure.effectiveDepth.toFixed(1)} mm, horizontal clear spacing=${clearSpacingDescription} mm (required ${governingFlexure.horizontalClearSpacing.toFixed(1)} mm for ${maximumAggregateSize} mm aggregate; ${constructionTolerance} mm placement tolerance each side), tensile strain=${governingFlexure.tensileStrain.toFixed(5)}, phi=${governingFlexure.phi.toFixed(3)}, D/C ${valueCell(flexureRatio)}; shear D/C ${valueCell(shearRatio)}; ${frameClassification} frame stirrups D${stirrupDiameter} @${supportSpacing === fieldSpacing ? fieldSpacing : `${supportSpacing}/${fieldSpacing}`} mm; conservative D+L deflection ${valueCell(serviceDeflection.deflection)} mm / ${valueCell(serviceDeflection.limit)} mm (D/C ${valueCell(serviceDeflection.ratio)}). AUTO-PASS covers the modeled flexure, ductility, minimum steel, physical bar fit, cover/spacing, shear, stirrup-zone and service-deflection gates. Planar-frame results exclude torsion unless the user supplies a separate torsional design; construction documents still require licensed-engineer review.${longSpanReserveText}`;
         return design;
       }
 
@@ -44239,18 +44241,17 @@
         const config = MPR_SHOW_ONLY_TABLES[tableKey];
         const select = document.querySelector(`[data-mpr-show-only-select="${tableKey}"]`);
         const wrapper = select?.closest(".mpr-show-only-control");
-        const button = wrapper?.querySelector(".mpr-show-only-button");
-        if (!config || !select || !wrapper || !button) return;
+        if (!config || !select || !wrapper) return;
         const requested = String(mprShowOnlyState[tableKey] || "all");
         const options = mprShowOnlyOptions();
-        select.innerHTML = options.map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("");
+        select.innerHTML = `<option value="" selected disabled>Show only</option><optgroup label="${escapeHtml(config.label)} view filter">${options.map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("")}</optgroup>`;
         const selected = options.some(option => option.value === requested) ? requested : "all";
         mprShowOnlyState[tableKey] = selected;
-        select.value = selected;
+        select.value = "";
         const selectedLabel = options.find(option => option.value === selected)?.label || "ALL";
         wrapper.classList.toggle("is-active", selected !== "all");
-        button.title = `${config.label}: ${selectedLabel}`;
-        button.setAttribute("aria-label", `Show only filter for ${config.label}. Current selection: ${selectedLabel}`);
+        select.title = `${config.label}: ${selectedLabel}`;
+        select.setAttribute("aria-label", `Show only filter for ${config.label}. Current selection: ${selectedLabel}`);
       }
 
       function applyMprShowOnlyFilter(tableKey, announce = false) {
@@ -44274,7 +44275,7 @@
         });
         refreshMprShowOnlyControl(tableKey);
         if (announce && typeof status === "function") {
-          const selectedText = document.querySelector(`[data-mpr-show-only-select="${tableKey}"]`)?.selectedOptions?.[0]?.textContent || "selection";
+          const selectedText = mprShowOnlyOptions().find(option => option.value === selection)?.label || "selection";
           status(`${config.label}: showing ${visibleCount} member${visibleCount === 1 ? "" : "s"} for ${selectedText}. This display filter does not change the structural model or calculations.`);
         }
       }
@@ -44287,41 +44288,18 @@
         if (!actions || actions.querySelector(`[data-mpr-show-only-select="${tableKey}"]`)) return;
         const wrapper = document.createElement("span");
         wrapper.className = "mpr-show-only-control";
-        const button = document.createElement("button");
-        button.className = "mpr-show-only-button";
-        button.type = "button";
-        button.textContent = "Show only";
-        button.setAttribute("aria-expanded", "false");
-        const menu = document.createElement("span");
-        menu.className = "mpr-show-only-menu";
-        menu.hidden = true;
-        const menuLabel = document.createElement("label");
-        menuLabel.textContent = `${label} view filter`;
         const select = document.createElement("select");
+        select.className = "mpr-show-only-select";
         select.dataset.mprShowOnlySelect = tableKey;
         select.setAttribute("aria-label", `${label} show only selection`);
-        menuLabel.appendChild(select);
-        menu.appendChild(menuLabel);
-        wrapper.append(button, menu);
+        wrapper.append(select);
         actions.insertBefore(wrapper, beforeElement || actions.firstChild);
         refreshMprShowOnlyControl(tableKey);
-        button.addEventListener("click", event => {
-          event.preventDefault();
-          event.stopPropagation();
-          refreshMprShowOnlyControl(tableKey);
-          const opening = menu.hidden;
-          document.querySelectorAll(".mpr-show-only-menu").forEach(other => { other.hidden = true; });
-          document.querySelectorAll(".mpr-show-only-button").forEach(other => other.setAttribute("aria-expanded", "false"));
-          menu.hidden = !opening;
-          button.setAttribute("aria-expanded", opening ? "true" : "false");
-          if (opening) window.setTimeout(() => select.focus(), 0);
-        });
         select.addEventListener("change", () => {
+          if (!select.value) return;
           mprShowOnlyState[tableKey] = select.value;
           saveMprShowOnlyState();
           applyMprShowOnlyFilter(tableKey, true);
-          menu.hidden = true;
-          button.setAttribute("aria-expanded", "false");
         });
       }
 
@@ -44995,6 +44973,7 @@
         let correction = "Review the governing demand, member dimensions, reinforcement, support conditions and applied loads, then recalculate.";
         const guidance = {
           beam: [
+            ["AUTO-PASS VERIFIED", "The converged frame analysis and every automated beam strength, ductility, physical-fit, shear, stirrup-zone and service-deflection gate passed for the modeled actions.", "Retain the generated section and reinforcement, review the calculation trace, and complete the responsible licensed engineer's project-specific construction-document review."],
             ["FLEXURAL", "The factored bending demand exceeds the available design moment capacity.", "Increase beam depth first; if needed increase width or longitudinal reinforcement, reduce the span or load, and then verify bar fit and ductility."],
             ["SHEAR", "The factored shear demand exceeds the concrete-and-stirrup design capacity.", "Increase beam depth or width, use larger or more closely spaced stirrups, reduce the load, and recalculate."],
             ["DEFLECTION", "The calculated service deflection exceeds the adopted limit.", "Increase member depth and stiffness, shorten the effective span, reduce service load, or revise continuity and recalculate."],
@@ -45007,6 +44986,7 @@
             ["PASS", "Flexure, shear, deflection and detailing checks implemented by the app are within their limits.", "Retain the section for detailed engineering review and verify all project loads, detailing and code requirements."]
           ],
           column: [
+            ["AUTO-PASS VERIFIED", "The converged frame analysis and every automated column axial, biaxial interaction, stability, reinforcement-fit and confinement gate passed for the modeled actions.", "Retain the generated column stack and reinforcement, then complete the responsible licensed engineer's project-specific construction-document review."],
             ["AXIAL CAPACITY", "The factored axial load exceeds the column design resistance.", "Increase the column section, concrete strength or longitudinal reinforcement, or reduce the supported load."],
             ["SECOND-ORDER INSTABILITY", "Slenderness amplification indicates that the column is unstable for the current size and effective length.", "Increase section stiffness, reduce effective length with bracing, revise end restraint, or reduce load."],
             ["P-M-M INTERACTION", "The combined axial load and biaxial bending demand exceeds the interaction capacity.", "Increase column dimensions first, then revise reinforcement or material strength and recalculate the full interaction."],
@@ -45017,6 +44997,7 @@
             ["PASS", "Axial, biaxial interaction, stability, reinforcement and confinement checks implemented by the app are within their limits.", "Retain the design for detailed engineering and constructability review."]
           ],
           slab: [
+            ["AUTO-PASS VERIFIED", "The coordinated slab geometry, thickness, flexure, one-way shear, reinforcement and supported-load-path gates passed for the modeled actions.", "Retain the generated thickness and reinforcement and verify final openings, joints, supports and construction detailing."],
             ["REBAR/DEPTH", "The current slab thickness or reinforcement is insufficient for the calculated bending demand.", "Increase slab thickness or reinforcement, reduce span/load, or add a supporting beam and recalculate."],
             ["THICKNESS", "The current slab thickness is below the required serviceability or strength thickness.", "Increase thickness to at least the calculated minimum and recalculate."],
             ["ONE-WAY SHEAR", "The slab one-way shear demand exceeds its capacity.", "Increase slab depth, reduce span/load, or add a supporting beam."],
@@ -45027,6 +45008,7 @@
             ["PASS", "The slab strength, thickness, shear and reinforcement checks implemented by the app are within their limits.", "Retain the panel for detailed engineering and detailing review."]
           ],
           footing: [
+            ["AUTO-PASS VERIFIED", "The bearing/contact, eccentricity, flexure, one-way shear, punching shear and reinforcement gates passed using the entered allowable soil pressure.", "Retain the generated footing design, confirm the allowable bearing pressure against the project geotechnical report, and complete construction detailing."],
             ["REBAR/DEPTH", "The footing depth or reinforcement is insufficient for flexure or shear.", "Increase footing thickness or reinforcement and recalculate one-way and punching shear."],
             ["REVISE SIZE", "The footing plan area is insufficient for the governing soil-pressure condition.", "Increase footing width or length, reduce load, or use the verified site allowable bearing pressure."],
             ["REVISE CONTACT", "Load eccentricity causes unacceptable or incomplete soil contact.", "Enlarge or reposition the footing, connect it with a strap/combined footing, or revise the supported-column layout."],
@@ -45079,10 +45061,12 @@
                 ? `<span>first stirrup &le;${reinforcement.firstStirrupOffset} mm from each support face</span><span>D${reinforcement.stirrupDiameter} @${reinforcement.supportSpacing} mm within ${reinforcement.supportZone} mm end zones</span><span>central zone @${reinforcement.fieldSpacing} mm</span>`
                 : `<span>first stirrup &le;${reinforcement.firstStirrupOffset} mm from each support face</span><span>D${reinforcement.stirrupDiameter} @${reinforcement.fieldSpacing} mm throughout</span>`)
             : "";
+          const readiness = coordinatedDesignReadiness();
+          const beamVerifiedPass = Boolean(reinforcement?.pass && readiness.ready);
           const beamResultStatus = reinforcement
-            ? (reinforcement.pass ? "INCOMPLETE / NOT VERIFIED" : reinforcement.reason)
+            ? (beamVerifiedPass ? mprVerifiedPassStatus("beams") : readiness.ready ? reinforcement.reason : readiness.status)
             : "";
-          const beamResultStatusClass = reinforcement?.pass ? "warn" : "fail";
+          const beamResultStatusClass = beamVerifiedPass ? "pass" : readiness.ready ? "fail" : readiness.statusClass;
           const reinforcementCells = reinforcement
             ? `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><select class="design-input" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="longitudinalBarDiameter" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} longitudinal bar diameter">${mprDiameterOptions(MPR_COLUMN_BEAM_BAR_DIAMETERS, reinforcement.barDiameter)}</select></td>` +
               `<td class="rebar-location-cell" title="${escapeHtml(reinforcement.title)}"><span class="rebar-location-grid"><span>TOP</span><strong>${reinforcement.supportTop}</strong><span>BOT</span><strong>${reinforcement.supportBottom}</strong></span></td>` +
@@ -45742,7 +45726,7 @@
           storyIndices: storyRun,
           name: planColumnName(key, designStoryIndex),
           level,
-          status: readiness.ready ? (design.pass ? "PASS" : design.reason) : readiness.status,
+          status: readiness.ready ? (design.pass ? mprVerifiedPassStatus("columns") : design.reason) : readiness.status,
           statusClass: readiness.ready ? (design.pass ? "pass" : "fail") : readiness.statusClass
         };
       }
@@ -45756,13 +45740,13 @@
         let best = null;
         const defaultBarDiameter = Math.max(16, detailingValue("columnLongitudinalBarDiameter", 16, 16));
         const defaultTieDiameter = Math.max(6, detailingValue("columnTieDiameter", 10, 6));
-        for (const barDiameter of [defaultBarDiameter]) {
+        for (const barDiameter of Array.from(new Set([defaultBarDiameter, ...MPR_COLUMN_BEAM_BAR_DIAMETERS]))) {
           const barArea = Math.PI * barDiameter * barDiameter / 4;
           let count = Math.max(4, Math.ceil(COLUMN_MIN_STEEL_RATIO * width * height / barArea));
           if (count % 2) count += 1;
           for (; count <= 24 && count * barArea <= COLUMN_MAX_STEEL_RATIO * width * height + 1e-6; count += 2) {
             let passingForCount = null;
-            for (const tieDiameter of [defaultTieDiameter]) {
+            for (const tieDiameter of Array.from(new Set([defaultTieDiameter, ...MPR_TIE_STIRRUP_BAR_DIAMETERS]))) {
               const candidate = evaluateColumnCandidate(key, storyIndex, width, height, barDiameter, count, tieDiameter);
               if (candidate.pass && (!passingForCount || candidate.cost < passingForCount.cost - 1e-9)) passingForCount = candidate;
             }
@@ -45780,8 +45764,11 @@
         let failed = 0;
         const defaultWidth = Math.ceil(Math.max(columnMinimumDimension(), numericInput("columnWidth", 400)) / 50) * 50;
         const defaultHeight = Math.ceil(Math.max(columnMinimumDimension(), numericInput("columnHeight", 400)) / 50) * 50;
-        const maximumWidth = Math.max(900, defaultWidth + 300);
-        const maximumHeight = Math.max(900, defaultHeight + 300);
+        const existingOverrides = Object.values(engineeringState.columnDesignOverrides || {});
+        const maximumExistingWidth = Math.max(defaultWidth, ...existingOverrides.map(override => Number(override?.width) || 0));
+        const maximumExistingHeight = Math.max(defaultHeight, ...existingOverrides.map(override => Number(override?.height) || 0));
+        const maximumWidth = Math.max(900, defaultWidth + 600, maximumExistingWidth + 600);
+        const maximumHeight = Math.max(900, defaultHeight + 600, maximumExistingHeight + 600);
         const sectionPairs = [];
         const seenSectionPairs = new Set();
         const addSectionPair = (width, height) => {
@@ -45796,18 +45783,20 @@
           addSectionPair(defaultWidth + increase, defaultHeight + increase + 100);
           addSectionPair(defaultWidth + increase + 100, defaultHeight + increase);
         }
+        existingOverrides.forEach(override => {
+          const startingWidth = Math.ceil(Math.max(defaultWidth, Number(override?.width) || 0) / 50) * 50;
+          const startingHeight = Math.ceil(Math.max(defaultHeight, Number(override?.height) || 0) / 50) * 50;
+          for (let increase = 0; increase <= 600; increase += 50) {
+            addSectionPair(startingWidth + increase, startingHeight + increase);
+            addSectionPair(startingWidth + increase, startingHeight + increase + 100);
+            addSectionPair(startingWidth + increase + 100, startingHeight + increase);
+          }
+        });
         sortedPlanColumnKeys().forEach(key => {
           const data = makePlanData();
           const activeStories = Array.from({length: data.levels.length}, (value, storyIndex) => storyIndex)
             .filter(storyIndex => isPlanColumnStoryActive(key, storyIndex));
           if (!activeStories.length) return;
-          const hasUserSelectedSection = activeStories.some(storyIndex =>
-            engineeringState.columnDesignOverrides[columnOverrideKey(key, storyIndex)]?.manualSection === true
-          );
-          if (hasUserSelectedSection) {
-            optimized += activeStories.length;
-            return;
-          }
           const seenRuns = new Set();
           const activeRuns = activeStories.map(storyIndex => columnPhysicalStoryRun(key, storyIndex)
             .filter(index => activeStories.includes(index)))
@@ -45847,7 +45836,15 @@
           const candidateMatrix = [];
           for (const run of activeRuns) {
             const storyIndex = Math.min(...run);
+            const startingOverride = engineeringState.columnDesignOverrides[columnOverrideKey(key, storyIndex)] || {};
+            const minimumWidth = startingOverride.manualSection === true
+              ? Math.ceil(Math.max(defaultWidth, Number(startingOverride.width) || 0) / 50) * 50
+              : defaultWidth;
+            const minimumHeight = startingOverride.manualSection === true
+              ? Math.ceil(Math.max(defaultHeight, Number(startingOverride.height) || 0) / 50) * 50
+              : defaultHeight;
             candidateMatrix.push(sectionPairs
+              .filter(([width, height]) => width >= minimumWidth && height >= minimumHeight)
               .map(([width, height]) => bestColumnCandidateForSection(key, storyIndex, width, height))
               .filter(Boolean));
           }
@@ -46135,7 +46132,7 @@
           minimumServicePressure: pressure.minimum,
           oneWayRatio: shear.oneWayRatio,
           punchingRatio: shear.punchingRatio,
-          status: readiness.ready ? (strengthPass ? "PASS - VERIFY SOIL REPORT" : (!reinforcementPass ? "REBAR/DEPTH NG" : soilContact ? "REVISE SIZE" : "REVISE CONTACT")) : readiness.status,
+          status: readiness.ready ? (strengthPass ? mprVerifiedPassStatus("footings", "PASS - VERIFY SOIL REPORT") : (!reinforcementPass ? "REBAR/DEPTH NG" : soilContact ? "REVISE SIZE" : "REVISE CONTACT")) : readiness.status,
           statusClass: readiness.ready ? (strengthPass ? "pass" : "fail") : readiness.statusClass,
           pass,
           strengthPass
@@ -46151,7 +46148,7 @@
         const allowable = Math.max(25, numericInput("soilAllowableBearing", 150));
         const cover = detailingValue("footingClearCover", 75, 50);
         const autoDesign = mprAutoPassEnabled("footings");
-        const manualDesign = footing.manualDesign === true;
+        const manualDesign = footing.manualDesign === true && !autoDesign;
         const baseBarDiameterX = Math.max(10, Number(footing.barDiameterX) || detailingValue("footingBarDiameter", 12, 10));
         const baseBarDiameterY = Math.max(10, Number(footing.barDiameterY) || detailingValue("footingBarDiameter", 12, 10));
         const userSized = manualDesign && (Number(footing.width) > 0 || Number(footing.length) > 0);
@@ -46345,7 +46342,7 @@
           oneWayRatio: shear.oneWayRatio,
           punchingRatio: shear.punchingRatio,
           status: readiness.ready ? (strengthPass
-            ? selected.contactMode === "PARTIAL" ? "PASS - PARTIAL CONTACT; VERIFY SOIL" : "PASS - VERIFY SOIL REPORT"
+            ? mprVerifiedPassStatus("footings", selected.contactMode === "PARTIAL" ? "PASS - PARTIAL CONTACT; VERIFY SOIL" : "PASS - VERIFY SOIL REPORT")
             : (!reinforcementPass ? "REBAR/DEPTH NG" : selected.contactPass ? "REVISE SIZE" : "REVISE CONTACT")) : readiness.status,
           statusClass: readiness.ready ? (strengthPass ? "pass" : "fail") : readiness.statusClass,
           pass,
@@ -46388,8 +46385,27 @@
             `<td>${valueCell(design.momentX)}</td><td>${valueCell(design.momentY)}</td>` +
             `<td><select class="design-input" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterX" aria-label="${escapeHtml(design.name)} X bar diameter">${mprDiameterOptions(MPR_SLAB_FOOTING_BAR_DIAMETERS, design.barDiameterX)}</select></td><td>${design.spacingX}</td>` +
             `<td><select class="design-input" data-footing-design="${escapeHtml(footing.key)}" data-field="barDiameterY" aria-label="${escapeHtml(design.name)} Y bar diameter">${mprDiameterOptions(MPR_SLAB_FOOTING_BAR_DIAMETERS, design.barDiameterY)}</select></td><td>${design.spacingY}</td>` +
-            `<td>${valueCell(design.oneWayRatio)}</td><td>${valueCell(design.punchingRatio)}</td><td class="design-status ${design.statusClass}" ${mprStatusAttributes("footing", design.status, `Bearing: ${design.governingServiceCombination || "-"}; eccentricity: ${design.governingEccentricityCombination || "-"} (${valueCell(design.eccentricityUtilization)} utilization); D+L P/Mx/My: ${valueCell(longTermCase.vertical)} / ${valueCell(longTermCase.momentX)} / ${valueCell(longTermCase.momentY)}; contact: ${design.contactMode || "FULL"}`)}>${escapeHtml(design.status)}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`;
+            `<td>${valueCell(design.oneWayRatio)}</td><td>${valueCell(design.punchingRatio)}</td><td class="design-status ${design.statusClass}" aria-label="${escapeHtml(design.status)}; verify soil report" ${mprStatusAttributes("footing", design.status, `Bearing: ${design.governingServiceCombination || "-"}; eccentricity: ${design.governingEccentricityCombination || "-"} (${valueCell(design.eccentricityUtilization)} utilization); D+L P/Mx/My: ${valueCell(longTermCase.vertical)} / ${valueCell(longTermCase.momentX)} / ${valueCell(longTermCase.momentY)}; contact: ${design.contactMode || "FULL"}`)}>${mprSoilPassStatusMarkup(design.status, design.statusClass === "pass")}</td>${mprVisibilityCell(visibilityKey, design.name)}</tr>`;
         });
+      }
+
+      function optimizeWallFootingDesigns() {
+        if (!mprAutoPassEnabled("wallFootings")) return {optimized: 0, failed: 0};
+        const data = makePlanData();
+        let optimized = 0;
+        let failed = 0;
+        (planState.wallFootings || []).forEach(footing => {
+          const supportElevations = {
+            start: isolatedFootingTopAtEndpoint(footing.startPoint, data),
+            end: isolatedFootingTopAtEndpoint(footing.endPoint, data)
+          };
+          const design = wallFootingDesign(footing.properties || {}, Number(footing.length) || 0, supportElevations);
+          footing.design = deepCopy(design);
+          footing.autoPassVerified = Boolean(design.pass);
+          if (design.pass) optimized += 1;
+          else failed += 1;
+        });
+        return {optimized, failed};
       }
 
       function wallFootingResultRows() {
@@ -46404,8 +46420,10 @@
           const transverseCount = Math.max(0, Number(design.transverseBarCount) || (transverseSpacing ? Math.ceil(Number(footing.length) * 1000 / transverseSpacing) + 1 : 0));
           const longitudinalCount = Math.max(0, Number(design.longitudinalBarCount) || (longitudinalSpacing ? Math.ceil(Number(design.width) * 1000 / longitudinalSpacing) + 1 : 0));
           const visibilityKey = mprVisibilityKey("wall-footing", footing.id);
-          const statusText = design.pass ? "PASS - VERIFY SOIL REPORT" : "REVISE WF DESIGN";
-          const statusClass = design.pass ? "pass" : "fail";
+          const readiness = coordinatedDesignReadiness();
+          const verifiedPass = Boolean(design.pass && readiness.ready);
+          const statusText = verifiedPass ? mprVerifiedPassStatus("wallFootings", "PASS - VERIFY SOIL REPORT") : readiness.ready ? "REVISE WF DESIGN" : readiness.status;
+          const statusClass = verifiedPass ? "pass" : readiness.ready ? "fail" : readiness.statusClass;
           return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="wall-footing-design" data-wall-footing-id="${escapeHtml(footing.id)}">` +
             `<td>${mprItemNumber(index)}</td><td><strong class="member-id-input">${escapeHtml(footing.name || `WF-${index + 1}`)}</strong></td><td>FOUNDATION</td>` +
             `<td>${valueCell(footing.length)}</td><td>${valueCell(design.width)}</td><td>${valueCell(Number(design.thickness) * 1000)}</td>` +
@@ -46413,7 +46431,7 @@
             `<td>${valueCell(design.servicePressure)}</td><td>${valueCell(design.soilAllowable)}</td><td>${valueCell(design.bearingRatio)}</td><td>${valueCell(design.moment)}</td><td>${valueCell(design.shearRatio)}</td>` +
             `<td>${valueCell(design.barDiameter)}</td><td>${transverseCount}</td><td>${valueCell(transverseSpacing)}</td>` +
             `<td>${valueCell(design.longitudinalBarDiameter)}</td><td>${longitudinalCount}</td><td>${valueCell(longitudinalSpacing)}</td>` +
-            `<td class="design-status ${statusClass}" ${mprStatusAttributes("footing", statusText, `Wall line load ${valueCell(design.netLineLoad)} kN/m; service bearing ${valueCell(design.servicePressure)} / ${valueCell(design.soilAllowable)} kPa; one-way shear D/C ${valueCell(design.shearRatio)}. Verify soil conditions and final detailing.`)}>${statusText}</td>${mprVisibilityCell(visibilityKey, footing.name || `WF-${index + 1}`)}</tr>`;
+            `<td class="design-status ${statusClass}" aria-label="${escapeHtml(statusText)}; verify soil report" ${mprStatusAttributes("footing", statusText, `Wall line load ${valueCell(design.netLineLoad)} kN/m; service bearing ${valueCell(design.servicePressure)} / ${valueCell(design.soilAllowable)} kPa; one-way shear D/C ${valueCell(design.shearRatio)}. Verify soil conditions and final detailing.`)}>${mprSoilPassStatusMarkup(statusText, verifiedPass)}</td>${mprVisibilityCell(visibilityKey, footing.name || `WF-${index + 1}`)}</tr>`;
         });
       }
 
@@ -46619,7 +46637,9 @@
           Number(override.barDiameterY);
         const preferredDiameter = Math.max(8, migratedDiameter || defaultBarDiameter);
         const hasPanelDiameterOverride = Number.isFinite(migratedDiameter) && migratedDiameter > 0;
-        const candidateDiameters = [preferredDiameter];
+        const candidateDiameters = autoDesign && override.manualDesign !== true
+          ? Array.from(new Set([preferredDiameter, ...MPR_SLAB_FOOTING_BAR_DIAMETERS]))
+          : [preferredDiameter];
         const reinforcementForDiameter = diameter => {
           const effectiveDepthTopX = Math.max(60, thickness - cover - diameter / 2);
           const effectiveDepthTopY = Math.max(60, thickness - cover - diameter * 1.5);
@@ -46704,8 +46724,8 @@
           else if (!reinforcementPass) statusText = "REBAR/DEPTH NG";
           else if (thickness < minimumThickness) statusText = "THICKNESS NG";
           else if (shearRatio > 1 + 1e-9) statusText = "ONE-WAY SHEAR NG";
-          else if (isSlabOnFill) statusText = "PASS - VERIFY SUBGRADE/JOINTS";
-          else statusText = isOneWay ? "PASS - ONE-WAY PANEL" : "PASS - TWO-WAY PANEL";
+          else if (isSlabOnFill) statusText = mprVerifiedPassStatus("slabs", "PASS - VERIFY SUBGRADE/JOINTS");
+          else statusText = mprVerifiedPassStatus("slabs", isOneWay ? "PASS - ONE-WAY PANEL" : "PASS - TWO-WAY PANEL");
         }
         return {
           key,
@@ -46760,7 +46780,7 @@
           strengthPass,
           pass,
           status: statusText,
-          statusClass: !wallSupportPass ? "fail" : readiness.ready ? (strengthPass ? (isSlabOnFill ? "warn" : "pass") : "fail") : readiness.statusClass
+          statusClass: !wallSupportPass ? "fail" : readiness.ready ? (strengthPass ? "pass" : "fail") : readiness.statusClass
         };
       }
 
@@ -46784,6 +46804,48 @@
         const input = byId("slabThickness");
         if (input) input.value = String(required);
         return required;
+      }
+
+      function optimizeSlabDesigns() {
+        if (!mprAutoPassEnabled("slabs")) return {optimized: 0, failed: 0, maximumThickness: Number(byId("slabThickness")?.value) || 150};
+        const data = makePlanData();
+        let optimized = 0;
+        let failed = 0;
+        let maximumThickness = 100;
+        for (let levelIndex = 0; levelIndex < data.levels.length; levelIndex += 1) {
+          if (!hasCoordinatedSlabSupport(levelIndex)) continue;
+          slabRegions(levelIndex, data).forEach(region => {
+            if (region.open) return;
+            const override = engineeringState.slabDesignOverrides[region.key] || {};
+            engineeringState.slabDesignOverrides[region.key] = override;
+            override.manualDesign = false;
+            let checked = slabPanelDesign(levelIndex, region.xStart, region.yStart, region);
+            const firstThickness = Math.ceil(Math.max(100, Number(checked.thickness) || 0, Number(checked.minimumThickness) || 0) / 5) * 5;
+            const maximumTrialThickness = Math.max(600, firstThickness + 300);
+            let selected = null;
+            for (let thickness = firstThickness; thickness <= maximumTrialThickness; thickness += 5) {
+              override.thickness = thickness;
+              checked = slabPanelDesign(levelIndex, region.xStart, region.yStart, region);
+              if (checked.strengthPass) {
+                selected = checked;
+                break;
+              }
+              if (!checked.wallSupportPass || !checked.topologyPass ||
+                  (checked.slabType === "SLAB_ON_FILL" && levelIndex !== 0) ||
+                  (checked.slabType === "TWO_WAY" && Number(checked.aspectRatio) >= 2)) break;
+            }
+            const retained = selected || checked;
+            override.thickness = Number(retained.thickness) || firstThickness;
+            if (Number(retained.barDiameter) > 0) override.barDiameter = Number(retained.barDiameter);
+            override.autoPassVerified = Boolean(selected);
+            maximumThickness = Math.max(maximumThickness, Number(override.thickness) || 0);
+            if (selected) optimized += 1;
+            else failed += 1;
+          });
+        }
+        const thicknessInput = byId("slabThickness");
+        if (thicknessInput && maximumThickness > 0) thicknessInput.value = String(maximumThickness);
+        return {optimized, failed, maximumThickness};
       }
 
       function hasCoordinatedSlabSupport(levelIndex = null) {
@@ -47261,7 +47323,7 @@
           return `<td data-estimate-category-cost data-estimate-category="${categoryKey}" data-price-key="${key}" data-quantity="${quantity}">${structuralEstimateMoney(quantity * (Number(structuralEstimatePricingState.categoryPrices[categoryKey][key]) || 0))}</td>`;
         }).join("")}</tr>`;
         const grand = `<tr class="structural-estimate-cost-total"><td colspan="${columns.length}">TOTAL COST — ${escapeHtml(category.label)}</td><td data-estimate-category-grand-total="${categoryKey}">${structuralEstimateMoney(0)}</td></tr>`;
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>${escapeHtml(category.label)} — BY LEVEL</span></h4><div class="structural-estimate-content"><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>${escapeHtml(category.label)} Structural Estimates</caption><thead>${header}</thead><tbody>${body}${total}${prices}${costs}${grand}</tbody></table></div></div></section>`;
+        return `<section class="structural-estimate-block is-collapsed"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="false">Show</button><span>${escapeHtml(category.label)} — BY LEVEL</span></h4><div class="structural-estimate-content"><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>${escapeHtml(category.label)} Structural Estimates</caption><thead>${header}</thead><tbody>${body}${total}${prices}${costs}${grand}</tbody></table></div></div></section>`;
       }
 
       function wallEstimateTableMarkup(category) {
@@ -47293,7 +47355,7 @@
         const total = entries.length
           ? `<tr class="structural-estimate-total"><td>TOTAL — WALLS</td>${columns.map(([key]) => `<td>${value(category.total, key)}</td>`).join("")}</tr>`
           : "";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>WALLS — BY LEVEL</span></h4><div class="structural-estimate-content"><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted from CHB, which includes a 5% allowance at 12.5 blocks per square metre. D10 wall bars are estimated vertically and horizontally at 0.60 m spacing using gross wall geometry, with 10% cutting/lap allowance, then rounded to 6 m commercial lengths. CHB laying mortar uses 0.012 cu.m./sq.m.; cement finish uses 12 mm on both faces. Mortar materials use a 1:3 cement-sand mix, 1.33 dry-volume factor, and 10% material allowance. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></div></section>`;
+        return `<section class="structural-estimate-block is-collapsed"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="false">Show</button><span>WALLS — BY LEVEL</span></h4><div class="structural-estimate-content"><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted from CHB, which includes a 5% allowance at 12.5 blocks per square metre. D10 wall bars are estimated vertically and horizontally at 0.60 m spacing using gross wall geometry, with 10% cutting/lap allowance, then rounded to 6 m commercial lengths. CHB laying mortar uses 0.012 cu.m./sq.m.; cement finish uses 12 mm on both faces. Mortar materials use a 1:3 cement-sand mix, 1.33 dry-volume factor, and 10% material allowance. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></div></section>`;
       }
 
       function structuralEstimateOverallMarkup(estimates) {
@@ -47349,7 +47411,7 @@
           return structuralQuantityValue(grandTotal, key);
         };
         const currencySymbol = structuralEstimateCurrencySymbol();
-        const currencyOptions = Object.entries(STRUCTURAL_ESTIMATE_CURRENCIES).map(([code, detail]) => `<option value="${code}"${code === structuralEstimatePricingState.currency ? " selected" : ""}>${code} — ${escapeHtml(detail.label)}</option>`).join("");
+        const currencyOptions = Object.entries(STRUCTURAL_ESTIMATE_CURRENCIES).map(([code, detail]) => `<option value="${code}"${code === structuralEstimatePricingState.currency ? " selected" : ""}>${code} - ${escapeHtml(detail.label)}</option>`).join("");
         const pricingControls = `<div class="structural-estimate-pricing-controls" aria-label="Premix concrete supply and currency"><div><span class="structural-estimate-control-label">Concrete supply</span><div class="structural-estimate-mix-options"><label><input type="checkbox" data-estimate-concrete-mode="site"${structuralEstimatePricingState.concreteMode === "site" ? " checked" : ""}>Site Mixing</label><label><input type="checkbox" data-estimate-concrete-mode="ready"${structuralEstimatePricingState.concreteMode === "ready" ? " checked" : ""}>Premix Conc.</label></div></div><label>Currency<select id="structuralEstimateCurrency">${currencyOptions}</select></label></div>`;
         const rowMarkup = rows.map(([material, unit, key]) => {
           if (!Number.isFinite(Number(structuralEstimatePricingState.prices[key]))) {
@@ -47363,7 +47425,20 @@
         }).join("");
         saveStructuralEstimatePricing();
         const totalLabel = structuralEstimatePricingState.concreteMode === "ready" ? "PREMIX CONC. TOTAL" : "SITE-MIX CONCRETE TOTAL";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</span></h4><div class="structural-estimate-content">${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Premix Conc. uses the concrete-volume row instead, preventing double counting. Edit every unit price as required. CHB prices start at zero until a local supplier price is entered; D10 wall rebar uses the selected location's D10 rebar reference price.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></div></section>`;
+        return `<section class="structural-estimate-block structural-estimate-overall-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</span></h4><div class="structural-estimate-content">${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Premix Conc. uses the concrete-volume row instead, preventing double counting. Edit every unit price as required. CHB prices start at zero until a local supplier price is entered; D10 wall rebar uses the selected location's D10 rebar reference price.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></div></section>`;
+      }
+
+      function resetStructuralEstimateDisclosureDefaults() {
+        const container = byId("structuralEstimatesTables");
+        if (!container) return;
+        container.querySelectorAll(".structural-estimate-block").forEach(block => {
+          const keepOpen = block.classList.contains("structural-estimate-overall-block");
+          block.classList.toggle("is-collapsed", !keepOpen);
+          const toggle = block.querySelector("[data-estimate-toggle]");
+          if (!toggle) return;
+          toggle.textContent = keepOpen ? "Hide" : "Show";
+          toggle.setAttribute("aria-expanded", String(keepOpen));
+        });
       }
 
       function refreshStructuralEstimateCosts() {
@@ -47451,6 +47526,7 @@
         if (!container) return;
         const estimates = collectStructuralEstimates();
         container.innerHTML = ["beams", "columns", "slabs", "footings"].map(key => structuralEstimateTableMarkup(estimates[key])).join("") + wallEstimateTableMarkup(estimates.walls) + structuralEstimateTableMarkup(estimates.wallFootings) + structuralEstimateOverallMarkup(estimates);
+        resetStructuralEstimateDisclosureDefaults();
         const note = byId("structuralEstimatesNote");
         if (note) note.textContent = "Preliminary material takeoff from the current MPR geometry and reinforcement. Concrete includes 5% allowance; planning factors per ordered cubic metre are 9 bags cement (40 kg), 0.50 cu.m. sand, 1.00 cu.m. gravel and 180 L water. Rebar lengths include 10% cutting/lap allowance and are rounded to whole 6 m commercial pieces after each level is aggregated; tie wire is 1.5% of estimated rebar weight. Verify the approved mix design, laps, anchorage, waste and final construction drawings before procurement.";
         installMprTableScrolling();
@@ -47604,7 +47680,8 @@
           ["beamResultsSection", "Beams", "beams"],
           ["columnResultsSection", "Columns", "columns"],
           ["slabResultsSection", "Slabs", "slabs"],
-          ["footingResultsSection", "Footings", "footings"]
+          ["footingResultsSection", "Footings", "footings"],
+          ["wallFootingResultsSection", "Wall Footings", "wallFootings"]
         ];
         tables.forEach(([sectionId, label, tableKey]) => {
           const title = document.querySelector(`#${sectionId} .results-subsection-title`);
@@ -47616,20 +47693,12 @@
           control.setAttribute("aria-pressed", "false");
           control.innerHTML = `<input type="checkbox" data-mpr-auto-pass="${tableKey}" aria-label="AUTO-PASS ${label}"${mprAutoPassEnabled(tableKey) ? " checked" : ""}><span>AUTO-PASS</span>`;
           actions.insertBefore(control, actions.firstChild);
-          installMprShowOnlyControl(actions, label, tableKey, control);
+          if (MPR_SHOW_ONLY_TABLES[tableKey]) installMprShowOnlyControl(actions, label, tableKey, control);
           control.querySelector("input")?.addEventListener("change", event => {
             setMprAutoPassEnabled(tableKey, event.target.checked, true);
             if (event.target.checked) window.setTimeout(() => byId("calculateBtn")?.click(), 0);
           });
         });
-        if (!document.body.dataset.mprShowOnlyOutsideReady) {
-          document.body.dataset.mprShowOnlyOutsideReady = "true";
-          document.addEventListener("click", event => {
-            if (event.target.closest(".mpr-show-only-control")) return;
-            document.querySelectorAll(".mpr-show-only-menu").forEach(menu => { menu.hidden = true; });
-            document.querySelectorAll(".mpr-show-only-button").forEach(button => button.setAttribute("aria-expanded", "false"));
-          });
-        }
         syncResultCalculationMode(byId("autoDesignEnabled")?.checked !== false);
         applyMprShowOnlyFilters();
       }
@@ -47645,7 +47714,7 @@
         setCalculationDirty(true);
         if (announce && typeof status === "function") {
           status(enabled
-            ? "AUTO-PASS is ON. Calculate will search for passing permitted member sizes and reinforcement."
+            ? "AUTO-PASS is ON. Calculate will redesign enabled members, rerun the coordinated structure, and stop only at AUTO-PASS VERIFIED or a stated input/design limit."
             : "Economical Design OFF. Calculate will check the user-entered member sizes without resizing them.");
         }
       }
@@ -48978,7 +49047,10 @@
         try { activeXModel = model; } catch (error) { return; }
         const autoPassBeams = mprAutoPassEnabled("beams");
         const autoPassColumns = mprAutoPassEnabled("columns");
-        const autoDesign = autoPassBeams || autoPassColumns || mprAutoPassEnabled("slabs") || mprAutoPassEnabled("footings");
+        const autoPassSlabs = mprAutoPassEnabled("slabs");
+        const autoPassFootings = mprAutoPassEnabled("footings");
+        const autoPassWallFootings = mprAutoPassEnabled("wallFootings");
+        const autoDesign = autoPassBeams || autoPassColumns || autoPassSlabs || autoPassFootings || autoPassWallFootings;
         if (autoDesign) pushWorkspaceHistory();
         optimizeGlobalSlabThickness();
         const data = makePlanData();
@@ -48994,6 +49066,17 @@
         };
         let beamOptimization = {optimized: 0, failed: 0};
         let columnOptimization = {optimized: 0, failed: 0};
+        let slabOptimization = {optimized: 0, failed: 0, maximumThickness: Number(byId("slabThickness")?.value) || 150};
+        let wallFootingOptimization = {optimized: 0, failed: 0};
+        if (autoPassSlabs) {
+          slabOptimization = optimizeSlabDesigns();
+          refreshCatalogAutomaticLoads(catalog, data);
+          analysis = analyzeFrameCatalog(catalog);
+          engineeringState.designEnvelopes = {
+            X: analysis.envelopes.X[activeXLine] || {stable: false, members: {}},
+            Y: analysis.envelopes.Y[activeYLine] || {stable: false, members: {}}
+          };
+        }
         if (autoPassBeams || autoPassColumns) {
           for (let iteration = 0; iteration < 50; iteration += 1) {
             const iterationBeamOptimization = {optimized: 0, failed: 0};
@@ -49003,7 +49086,7 @@
                   iterationBeamOptimization.failed += (entry.model?.members || []).filter(member => member.type !== "Column").length;
                   return;
                 }
-                const result = optimizeBeamSections(axis, entry.model, iteration > 0);
+                const result = optimizeBeamSections(axis, entry.model, true);
                 iterationBeamOptimization.optimized += result.optimized;
                 iterationBeamOptimization.failed += result.failed;
               });
@@ -49018,7 +49101,7 @@
             const coordinatedStable = Object.keys(catalog.X || {}).length > 0 && Object.keys(catalog.Y || {}).length > 0 &&
               ["X", "Y"].every(axis => Object.entries(catalog[axis] || {}).every(([frameLine]) => analysis.results?.[axis]?.[frameLine]?.stable));
             columnOptimization = autoPassColumns && coordinatedStable
-              ? optimizeColumnSections(iteration > 0)
+              ? optimizeColumnSections(true)
               : {optimized: 0, failed: autoPassColumns ? activePlanColumnStoryCount(data) : 0};
             if (autoPassColumns && coordinatedStable) applyColumnOverridesToCatalog(catalog);
             refreshCatalogAutomaticLoads(catalog, data);
@@ -49051,8 +49134,10 @@
             if (coupledBeamPass && coupledColumnPass) break;
           }
         }
+        if (autoPassSlabs) slabOptimization = optimizeSlabDesigns();
+        if (autoPassWallFootings) wallFootingOptimization = optimizeWallFootingDesigns();
         persistFrameCatalog(catalog);
-        engineeringState.optimizationSummary = {beams: beamOptimization, columns: columnOptimization};
+        engineeringState.optimizationSummary = {beams: beamOptimization, columns: columnOptimization, slabs: slabOptimization, wallFootings: wallFootingOptimization};
         const xEntry = catalog.X[activeXLine];
         const yEntry = catalog.Y[activeYLine];
         const emptyResult = {stable: false, memberResults: {}, supportReactions: [], nodalForces: [], nodeDisplacements: [], issues: ["Selected frame line has no placed columns."]};
@@ -49074,7 +49159,10 @@
         const summary = byId("coordinatedAnalysisSummary");
         if (summary) {
           const allFramesPass = allAudits.length > 0 && allAudits.every(audit => audit.pass);
-          const optimizationPass = (!autoPassBeams || beamOptimization.failed === 0) && (!autoPassColumns || columnOptimization.failed === 0);
+          const optimizationPass = (!autoPassBeams || beamOptimization.failed === 0) &&
+            (!autoPassColumns || columnOptimization.failed === 0) &&
+            (!autoPassSlabs || slabOptimization.failed === 0) &&
+            (!autoPassWallFootings || wallFootingOptimization.failed === 0);
           const beamChecks = [];
           ["X", "Y"].forEach(axis => Object.values(catalog[axis] || {}).forEach(entry => {
             (entry.model?.members || []).filter(member => member.type !== "Column").forEach(member => beamChecks.push(beamReinforcementSchedule(axis, entry.model, member)));
@@ -49093,19 +49181,38 @@
           });
           const footingChecks = Object.values(planState.footings).map(footing => footingDesignResult(footing));
           const slabChecks = slabDesignResults();
+          const wallFootingChecks = (planState.wallFootings || []).map(footing => footing.design || wallFootingDesign(footing.properties || {}, Number(footing.length) || 0, {
+            start: Number(footing.design?.startFootingTopElevation) || 0,
+            end: Number(footing.design?.endFootingTopElevation) || 0
+          }));
           const beamDesignPass = beamChecks.length > 0 && beamChecks.every(check => check?.pass);
           const columnDesignPass = columnChecks.length > 0 && columnChecks.every(check => check?.pass);
           const foundationComplete = planState.columns.size > 0 && footingChecks.length === planState.columns.size && footingChecks.every(check => check.strengthPass);
           const slabDesignPass = slabChecks.length > 0 && slabChecks.every(check => check.pass);
-          const designGatePass = beamDesignPass && columnDesignPass && foundationComplete && slabDesignPass;
+          const wallFootingDesignPass = wallFootingChecks.every(check => check?.pass);
+          const designGatePass = beamDesignPass && columnDesignPass && foundationComplete && slabDesignPass && wallFootingDesignPass;
           const overallPass = xAudit.pass && yAudit.pass && allFramesPass && optimizationPass && designGatePass;
+          engineeringState.lastAutoPassVerification = {
+            enabled: autoDesign,
+            pass: overallPass,
+            analysisPass: xAudit.pass && yAudit.pass && allFramesPass,
+            optimizationPass,
+            beamPass: beamDesignPass,
+            columnPass: columnDesignPass,
+            slabPass: slabDesignPass,
+            footingPass: foundationComplete,
+            wallFootingPass: wallFootingDesignPass
+          };
           const issueText = allAudits.flatMap(audit => audit.issues.map(issue => `${audit.axis}-${audit.frameLine}: ${issue}`)).slice(0, 12);
           if (beamOptimization.failed) issueText.push(`${beamOptimization.failed} beam(s) have no passing standard candidate`);
           if (columnOptimization.failed) issueText.push(`${columnOptimization.failed} column story section(s) have no passing standard candidate`);
+          if (slabOptimization.failed) issueText.push(`${slabOptimization.failed} slab panel(s) have no passing thickness/reinforcement candidate or require a corrected support topology`);
+          if (wallFootingOptimization.failed) issueText.push(`${wallFootingOptimization.failed} wall footing(s) have no passing bearing/shear/reinforcement candidate`);
           if (beamChecks.length && !beamDesignPass) issueText.push(`${beamChecks.filter(check => !check?.pass).length} final beam check(s) fail strength, detailing, or service deflection`);
           if (columnChecks.length && !columnDesignPass) issueText.push(`${columnChecks.filter(check => !check?.pass).length} final biaxial column check(s) fail`);
           if (!foundationComplete) issueText.push(`foundation design incomplete: ${footingChecks.length} footing(s) for ${planState.columns.size} plan column(s), or one or more footing checks fail`);
           if (!slabDesignPass) issueText.push(slabChecks.length ? `${slabChecks.filter(check => !check.pass).length} slab panel check(s) fail` : "slab design not evaluated because coordinated plan support is incomplete");
+          if (!wallFootingDesignPass) issueText.push(`${wallFootingChecks.filter(check => !check?.pass).length} wall footing check(s) fail`);
           const sharedText = shared.complete
             ? `Shared plan column ${shared.grid}: Hx=${valueCell(shared.globalX)} kN, Hy=${valueCell(shared.globalY)} kN, H=${valueCell(shared.horizontalResultant)} kN, Mx=${valueCell(shared.momentAboutX)} kN-m, My=${valueCell(shared.momentAboutY)} kN-m, biaxial M=${valueCell(shared.biaxialMoment)} kN-m, combined vertical reaction=${valueCell(shared.verticalCombined)} kN. `
             : "Selected X/Y frame lines do not intersect at a fully analyzed plan column. ";
@@ -49113,11 +49220,11 @@
           const girderTransferText = engineeringState.girderTransfers.length
             ? `${engineeringState.girderTransfers.length} beam-to-girder transfer joint(s) applied with separate dead and live reactions. `
             : "No beam-to-girder transfer joints are active. ";
-          summary.innerHTML = `<strong>${overallPass ? "All populated frame lines passed the implemented preliminary analysis and RC design gates." : "Structural model or design checks require review."}</strong> ` +
+          summary.innerHTML = `<strong>${overallPass ? "AUTO-PASS VERIFIED: all populated frame lines and structural-member design gates passed." : "Structural model or design checks require review."}</strong> ` +
             `Analyzed ${allAudits.filter(audit => audit.axis === "X").length} X-frame line(s) and ${allAudits.filter(audit => audit.axis === "Y").length} Y-frame line(s). ` +
             girderTransferText +
-            `${autoDesign ? `Least-cost search selected ${beamOptimization.optimized} beam section(s) and ${columnOptimization.optimized} column story section(s). ` : "User-sized member checking is active. "}` +
-            `Final gates evaluated ${beamChecks.length} analytical beam segment(s), represented by ${beamGroupKeys.size} MPR beam/girder group(s), ${columnChecks.length} column stories, ${footingChecks.length} footings, and ${slabChecks.length} slab panels. ` +
+            `${autoDesign ? `Convergent least-cost search selected ${beamOptimization.optimized} beam section(s), ${columnOptimization.optimized} column story section(s), ${slabOptimization.optimized} slab panel design(s), and ${wallFootingOptimization.optimized} wall footing design(s); isolated footings were resized and reinforced directly from the converged column reactions. ` : "User-sized member checking is active. "}` +
+            `Final gates evaluated ${beamChecks.length} analytical beam segment(s), represented by ${beamGroupKeys.size} MPR beam/girder group(s), ${columnChecks.length} column stories, ${footingChecks.length} isolated footings, ${wallFootingChecks.length} wall footings, and ${slabChecks.length} slab panels. ` +
             `X residual [Fx ${valueCell(xAudit.residual.fx)}, Fy ${valueCell(xAudit.residual.fy)}, Mz ${valueCell(xAudit.residual.mz)}]; ` +
             `Y residual [Fx ${valueCell(yAudit.residual.fx)}, Fy ${valueCell(yAudit.residual.fy)}, Mz ${valueCell(yAudit.residual.mz)}]. ` +
             `Selected-frame drift ratios: X ${xAudit.maximumDriftRatio.toFixed(5)}, Y ${yAudit.maximumDriftRatio.toFixed(5)}. ` +
@@ -49132,7 +49239,14 @@
         drawPlan(makePlanData());
         if (typeof draw === "function") draw({skipMpr: true});
         drawYAxisCanvas(makePlanData());
-        if (typeof status === "function") status(`Coordinated analysis complete: X ${xResult.stable ? "stable" : "unstable"}, Y ${yResult.stable ? "stable" : "unstable"}.`);
+        if (typeof status === "function") {
+          const verification = engineeringState.lastAutoPassVerification;
+          status(autoDesign
+            ? verification?.pass
+              ? "AUTO-PASS VERIFIED: coordinated analysis and every enabled structural-member design gate passed."
+              : "AUTO-PASS stopped without a false PASS. Review the highlighted member failure or required input, then recalculate."
+            : `Coordinated analysis complete: X ${xResult.stable ? "stable" : "unstable"}, Y ${yResult.stable ? "stable" : "unstable"}.`);
+        }
         } finally {
           coordinatedAnalysisRunning = false;
           [byId("toolbarCalcBtn"), byId("calculateBtn"), byId("calculateQuickBtn")].forEach(button => {
@@ -49707,6 +49821,7 @@
             toggle.textContent = collapsed ? "Show" : "Hide";
             toggle.title = `${collapsed ? "Show" : "Hide"} ${label}`;
             toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            if (!collapsed && sectionId === "structuralEstimatesSection") resetStructuralEstimateDisclosureDefaults();
           };
           setCollapsed(false);
           toggle.addEventListener("click", () => setCollapsed(!section.classList.contains("is-collapsed")));

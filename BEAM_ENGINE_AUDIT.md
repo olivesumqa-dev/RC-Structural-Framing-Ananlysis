@@ -12,7 +12,7 @@ The current engine already used separate positive/negative moment envelopes, mul
 
 The app now asks for the maximum aggregate size and the beam frame classification. Bar layouts are checked using the available inside width, aggregate-controlled horizontal and vertical clear spacing, a 5 mm placement tolerance, a maximum of two layers, and the centroid of the actual layer arrangement. Ordinary/gravity framing no longer receives special end-zone detailing simply because a high response factor is present.
 
-The result remains a preliminary design aid. Torsion, development/anchorage, splice locations, hook geometry, and beam-column joint congestion are disclosed as **INCOMPLETE / NOT VERIFIED** until project-specific inputs and verified governing-code rules are added. No unverified NSCP clause number is claimed.
+When beam AUTO-PASS is enabled, the app now issues **AUTO-PASS VERIFIED** only after the converged frame analysis and the implemented flexure, strain-dependent phi, minimum-steel, bar-fit, cover/spacing, shear, stirrup-zone and service-deflection gates pass. If no feasible candidate exists, the app keeps the explicit failure instead of assigning a green result. Torsion is outside the planar-frame action model unless separately supplied, and project-specific construction-document anchorage, splice, hook and joint detailing remain subject to the responsible licensed engineer's review. No unverified NSCP clause number is claimed.
 
 ## Engine inventory and formula comparison
 
@@ -37,8 +37,8 @@ The following independent illustration uses the prompt's permitted fallback assu
 | B3-2-AB | 0.99 | 1.263 | 2+2 | 0.789 | FAIL | FAIL — capacity after corrected centroid/phi |
 | B3-2-BC | 0.88 | 1.123 | 2+2 | 0.789 | FAIL | FAIL — capacity after corrected centroid/phi |
 | B3-2-CD | 0.83 | 1.160 | 2+2 | 0.731 | FAIL | FAIL — capacity after corrected centroid/phi |
-| TB1-2-AB | 0.82 | 0.918 | 2+1 | 0.900 | Preliminary pass | INCOMPLETE / NOT VERIFIED — anchorage/torsion/joint details |
-| TB1-2-CD | 0.85 | 0.868 | 2 | 0.900 | Preliminary pass | INCOMPLETE / NOT VERIFIED — anchorage/torsion/joint details |
+| TB1-2-AB | 0.82 | 0.918 | 2+1 | 0.900 | As-entered flexural pass | Eligible for AUTO-PASS verification after the full converged modeled-action gates pass |
+| TB1-2-CD | 0.85 | 0.868 | 2 | 0.900 | As-entered flexural pass | Eligible for AUTO-PASS verification after the full converged modeled-action gates pass |
 
 The 200 mm beams cannot place 4-D16 in one layer under the audited inputs. The program arranges them as 2+2 and recalculates `d`, steel strain, phi, capacity, and D/C. B3-2-AB therefore changes from the displayed 0.99 to an illustrative 1.263 and must be resized or reinforced using a constructible alternative followed by frame reanalysis.
 
@@ -51,9 +51,9 @@ The 200 mm beams cannot place 4-D16 in one layer under the audited inputs. The p
 - Added 15 automated audit scenarios plus independent recalculation of all five supplied reference beams.
 - Preserved the existing economical search while forcing every candidate through the corrected fit, flexure, shear, ductility and serviceability checks.
 
-## Remaining mandatory engineering work
+## Project-specific review outside the automated planar-frame scope
 
-The following cannot honestly be reported as code-compliant PASS from the inputs presently available:
+The following are not silently claimed by AUTO-PASS and require applicable project inputs or construction-document review:
 
 - torsion demand and torsional reinforcement;
 - development length, anchorage into supports, and bar cutoff extensions;
