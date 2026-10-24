@@ -13,7 +13,7 @@ assert(html.includes('data-estimate-selected-total'), "Only the selected concret
 assert(html.includes('structural-estimate-block is-collapsed'), "Structural Estimate member tables must start collapsed");
 assert(html.includes('structural-estimate-overall-block'), "Overall Total Summary must be identifiable as the one default-open estimate table");
 assert(html.includes('function resetStructuralEstimateDisclosureDefaults()'), "Structural Estimate disclosure defaults must be restored when the section opens");
-assert(html.includes('#structuralEstimateCurrency') && html.includes('min-width: 225px'), "Currency selector must be wide enough for complete currency names");
+assert(html.includes('#structuralEstimateCurrency') && html.includes('min-width: 245px !important'), "Currency selector must be wide enough for complete currency names");
 assert(html.includes('${code} - ${escapeHtml(detail.label)}'), "Currency options must show code and full currency name");
 
 for (const tableKey of ["beams", "columns", "slabs", "footings"]) {
