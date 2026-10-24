@@ -33,11 +33,11 @@ const checks = [
   ["walls table before wall footings estimate", /wallEstimateTableMarkup\(estimates\.walls\) \+ structuralEstimateTableMarkup\(estimates\.wallFootings\)/],
   ["wall reinforcement spacing", /chbRebarDiameter:\s*10[\s\S]*?chbRebarSpacing:\s*0\.60[\s\S]*?verticalBarCount[\s\S]*?horizontalBarCount/],
   ["wall reinforcement table columns", /D10 vertical wall rebar[\s\S]*?D10 horizontal wall rebar[\s\S]*?0\.60 m/],
-  ["wall materials in overall total", /categoryKeys\s*=\s*\["beams", "columns", "slabs", "footings", "walls", "wallFootings"\][\s\S]*?4" CHB — interior walls[\s\S]*?6" CHB — exterior walls[\s\S]*?D10 CHB wall rebar/],
+  ["wall materials in standard overall rows", /categoryKeys\s*=\s*\["beams", "columns", "slabs", "footings", "walls", "wallFootings"\][\s\S]*?wallMaterialKeys\s*=\s*new Set\(\["chb4", "chb6", "D10", "cement", "sand"\]\)[\s\S]*?if \(key === "D10"\)[\s\S]*?if \(key === "cement"\)[\s\S]*?if \(key === "sand"\)/],
   ["wall mortar and finish factors", /chbLayingMortarWetVolumePerSquareMeter:\s*0\.012[\s\S]*?chbFinishThicknessPerFace:\s*0\.012[\s\S]*?mortarCementPart:\s*1[\s\S]*?mortarSandParts:\s*3/],
   ["wall mortar and finish quantities", /const layingMortarVolume[\s\S]*?const finishMortarVolume[\s\S]*?mortarFinishCementBags[\s\S]*?mortarFinishSand/],
   ["wall mortar and finish table columns", /CHB laying mortar[\s\S]*?Cement finish, 2 faces[\s\S]*?Mortar \+ finish cement[\s\S]*?Mortar \+ finish sand/],
-  ["wall mortar and finish overall total", /CHB mortar \+ cement finish cement[\s\S]*?CHB mortar \+ cement finish sand[\s\S]*?wallCement[\s\S]*?wallSand/]
+  ["wall materials do not create duplicate overall rows", /const allRows = \[[\s\S]*?\['6" CHB — exterior walls', "pcs", "chb6"\][\s\S]*?\];[\s\S]*?const wallOnlyKeys = new Set\(\["chb4", "chb6"\]\)/]
 ];
 
 const failures = checks.filter(([, expression]) => !expression.test(source)).map(([label]) => label);

@@ -1005,10 +1005,32 @@
     .structural-estimate-heading {
       margin: 0;
       padding: 6px 8px;
-      background: #334143;
-      color: #fff;
+      background: #AEC8A7;
+      color: #17261b;
       font: 800 11px/1.2 Arial, sans-serif;
       letter-spacing: .04em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .structural-estimate-toggle {
+      min-width: 46px;
+      padding: 3px 7px;
+      border: 1px solid #385141;
+      border-radius: 3px;
+      background: #f8fbf7;
+      color: #17261b;
+      cursor: pointer;
+      font: 800 10px/1 Arial, sans-serif;
+    }
+    .structural-estimate-toggle:hover,
+    .structural-estimate-toggle:focus-visible {
+      background: #dcebd8;
+      outline: 2px solid #385141;
+      outline-offset: 1px;
+    }
+    .structural-estimate-block.is-collapsed .structural-estimate-content {
+      display: none;
     }
     .structural-estimates-scroll {
       width: 100%;
@@ -1861,8 +1883,8 @@
       color: #f0f5f4;
     }
     body[data-theme="green_teal"] .structural-estimate-heading {
-      background: #26383a;
-      color: #f1f5f4;
+      background: #AEC8A7;
+      color: #17261b;
     }
     body[data-theme="green_teal"] .structural-estimates-table .structural-estimate-total td {
       background: #243638;
@@ -31383,7 +31405,7 @@
           secI: "Precaution: this read-only gross value is modified separately for cracking where required. What it is: second moment of area I, a geometric measure governing flexural stiffness about the analysis axis.",
           loadCodeBasis: "Precaution: select the legally adopted code and edition for the project location; legacy coefficients must not be mixed with a different standard. What it is: the ruleset that defines load values, combinations and wind or seismic procedures.",
           occupancyType: "Precaution: confirm the actual use of every floor; storage, assembly and corridors can require much larger live loads than residential areas. What it is: the occupancy category used to select a preliminary floor live load.",
-          occupancyLiveLoad: "Precaution: verify the value against the governing code and actual occupancy, including concentrated-load requirements. What it is: a movable gravity load per unit floor area from people, furniture and use, excluding permanent construction.",
+          occupancyLiveLoad: "Floor Live Load, kPa — is a movable gravity load per unit floor area from people, furniture and occupancy use, excluding permanent construction. Please verify the entered/default value against the governing code, actual occupancy, and concentrated-load requirements.",
           roofLiveLoad: "Precaution: verify roof access, maintenance, ponding, rain or snow provisions and permitted reductions. What it is: the temporary distributed load assigned to the roof surface.",
           slabThickness: "Precaution: verify strength, deflection, vibration, fire rating and service penetrations; slab-on-fill rules differ from suspended slabs. What it is: the default reinforced-concrete slab depth used for self-weight and preliminary design.",
           concreteDensity: "Precaution: use the specified normal-weight or lightweight concrete density; it directly changes dead load and seismic weight. What it is: concrete unit weight used to calculate self-weight from member volume.",
@@ -31473,9 +31495,21 @@
         };
         const displayNameById = {
           concreteStrength: "Concrete strength f'c", rebarYieldStrength: "Rebar yield strength fy", soilAllowableBearing: "Allowable soil bearing (ASB)",
+          occupancyLiveLoad: "Floor Live Load, kPa", roofLiveLoad: "Roof Live Load, kPa",
           roofSolar: "Solar-panel roof load", windKd: "Wind directionality Kd", windKzt: "Topographic factor Kzt", windNetCp: "Net wind-pressure coefficient",
           eqZ: "Seismic zone factor Z", eqI: "Seismic importance factor I", eqCa: "Seismic coefficient Ca", eqCv: "Seismic coefficient Cv", eqNv: "Near-source factor Nv",
           eqRx: "Response modification R-X", eqRy: "Response modification R-Y", eqCt: "Period coefficient Ct"
+        };
+        const contextualSidebarHelp = (control, rawHelp) => {
+          const help = String(rawHelp || "").replace(/\s+/g, " ").trim();
+          if (!control?.matches?.("input, select, textarea") || !help || help.includes("Please verify the entered/default value")) return help;
+          const id = control.id || "";
+          const label = displayNameById[id] || labelFor(control).replace(/\s+/g, " ").trim() || "This input";
+          const unit = unitById[id] || "";
+          const name = unit && !label.toLowerCase().includes(unit.toLowerCase()) ? `${label}, ${unit}` : label;
+          const definition = (help.match(/What it is:\s*(.+)$/i)?.[1] || help).trim();
+          const statement = /^(a|an|the)\b/i.test(definition) ? `is ${definition}` : definition;
+          return `${name} — ${statement} Please verify the entered/default value, unit, and applicability against the governing code, project specifications, site conditions, and the responsible structural engineer before design or construction.`;
         };
         const currentDataLine = (target, control) => {
           if (!control || !control.matches?.("input, select, textarea")) return "";
@@ -31515,7 +31549,7 @@
           if (!help) return;
           const control = target.dataset.sidebarHelpControl ? byId(target.dataset.sidebarHelpControl) : (target.matches?.("input, select, textarea") ? target : null);
           const dataLine = currentDataLine(target, control);
-          const text = `${dataLine}${dataLine ? " " : ""}${help}`;
+          const text = `${dataLine}${dataLine ? " " : ""}${contextualSidebarHelp(control, help)}`;
           activeTarget = target;
           tooltip.textContent = text;
           tooltip.hidden = false;
@@ -44703,7 +44737,8 @@
         };
         const match = (guidance[kind] || []).find(([token]) => upper.includes(token));
         if (match) [, meaning, correction] = match;
-        return `${statement}. Meaning: ${meaning} How to correct: ${correction}${details ? ` Current calculation: ${String(details).trim()}` : ""}`;
+        const readableMeaning = meaning ? `${meaning.charAt(0).toLowerCase()}${meaning.slice(1)}` : "one or more preliminary checks need review";
+        return `${statement} — indicates that ${readableMeaning} Please verify the member data, applied loads, load combinations, governing code, and detailing before relying on this result. Recommended action: ${correction}${details ? ` Current calculation: ${String(details).trim()}` : ""}`;
       }
 
       function mprStatusAttributes(kind, status, details = "") {
@@ -46585,9 +46620,6 @@
         [10, 12, 16, 20, 25, 30].forEach(diameter => {
           prices[`D${diameter}`] = structuralEstimateRebarPrice(diameter, preset.prices.rebarKg) / divisor;
         });
-        prices.wallRebarD10 = prices.D10;
-        prices.wallCement = prices.cement;
-        prices.wallSand = prices.sand;
         return prices;
       }
 
@@ -46887,7 +46919,7 @@
       function structuralEstimateTableMarkup(category) {
         const diameters = structuralEstimateDiameters(category);
         const columns = [
-          ["concrete", "Concrete<br>(cu.m.)"], ["cement", "Cement<br>(40 kg bags)"],
+          ["concrete", "Premix Conc.<br>(cu.m.)"], ["cement", "Cement<br>(40 kg bags)"],
           ["sand", "Sand<br>(cu.m.)"], ["gravel", "Gravel<br>(cu.m.)"],
           ["water", "Water<br>(L)"], ["formwork", "Formwork<br>(sq.m.)"],
           ["tieWire", "Tie wire<br>(kg)"],
@@ -46916,7 +46948,7 @@
           return `<td data-estimate-category-cost data-estimate-category="${categoryKey}" data-price-key="${key}" data-quantity="${quantity}">${structuralEstimateMoney(quantity * (Number(structuralEstimatePricingState.categoryPrices[categoryKey][key]) || 0))}</td>`;
         }).join("")}</tr>`;
         const grand = `<tr class="structural-estimate-cost-total"><td colspan="${columns.length}">TOTAL COST — ${escapeHtml(category.label)}</td><td data-estimate-category-grand-total="${categoryKey}">${structuralEstimateMoney(0)}</td></tr>`;
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">${escapeHtml(category.label)} — BY LEVEL</h4><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>${escapeHtml(category.label)} Structural Estimates</caption><thead>${header}</thead><tbody>${body}${total}${prices}${costs}${grand}</tbody></table></div></section>`;
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>${escapeHtml(category.label)} — BY LEVEL</span></h4><div class="structural-estimate-content"><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>${escapeHtml(category.label)} Structural Estimates</caption><thead>${header}</thead><tbody>${body}${total}${prices}${costs}${grand}</tbody></table></div></div></section>`;
       }
 
       function wallEstimateTableMarkup(category) {
@@ -46948,7 +46980,7 @@
         const total = entries.length
           ? `<tr class="structural-estimate-total"><td>TOTAL — WALLS</td>${columns.map(([key]) => `<td>${value(category.total, key)}</td>`).join("")}</tr>`
           : "";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">WALLS — BY LEVEL</h4><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted from CHB, which includes a 5% allowance at 12.5 blocks per square metre. D10 wall bars are estimated vertically and horizontally at 0.60 m spacing using gross wall geometry, with 10% cutting/lap allowance, then rounded to 6 m commercial lengths. CHB laying mortar uses 0.012 cu.m./sq.m.; cement finish uses 12 mm on both faces. Mortar materials use a 1:3 cement-sand mix, 1.33 dry-volume factor, and 10% material allowance. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></section>`;
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>WALLS — BY LEVEL</span></h4><div class="structural-estimate-content"><p class="structural-estimates-note">Walls on the building footprint perimeter use 6-inch CHB; internal walls use 4-inch CHB. Defined openings are deducted from CHB, which includes a 5% allowance at 12.5 blocks per square metre. D10 wall bars are estimated vertically and horizontally at 0.60 m spacing using gross wall geometry, with 10% cutting/lap allowance, then rounded to 6 m commercial lengths. CHB laying mortar uses 0.012 cu.m./sq.m.; cement finish uses 12 mm on both faces. Mortar materials use a 1:3 cement-sand mix, 1.33 dry-volume factor, and 10% material allowance. Walls created above a WF are included at Level-1.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table"><caption>Walls by Level</caption><thead>${header}</thead><tbody>${body}${total}</tbody></table></div></div></section>`;
       }
 
       function structuralEstimateOverallMarkup(estimates) {
@@ -46956,58 +46988,69 @@
         const categoryKeys = ["beams", "columns", "slabs", "footings", "walls", "wallFootings"];
         const grandTotal = createStructuralEstimateQuantity();
         structuralCategoryKeys.forEach(key => mergeStructuralEstimateQuantity(grandTotal, estimates[key].total));
-        const diameters = Array.from(grandTotal.rebars.keys()).sort((a, b) => a - b);
+        const diameters = Array.from(grandTotal.rebars.keys());
+        const wallD10Length = (Number(estimates.walls.total.verticalRebarLength) || 0) + (Number(estimates.walls.total.horizontalRebarLength) || 0);
+        if (wallD10Length > 0 && !diameters.includes(10)) diameters.push(10);
+        diameters.sort((a, b) => a - b);
         ensureStructuralEstimatePricing();
         const allRows = [
-          ["Concrete", "cu.m.", "concrete"], ["Cement", "40 kg bags", "cement"],
+          ["Premix Conc.", "cu.m.", "concrete"], ["Cement", "40 kg bags", "cement"],
           ["Sand", "cu.m.", "sand"], ["Gravel", "cu.m.", "gravel"],
           ["Water", "cu.m.", "water"], ["Formwork", "sq.m.", "formwork"],
           ["Tie wire", "kg", "tieWire"],
           ...diameters.map(diameter => [`D${diameter} rebar`, "6 m pcs", `D${diameter}`]),
           ['4" CHB — interior walls', "pcs", "chb4"],
-          ['6" CHB — exterior walls', "pcs", "chb6"],
-          ["D10 CHB wall rebar @ 0.60 m vertical & horizontal", "6 m pcs", "wallRebarD10"],
-          ["CHB mortar + cement finish cement", "40 kg bags", "wallCement"],
-          ["CHB mortar + cement finish sand", "cu.m.", "wallSand"]
+          ['6" CHB — exterior walls', "pcs", "chb6"]
         ];
         const siteMixKeys = new Set(["cement", "sand", "gravel", "water"]);
         const rows = allRows.filter(([, , key]) => structuralEstimatePricingState.concreteMode === "ready"
-          ? !siteMixKeys.has(key)
+          ? key !== "gravel" && key !== "water"
           : key !== "concrete");
-        const wallKeys = new Set(["chb4", "chb6", "wallRebarD10", "wallCement", "wallSand"]);
+        const wallOnlyKeys = new Set(["chb4", "chb6"]);
+        const wallMaterialKeys = new Set(["chb4", "chb6", "D10", "cement", "sand"]);
         const wallQuantityValue = key => {
           if (key === "chb4" || key === "chb6") return Math.ceil(Number(estimates.walls.total[key]) || 0);
-          if (key === "wallRebarD10") {
-            const totalLength = (Number(estimates.walls.total.verticalRebarLength) || 0) + (Number(estimates.walls.total.horizontalRebarLength) || 0);
-            return Math.ceil(totalLength * STRUCTURAL_ESTIMATE_FACTORS.rebarAllowance / STRUCTURAL_ESTIMATE_FACTORS.commercialBarLength);
+          if (key === "D10") {
+            return Math.ceil(wallD10Length * STRUCTURAL_ESTIMATE_FACTORS.rebarAllowance / STRUCTURAL_ESTIMATE_FACTORS.commercialBarLength);
           }
-          if (key === "wallCement") return Math.ceil(Number(estimates.walls.total.mortarFinishCementBags) || 0);
-          if (key === "wallSand") return (Number(estimates.walls.total.mortarFinishSand) || 0).toFixed(3);
+          if (key === "cement") return Math.ceil(Number(estimates.walls.total.mortarFinishCementBags) || 0);
+          if (key === "sand") return (Number(estimates.walls.total.mortarFinishSand) || 0).toFixed(3);
           return 0;
         };
         const structuralQuantityValue = (quantity, key) => key === "water"
           ? ((Number(quantity.water) || 0) / 1000).toFixed(3)
           : structuralEstimateValue(quantity, key);
         const categoryQuantityValue = (categoryKey, key) => {
-          if (categoryKey === "walls") return wallKeys.has(key) ? wallQuantityValue(key) : "0";
-          return wallKeys.has(key) ? "0" : structuralQuantityValue(estimates[categoryKey].total, key);
+          if (categoryKey === "walls") return wallMaterialKeys.has(key) ? wallQuantityValue(key) : "0";
+          if (wallOnlyKeys.has(key)) return "0";
+          if (structuralEstimatePricingState.concreteMode === "ready" && (key === "cement" || key === "sand")) return "0";
+          return structuralQuantityValue(estimates[categoryKey].total, key);
+        };
+        const overallQuantityValue = key => {
+          const structural = structuralEstimatePricingState.concreteMode === "ready" && (key === "cement" || key === "sand")
+            ? 0
+            : Number(structuralQuantityValue(grandTotal, key)) || 0;
+          const wall = Number(wallQuantityValue(key)) || 0;
+          if (key === "sand") return (structural + wall).toFixed(3);
+          if (key === "cement" || key === "D10") return Math.round(structural + wall);
+          return structuralQuantityValue(grandTotal, key);
         };
         const currencySymbol = structuralEstimateCurrencySymbol();
         const currencyOptions = Object.entries(STRUCTURAL_ESTIMATE_CURRENCIES).map(([code, detail]) => `<option value="${code}"${code === structuralEstimatePricingState.currency ? " selected" : ""}>${code} — ${escapeHtml(detail.label)}</option>`).join("");
-        const pricingControls = `<div class="structural-estimate-pricing-controls" aria-label="Concrete supply and currency"><div><span class="structural-estimate-control-label">Concrete supply</span><div class="structural-estimate-mix-options"><label><input type="checkbox" data-estimate-concrete-mode="site"${structuralEstimatePricingState.concreteMode === "site" ? " checked" : ""}>Site Mixing</label><label><input type="checkbox" data-estimate-concrete-mode="ready"${structuralEstimatePricingState.concreteMode === "ready" ? " checked" : ""}>Ready Mixed Concrete</label></div></div><label>Currency<select id="structuralEstimateCurrency">${currencyOptions}</select></label></div>`;
+        const pricingControls = `<div class="structural-estimate-pricing-controls" aria-label="Premix concrete supply and currency"><div><span class="structural-estimate-control-label">Concrete supply</span><div class="structural-estimate-mix-options"><label><input type="checkbox" data-estimate-concrete-mode="site"${structuralEstimatePricingState.concreteMode === "site" ? " checked" : ""}>Site Mixing</label><label><input type="checkbox" data-estimate-concrete-mode="ready"${structuralEstimatePricingState.concreteMode === "ready" ? " checked" : ""}>Premix Conc.</label></div></div><label>Currency<select id="structuralEstimateCurrency">${currencyOptions}</select></label></div>`;
         const rowMarkup = rows.map(([material, unit, key]) => {
           if (!Number.isFinite(Number(structuralEstimatePricingState.prices[key]))) {
             const defaults = structuralEstimatePresetPrices(structuralEstimatePricingState.preset);
             structuralEstimatePricingState.prices[key] = Number(defaults[key]) || 0;
           }
-          const overallDisplay = wallKeys.has(key) ? wallQuantityValue(key) : structuralQuantityValue(grandTotal, key);
+          const overallDisplay = overallQuantityValue(key);
           const quantity = Number(overallDisplay) || 0;
           const unitPrice = Number(structuralEstimatePricingState.prices[key]) || 0;
           return `<tr data-estimate-price-row data-price-key="${key}" data-quantity="${quantity}"><td>${material}</td><td>${unit}</td>${categoryKeys.map(categoryKey => `<td>${categoryQuantityValue(categoryKey, key)}</td>`).join("")}<td><strong>${overallDisplay}</strong></td><td><span class="structural-estimate-price-editor"><span aria-hidden="true">${escapeHtml(currencySymbol)}</span><input class="structural-estimate-price-input" data-estimate-unit-price type="number" min="0" step="0.01" inputmode="decimal" value="${unitPrice.toFixed(2)}" aria-label="${escapeHtml(material)} unit price in ${escapeHtml(structuralEstimatePricingState.currency)}"></span></td><td data-estimate-item-cost>${structuralEstimateMoney(quantity * unitPrice)}</td></tr>`;
         }).join("");
         saveStructuralEstimatePricing();
-        const totalLabel = structuralEstimatePricingState.concreteMode === "ready" ? "READY-MIX CONCRETE TOTAL" : "SITE-MIX CONCRETE TOTAL";
-        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading">OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</h4>${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Ready Mixed Concrete uses the concrete volume row instead, preventing double counting. Edit every unit price as required. CHB prices start at zero until a local supplier price is entered; D10 wall rebar uses the selected location's D10 rebar reference price.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></section>`;
+        const totalLabel = structuralEstimatePricingState.concreteMode === "ready" ? "PREMIX CONC. TOTAL" : "SITE-MIX CONCRETE TOTAL";
+        return `<section class="structural-estimate-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</span></h4><div class="structural-estimate-content">${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Premix Conc. uses the concrete-volume row instead, preventing double counting. Edit every unit price as required. CHB prices start at zero until a local supplier price is entered; D10 wall rebar uses the selected location's D10 rebar reference price.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></div></section>`;
       }
 
       function refreshStructuralEstimateCosts() {
@@ -47056,6 +47099,14 @@
           container.dataset.pricingReady = "true";
           container.addEventListener("input", event => {
             if (event.target.matches("[data-estimate-unit-price], [data-estimate-category-unit-price]")) refreshStructuralEstimateCosts();
+          });
+          container.addEventListener("click", event => {
+            const toggle = event.target.closest("[data-estimate-toggle]");
+            if (!toggle) return;
+            const block = toggle.closest(".structural-estimate-block");
+            const collapsed = block?.classList.toggle("is-collapsed");
+            toggle.textContent = collapsed ? "Show" : "Hide";
+            toggle.setAttribute("aria-expanded", String(!collapsed));
           });
           container.addEventListener("change", event => {
             if (event.target.matches("[data-estimate-concrete-mode]")) {
