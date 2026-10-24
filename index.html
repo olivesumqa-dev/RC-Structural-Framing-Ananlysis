@@ -969,6 +969,59 @@
     }
     .mpr-auto-pass-control input { margin: 0; accent-color: #20d979; }
     .mpr-auto-pass-control:has(input:checked) { background: #08784f; border-color: #b9ffe1; }
+    .mpr-show-only-control {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .mpr-show-only-button {
+      min-height: 22px;
+      padding: 0 8px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 2px;
+      background: rgba(0, 0, 0, 0.18);
+      color: #fff;
+      font: 800 9px/1 Arial, sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mpr-show-only-button::after {
+      content: "\25BE";
+      margin-left: 5px;
+      font-size: 8px;
+    }
+    .mpr-show-only-control.is-active .mpr-show-only-button {
+      background: #0d6e58;
+      border-color: #c8ffec;
+    }
+    .mpr-show-only-menu {
+      position: absolute;
+      z-index: 80;
+      top: calc(100% + 4px);
+      right: 0;
+      width: min(330px, 82vw);
+      padding: 8px;
+      border: 1px solid #78928c;
+      border-radius: 3px;
+      background: #102220;
+      box-shadow: 0 5px 18px rgba(0, 0, 0, 0.42);
+    }
+    .mpr-show-only-menu[hidden] { display: none !important; }
+    .mpr-show-only-menu label {
+      display: block;
+      margin: 0 0 5px;
+      color: #eafff6;
+      font: 700 9px/1.25 Arial, sans-serif;
+    }
+    .mpr-show-only-menu select {
+      width: 100%;
+      min-height: 27px;
+      border: 1px solid #8eb7aa;
+      background: #081513;
+      color: #fff;
+      font: 600 10px/1.2 Arial, sans-serif;
+    }
+    .mpr-show-only-filtered { display: none !important; }
     .results-subsection.is-collapsed table {
       display: none !important;
     }
@@ -2702,6 +2755,17 @@
         <input id="rebarYieldStrength" value="415" />
         <label>Beam clear cover, mm</label>
         <input id="beamClearCover" value="40" />
+        <label>Maximum coarse aggregate size, mm</label>
+        <input id="beamMaximumAggregateSize" type="number" min="5" step="5" value="20" />
+        <label>Beam rebar placement tolerance, mm</label>
+        <input id="beamRebarPlacementTolerance" type="number" min="0" step="1" value="5" />
+        <label>Beam frame classification</label>
+        <select id="beamFrameClassification">
+          <option value="gravity">Gravity-only framing</option>
+          <option value="ordinary" selected>Ordinary moment-resisting frame</option>
+          <option value="intermediate">Intermediate moment-resisting frame</option>
+          <option value="special">Special moment-resisting frame</option>
+        </select>
         <label>Column longitudinal bar diameter, mm</label>
         <input id="columnLongitudinalBarDiameter" value="16" />
         <label>Column tie diameter, mm</label>
@@ -28068,6 +28132,16 @@
       let hoverMemberRenameTarget = null;
       let memberNameHoverHideTimer = null;
       const mprVisibilityState = {hiddenRows: new Set(), revealHidden: false};
+      const MPR_SHOW_ONLY_STORAGE_KEY = "strucforge_mpr_show_only_v1";
+      const mprShowOnlyState = (() => {
+        const fallback = {beams: "all", columns: "all", slabs: "all", footings: "all"};
+        try {
+          const saved = JSON.parse(window.localStorage?.getItem(MPR_SHOW_ONLY_STORAGE_KEY) || "null");
+          return saved && typeof saved === "object" ? {...fallback, ...saved} : fallback;
+        } catch (error) {
+          return fallback;
+        }
+      })();
       const beamMprSortState = {key: null, direction: "asc"};
       const additionalMprSortStates = {};
       const wallBeamSelectionState = {active: false, axis: null, planMemberIds: new Set()};
@@ -31383,6 +31457,9 @@
           beamStirrupDiameter: "Precaution: verify shear demand, minimum transverse reinforcement, hooks and constructible spacing. What it is: the diameter of closed beam stirrups that resist shear and hold the longitudinal bars in position.",
           rebarYieldStrength: "Precaution: use the certified grade actually supplied and the limit permitted by the selected design code and seismic system. What it is: fy is the stress at which reinforcing steel begins significant permanent yielding and is used to calculate reinforcement strength.",
           beamClearCover: "Precaution: check exposure, fire rating and bar-size requirements; clear cover is measured to the outside of the stirrup. What it is: the protective concrete thickness between the beam surface and its nearest reinforcement.",
+          beamMaximumAggregateSize: "Precaution: verify the approved concrete mix. The beam bar-fit check uses this size when establishing minimum clear spacing between bars and layers. What it is: the nominal maximum coarse aggregate size in the concrete mix.",
+          beamRebarPlacementTolerance: "Precaution: confirm the fabrication and placement tolerance required by the project specifications. This allowance reduces the usable inside width during beam bar-fit checks. What it is: the construction tolerance reserved at each side of the reinforcement cage.",
+          beamFrameClassification: "Precaution: select this from the engineer's approved lateral-force-resisting system; it is not inferred from the seismic response factor. What it is: the beam framing classification used to decide whether ordinary, intermediate, or special transverse detailing limits apply.",
           columnLongitudinalBarDiameter: "Precaution: check minimum and maximum steel ratio, clear spacing, lap or mechanical splices and joint congestion. What it is: the diameter of the vertical main bars that work with concrete to resist column axial force and bending.",
           columnTieDiameter: "Precaution: verify seismic confinement zones, hooks and maximum spacing under the governing code. What it is: the diameter of transverse column ties that confine the core and restrain longitudinal bars against buckling.",
           columnClearCover: "Precaution: confirm exposure and fire requirements and measure cover to the outside face of the tie. What it is: the protective concrete thickness from the column face to its nearest reinforcement.",
@@ -31485,7 +31562,7 @@
           return text ? `Data group: ${text}. Precaution: review its inputs before calculation. What it is: related guidance for the structural drawing and design workflow.` : "Precaution: verify the active project data. What it is: guidance for the structural drawing and design workflow.";
         };
         const unitById = {
-          beamWidth: "mm", beamHeight: "mm", columnWidth: "mm", columnHeight: "mm",
+          beamWidth: "mm", beamHeight: "mm", columnWidth: "mm", columnHeight: "mm", beamMaximumAggregateSize: "mm", beamRebarPlacementTolerance: "mm",
           concreteStrength: "MPa", beamLongitudinalBarDiameter: "mm", beamStirrupDiameter: "mm", rebarYieldStrength: "MPa", beamClearCover: "mm",
           columnLongitudinalBarDiameter: "mm", columnTieDiameter: "mm", columnClearCover: "mm", footingBarDiameter: "mm", footingClearCover: "mm", footingThickness: "mm", soilAllowableBearing: "kPa", slabBarDiameter: "mm", slabClearCover: "mm",
           optimizationConcreteCost: "relative/m³", optimizationRebarCost: "relative/kg", optimizationFormworkCost: "relative/m²",
@@ -43103,16 +43180,32 @@
         return Math.max(25, Math.floor(limit / 25) * 25);
       }
 
-      function beamStirrupSpacingLimits(effectiveDepth, barDiameter, requiredStirrupShear, fc, width, seismicFrame) {
+      function normalizedBeamFrameClassification(value = "") {
+        const normalized = String(value || byId("beamFrameClassification")?.value || "ordinary").trim().toLowerCase();
+        return ["gravity", "ordinary", "intermediate", "special"].includes(normalized) ? normalized : "ordinary";
+      }
+
+      function beamStirrupSpacingLimits(effectiveDepth, barDiameter, requiredStirrupShear, fc, width, frameClassification = "ordinary") {
         const highShearThreshold = 0.33 * Math.sqrt(fc) * width * effectiveDepth;
         const highShear = requiredStirrupShear > highShearThreshold;
         const fieldMaximum = highShear
           ? Math.min(effectiveDepth / 4, 300)
           : Math.min(effectiveDepth / 2, 600);
-        const supportMaximum = seismicFrame
+        const classification = frameClassification === true
+          ? "special"
+          : frameClassification === false
+            ? "ordinary"
+            : normalizedBeamFrameClassification(frameClassification);
+        const supportMaximum = classification === "special" || classification === "intermediate"
           ? Math.min(fieldMaximum, effectiveDepth / 4, 6 * barDiameter, 150)
           : fieldMaximum;
-        return {highShear, fieldMaximum, supportMaximum};
+        return {
+          highShear,
+          fieldMaximum,
+          supportMaximum,
+          classification,
+          seismicEndZone: classification === "intermediate" || classification === "special"
+        };
       }
 
       function beamReinforcementScheduleLegacy(axis, frameModel, member) {
@@ -43160,12 +43253,12 @@
           : Infinity;
         const minimumStirrupRatio = Math.max(0.062 * Math.sqrt(fc) * width / fy, 0.35 * width / fy);
         const minimumSteelSpacing = minimumStirrupRatio > 0 ? twoLegStirrupArea / minimumStirrupRatio : Infinity;
-        const seismicFrame = Math.max(numericInput("eqRx", 8.5), numericInput("eqRy", 8.5)) >= 8;
-        const spacingLimits = beamStirrupSpacingLimits(effectiveDepth, barDiameter, requiredStirrupShear, fc, width, seismicFrame);
+        const frameClassification = normalizedBeamFrameClassification();
+        const spacingLimits = beamStirrupSpacingLimits(effectiveDepth, barDiameter, requiredStirrupShear, fc, width, frameClassification);
         const fieldSpacing = practicalStirrupSpacing(Math.min(strengthSpacing, minimumSteelSpacing, spacingLimits.fieldMaximum));
         const supportSpacing = practicalStirrupSpacing(Math.min(strengthSpacing, minimumSteelSpacing, spacingLimits.supportMaximum));
-        const supportZone = seismicFrame ? Math.round(Math.min(2 * height, length * 1000 / 2)) : 0;
-        const firstStirrupOffset = seismicFrame
+        const supportZone = spacingLimits.seismicEndZone ? Math.round(Math.min(2 * height, length * 1000 / 2)) : 0;
+        const firstStirrupOffset = spacingLimits.seismicEndZone
           ? 50
           : Math.max(50, Math.min(150, Math.floor(fieldSpacing / 50) * 25));
         return {
@@ -43181,7 +43274,8 @@
           supportZone,
           fieldSpacing,
           firstStirrupOffset,
-          seismicDetailing: seismicFrame,
+          seismicDetailing: spacingLimits.seismicEndZone,
+          frameClassification,
           title: `Preliminary NSCP 2015 beam schedule. Mu=${valueCell(demand.maxMoment)} kN-m (${demand.momentCombination || "minimum steel"}); Vu=${valueCell(demand.maxShear)} kN (${demand.shearCombination || "minimum steel"}); d=${effectiveDepth.toFixed(0)} mm; two-leg stirrups.`
         };
       }
@@ -43488,11 +43582,14 @@
         return 0.65 + 0.25 * (tensileStrain - yieldStrain) / (BEAM_TENSION_CONTROLLED_STRAIN - yieldStrain);
       }
 
-      function beamBarLayout(width, cover, stirrupDiameter, barDiameter, count) {
+      function beamBarLayout(width, cover, stirrupDiameter, barDiameter, count, maximumAggregateSize = 0, constructionTolerance = 0) {
         const barArea = Math.PI * barDiameter * barDiameter / 4;
-        const clearWidth = width - 2 * (cover + stirrupDiameter);
-        const clearSpacing = Math.max(25, barDiameter);
-        const perLayer = Math.floor((clearWidth + clearSpacing) / (barDiameter + clearSpacing));
+        const tolerance = Math.max(0, Number(constructionTolerance) || 0);
+        const aggregateSize = Math.max(0, Number(maximumAggregateSize) || 0);
+        const clearWidth = width - 2 * (cover + stirrupDiameter + tolerance);
+        const horizontalClearSpacing = Math.max(25, barDiameter, 4 * aggregateSize / 3);
+        const verticalClearSpacing = Math.max(25, barDiameter, 4 * aggregateSize / 3);
+        const perLayer = Math.floor((clearWidth + horizontalClearSpacing) / (barDiameter + horizontalClearSpacing));
         const barCount = Math.max(2, Math.round(Number(count) || 0));
         const layers = perLayer > 0 ? Math.ceil(barCount / perLayer) : Infinity;
         const layerCounts = [];
@@ -43502,20 +43599,46 @@
           layerCounts.push(layerCount);
           remaining -= layerCount;
         }
-        return {barArea, count: barCount, perLayer, layers, layerCounts, clearSpacing, fits: perLayer >= 2 && layers <= 2 && remaining === 0};
+        const actualHorizontalClearSpacing = layerCounts.reduce((minimum, layerCount) => {
+          if (layerCount <= 1) return minimum;
+          return Math.min(minimum, (clearWidth - layerCount * barDiameter) / (layerCount - 1));
+        }, Infinity);
+        const horizontalFits = perLayer >= 2 && actualHorizontalClearSpacing + 1e-9 >= horizontalClearSpacing;
+        const fits = horizontalFits && layers <= 2 && remaining === 0;
+        return {
+          barArea,
+          count: barCount,
+          perLayer,
+          layers,
+          layerCounts,
+          clearWidth,
+          clearSpacing: verticalClearSpacing,
+          horizontalClearSpacing,
+          verticalClearSpacing,
+          actualHorizontalClearSpacing,
+          maximumAggregateSize: aggregateSize,
+          constructionTolerance: tolerance,
+          horizontalFits,
+          verticalFits: true,
+          fits,
+          fitFailure: !horizontalFits ? "INSUFFICIENT HORIZONTAL CLEAR SPACING" : layers > 2 || remaining > 0 ? "MORE THAN TWO BAR LAYERS REQUIRED" : ""
+        };
       }
 
       function beamBarCentroidDepth(height, cover, stirrupDiameter, barDiameter, layout) {
         const firstLayerDepth = height - cover - stirrupDiameter - barDiameter / 2;
         if (!layout?.fits || firstLayerDepth <= 0) return firstLayerDepth;
-        const centerSpacing = barDiameter + layout.clearSpacing;
+        const centerSpacing = barDiameter + layout.verticalClearSpacing;
         const weightedOffset = layout.layerCounts.reduce((sum, count, layerIndex) => sum + count * layerIndex * centerSpacing, 0) / layout.count;
         return firstLayerDepth - weightedOffset;
       }
 
-      function beamFlexuralResponse(width, height, cover, stirrupDiameter, barDiameter, count, momentKnM, fc, fy) {
-        const layout = beamBarLayout(width, cover, stirrupDiameter, barDiameter, count);
+      function beamFlexuralResponse(width, height, cover, stirrupDiameter, barDiameter, count, momentKnM, fc, fy, maximumAggregateSize = 0, constructionTolerance = 0) {
+        const layout = beamBarLayout(width, cover, stirrupDiameter, barDiameter, count, maximumAggregateSize, constructionTolerance);
         const effectiveDepth = beamBarCentroidDepth(height, cover, stirrupDiameter, barDiameter, layout);
+        const reinforcementPackageDepth = layout.layers * barDiameter + Math.max(0, layout.layers - 1) * layout.verticalClearSpacing;
+        const availableReinforcementDepth = height - 2 * (cover + stirrupDiameter + layout.constructionTolerance);
+        const verticalFits = layout.layers <= 1 || reinforcementPackageDepth <= availableReinforcementDepth + 1e-9;
         const areaSteel = layout.count * layout.barArea;
         const minimumArea = Math.max(0.25 * Math.sqrt(fc) / fy, 1.4 / fy) * width * Math.max(0, effectiveDepth);
         const a = areaSteel * fy / Math.max(0.85 * fc * width, 1e-9);
@@ -43543,17 +43666,24 @@
           minimumSteelPass,
           tensionStrainPass,
           strengthPass,
-          pass: layout.fits && effectiveDepth > 0 && minimumSteelPass && tensionStrainPass && strengthPass,
+          verticalFits,
+          fits: layout.fits && verticalFits,
+          fitFailure: !layout.horizontalFits
+            ? layout.fitFailure
+            : !verticalFits
+              ? "INSUFFICIENT VERTICAL LAYER SPACING"
+              : layout.fitFailure,
+          pass: layout.fits && verticalFits && effectiveDepth > 0 && minimumSteelPass && tensionStrainPass && strengthPass,
           demandRatio: momentKnM / Math.max(designCapacity, 1e-9)
         };
       }
 
-      function selectBeamFlexuralLayout(width, height, cover, stirrupDiameter, barDiameter, momentKnM, fc, fy, steelAreaFactor = 1) {
-        const trial = beamBarLayout(width, cover, stirrupDiameter, barDiameter, 2);
+      function selectBeamFlexuralLayout(width, height, cover, stirrupDiameter, barDiameter, momentKnM, fc, fy, steelAreaFactor = 1, maximumAggregateSize = 0, constructionTolerance = 0) {
+        const trial = beamBarLayout(width, cover, stirrupDiameter, barDiameter, 2, maximumAggregateSize, constructionTolerance);
         const maximumBars = Number.isFinite(trial.perLayer) && trial.perLayer > 0 ? 2 * trial.perLayer : 2;
         const candidates = [];
         for (let count = 2; count <= maximumBars; count += 1) {
-          const candidate = beamFlexuralResponse(width, height, cover, stirrupDiameter, barDiameter, count, momentKnM, fc, fy);
+          const candidate = beamFlexuralResponse(width, height, cover, stirrupDiameter, barDiameter, count, momentKnM, fc, fy, maximumAggregateSize, constructionTolerance);
           candidates.push(candidate);
         }
         const baseline = candidates.find(candidate => candidate.pass);
@@ -43588,7 +43718,7 @@
         ];
         const diagnosticPool = diagnosticPools.find(pool => pool.length) || [];
         const diagnostic = diagnosticPool.slice().sort((a, b) => b.designCapacity - a.designCapacity)[0]
-          || beamFlexuralResponse(width, height, cover, stirrupDiameter, barDiameter, 2, momentKnM, fc, fy);
+          || beamFlexuralResponse(width, height, cover, stirrupDiameter, barDiameter, 2, momentKnM, fc, fy, maximumAggregateSize, constructionTolerance);
         return {...diagnostic, baselineAreaSteel: null, requiredAreaSteel: null, steelAreaFactor: reserveFactor, steelReservePass: null};
       }
 
@@ -43648,11 +43778,13 @@
         const fc = detailingValue("concreteStrength", 28, 1);
         const fy = Math.min(550, detailingValue("rebarYieldStrength", 415, 200));
         const clearCover = detailingValue("beamClearCover", 40, 20);
+        const maximumAggregateSize = detailingValue("beamMaximumAggregateSize", 20, 5);
+        const constructionTolerance = detailingValue("beamRebarPlacementTolerance", 5, 0);
         const forces = demand || beamDemandEnvelope(axis, frameModel, member);
         const steelAreaFactor = beamLongSpanSteelFactor(length, mprAutoPassEnabled("beams"));
-        const positiveLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, forces.positiveMoment, fc, fy, steelAreaFactor);
-        const negativeLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, forces.negativeMoment, fc, fy, steelAreaFactor);
-        const minimumLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, 0, fc, fy, steelAreaFactor);
+        const positiveLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, forces.positiveMoment, fc, fy, steelAreaFactor, maximumAggregateSize, constructionTolerance);
+        const negativeLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, forces.negativeMoment, fc, fy, steelAreaFactor, maximumAggregateSize, constructionTolerance);
+        const minimumLayout = selectBeamFlexuralLayout(width, height, clearCover, stirrupDiameter, barDiameter, 0, fc, fy, steelAreaFactor, maximumAggregateSize, constructionTolerance);
         const flexuralLayouts = [positiveLayout, negativeLayout, minimumLayout];
         const effectiveDepth = Math.min(...flexuralLayouts.map(layout => layout.effectiveDepth));
         if (!(effectiveDepth > 0)) return {pass: false, reason: "INVALID EFFECTIVE DEPTH", flexureRatio: Infinity, shearRatio: Infinity, deflectionRatio: Infinity};
@@ -43665,12 +43797,12 @@
         const strengthLimit = requiredStirrupShear > 0 ? stirrupArea * fy * effectiveDepth / requiredStirrupShear : Infinity;
         const minimumAvPerS = Math.max(0.062 * Math.sqrt(fc) * width / fy, 0.35 * width / fy);
         const minimumSteelLimit = minimumAvPerS > 0 ? stirrupArea / minimumAvPerS : Infinity;
-        const seismicFrame = Math.max(numericInput("eqRx", 8.5), numericInput("eqRy", 8.5)) >= 8;
-        const spacingLimits = beamStirrupSpacingLimits(effectiveDepth, barDiameter, requiredStirrupShear, fc, width, seismicFrame);
+        const frameClassification = normalizedBeamFrameClassification();
+        const spacingLimits = beamStirrupSpacingLimits(effectiveDepth, barDiameter, requiredStirrupShear, fc, width, frameClassification);
         const fieldSpacing = constructibleSpacing(Math.min(strengthLimit, minimumSteelLimit, spacingLimits.fieldMaximum));
         const supportSpacing = constructibleSpacing(Math.min(strengthLimit, minimumSteelLimit, spacingLimits.supportMaximum));
-        const supportZone = seismicFrame ? Math.round(Math.min(2 * height, length * 500)) : 0;
-        const firstStirrupOffset = seismicFrame
+        const supportZone = spacingLimits.seismicEndZone ? Math.round(Math.min(2 * height, length * 500)) : 0;
+        const firstStirrupOffset = spacingLimits.seismicEndZone
           ? 50
           : Math.max(50, Math.min(150, Math.floor(fieldSpacing / 50) * 25));
         const maximumNominalShear = concreteShear + 0.66 * Math.sqrt(fc) * width * effectiveDepth;
@@ -43687,7 +43819,7 @@
         const midspanBottom = positiveLayout.count;
         const pass = flexureValid && flexureRatio <= 1 + 1e-9 && shearValid && serviceabilityValid;
         let reason = "PASS";
-        if (!flexuralLayouts.every(layout => layout.fits)) reason = "REBAR DOES NOT FIT";
+        if (!flexuralLayouts.every(layout => layout.fits)) reason = flexuralLayouts.find(layout => !layout.fits)?.fitFailure || "REBAR DOES NOT FIT";
         else if (!flexuralLayouts.every(layout => layout.minimumSteelPass)) reason = "MINIMUM FLEXURAL STEEL";
         else if (!flexuralLayouts.every(layout => layout.tensionStrainPass)) reason = "TENSION STRAIN < 0.004";
         else if (!flexuralLayouts.every(layout => layout.strengthPass)) reason = "FLEXURAL CAPACITY";
@@ -43706,6 +43838,8 @@
           barArea: positiveLayout.barArea,
           stirrupArea,
           clearCover,
+          maximumAggregateSize,
+          constructionTolerance,
           effectiveDepth,
           supportTop,
           supportBottom,
@@ -43715,7 +43849,8 @@
           supportZone,
           fieldSpacing,
           firstStirrupOffset,
-          seismicDetailing: seismicFrame,
+          seismicDetailing: spacingLimits.seismicEndZone,
+          frameClassification,
           highShear: spacingLimits.highShear,
           designShear: forces.shear,
           designMoment: Math.max(forces.positiveMoment, forces.negativeMoment),
@@ -43737,7 +43872,11 @@
         const longSpanReserveText = steelAreaFactor > 1
           ? ` Application economical-design long-span rule applied: As,target = ${steelAreaFactor.toFixed(2)} As,baseline (+${beamLongSpanSteelReservePercent().toFixed(0)}%) for L=${length.toFixed(2)} m; the selected whole-bar layout must still fit, maintain the concrete-steel balance, and maintain tensile strain at least ${BEAM_MINIMUM_TENSION_STRAIN.toFixed(3)}.`
           : "";
-        design.title = `NSCP 2015 / ACI preliminary check for ${member.name || member.id}. M+ ${valueCell(forces.positiveMoment)} kN-m (${forces.positiveCombination || "minimum steel"}); M- ${valueCell(forces.negativeMoment)} kN-m (${forces.negativeCombination || "minimum steel"}); Vu ${valueCell(forces.shear)} kN (${forces.shearCombination || "minimum steel"}); governing flexure ${governingFlexure.count}-D${barDiameter}, d=${governingFlexure.effectiveDepth.toFixed(1)} mm, tensile strain=${governingFlexure.tensileStrain.toFixed(5)}, phi=${governingFlexure.phi.toFixed(3)}, D/C ${valueCell(flexureRatio)}; shear D/C ${valueCell(shearRatio)}; ${seismicFrame ? "seismic end-zone" : "ordinary-frame"} stirrups D${stirrupDiameter} @${supportSpacing === fieldSpacing ? fieldSpacing : `${supportSpacing}/${fieldSpacing}`} mm; conservative D+L deflection ${valueCell(serviceDeflection.deflection)} mm / ${valueCell(serviceDeflection.limit)} mm (D/C ${valueCell(serviceDeflection.ratio)}).${longSpanReserveText}`;
+        const layerDescription = governingFlexure.layerCounts.join("+");
+        const clearSpacingDescription = Number.isFinite(governingFlexure.actualHorizontalClearSpacing)
+          ? governingFlexure.actualHorizontalClearSpacing.toFixed(1)
+          : "N/A";
+        design.title = `NSCP 2015 / ACI preliminary check for ${member.name || member.id}. M+ ${valueCell(forces.positiveMoment)} kN-m (${forces.positiveCombination || "minimum steel"}); M- ${valueCell(forces.negativeMoment)} kN-m (${forces.negativeCombination || "minimum steel"}); Vu ${valueCell(forces.shear)} kN (${forces.shearCombination || "minimum steel"}); governing flexure ${governingFlexure.count}-D${barDiameter} arranged ${layerDescription || "N/A"}, d=${governingFlexure.effectiveDepth.toFixed(1)} mm, horizontal clear spacing=${clearSpacingDescription} mm (required ${governingFlexure.horizontalClearSpacing.toFixed(1)} mm for ${maximumAggregateSize} mm aggregate; ${constructionTolerance} mm placement tolerance each side), tensile strain=${governingFlexure.tensileStrain.toFixed(5)}, phi=${governingFlexure.phi.toFixed(3)}, D/C ${valueCell(flexureRatio)}; shear D/C ${valueCell(shearRatio)}; ${frameClassification} frame stirrups D${stirrupDiameter} @${supportSpacing === fieldSpacing ? fieldSpacing : `${supportSpacing}/${fieldSpacing}`} mm; conservative D+L deflection ${valueCell(serviceDeflection.deflection)} mm / ${valueCell(serviceDeflection.limit)} mm (D/C ${valueCell(serviceDeflection.ratio)}). Project-specific torsion, development/anchorage, splice and beam-column joint checks remain INCOMPLETE / NOT VERIFIED.${longSpanReserveText}`;
         return design;
       }
 
@@ -44016,14 +44155,174 @@
           return yLabel === selectedXFrameGrid || xLabel === selectedYFrameGrid;
         }
         if (tableId === "slabResultsTable") {
-          const [, xIndex = -1, yIndex = -1] = String(row.dataset.slabKey || "").split("|").map(Number);
+          const xStart = Number(row.dataset.slabXStart);
+          const xEnd = Number(row.dataset.slabXEnd);
+          const yStart = Number(row.dataset.slabYStart);
+          const yEnd = Number(row.dataset.slabYEnd);
           const selectedYIndex = data.yLabels.indexOf(selectedXFrameGrid);
           const selectedXIndex = data.xLabels.indexOf(selectedYFrameGrid);
-          const touchesXFrame = selectedYIndex >= 0 && (yIndex === selectedYIndex || yIndex + 1 === selectedYIndex);
-          const touchesYFrame = selectedXIndex >= 0 && (xIndex === selectedXIndex || xIndex + 1 === selectedXIndex);
+          const touchesXFrame = selectedYIndex >= 0 && selectedYIndex >= Math.min(yStart, yEnd) && selectedYIndex <= Math.max(yStart, yEnd);
+          const touchesYFrame = selectedXIndex >= 0 && selectedXIndex >= Math.min(xStart, xEnd) && selectedXIndex <= Math.max(xStart, xEnd);
           return touchesXFrame || touchesYFrame;
         }
         return true;
+      }
+
+      const MPR_SHOW_ONLY_TABLES = Object.freeze({
+        beams: {sectionId: "beamResultsSection", tableId: "beamResultsTable", label: "Beams"},
+        columns: {sectionId: "columnResultsSection", tableId: "columnResultsTable", label: "Columns"},
+        slabs: {sectionId: "slabResultsSection", tableId: "slabResultsTable", label: "Slabs"},
+        footings: {sectionId: "footingResultsSection", tableId: "footingResultsTable", label: "Footings"}
+      });
+
+      function saveMprShowOnlyState() {
+        try { window.localStorage?.setItem(MPR_SHOW_ONLY_STORAGE_KEY, JSON.stringify(mprShowOnlyState)); } catch (error) {}
+      }
+
+      function mprRowAppearsInFrame(tableId, row, axis, frameLine) {
+        const data = makePlanData();
+        const normalizedAxis = String(axis || "").toUpperCase();
+        const normalizedLine = String(frameLine || "");
+        if (!row || !normalizedLine) return false;
+        if (tableId === "beamResultsTable") {
+          return String(row.dataset.frame || "").toUpperCase() === normalizedAxis && String(row.dataset.frameLine || "") === normalizedLine;
+        }
+        if (tableId === "columnResultsTable" || tableId === "footingResultsTable") {
+          const memberKey = tableId === "columnResultsTable" ? row.dataset.columnKey : row.dataset.footingKey;
+          const [xLabel = "", yLabel = ""] = String(memberKey || "").split("|");
+          return normalizedAxis === "X" ? yLabel === normalizedLine : xLabel === normalizedLine;
+        }
+        if (tableId === "slabResultsTable") {
+          const xStart = Number(row.dataset.slabXStart);
+          const xEnd = Number(row.dataset.slabXEnd);
+          const yStart = Number(row.dataset.slabYStart);
+          const yEnd = Number(row.dataset.slabYEnd);
+          if (normalizedAxis === "X") {
+            const gridIndex = data.yLabels.indexOf(normalizedLine);
+            return gridIndex >= 0 && gridIndex >= Math.min(yStart, yEnd) && gridIndex <= Math.max(yStart, yEnd);
+          }
+          const gridIndex = data.xLabels.indexOf(normalizedLine);
+          return gridIndex >= 0 && gridIndex >= Math.min(xStart, xEnd) && gridIndex <= Math.max(xStart, xEnd);
+        }
+        return false;
+      }
+
+      function mprRowLevelIndex(tableId, row) {
+        if (!row) return null;
+        if (tableId === "beamResultsTable") return Number(row.dataset.sortLevel);
+        if (tableId === "columnResultsTable") return Number(row.dataset.storyIndex);
+        if (tableId === "slabResultsTable") return Number(row.dataset.levelIndex);
+        if (tableId === "footingResultsTable") return -1;
+        return null;
+      }
+
+      function mprShowOnlyOptions() {
+        const data = makePlanData();
+        const options = [
+          {value: "all", label: "ALL"},
+          {value: "axis-selected", label: "Selected X & Y Axis Frames members"}
+        ];
+        orderedFrameCatalogEntries("X").forEach(([line]) => {
+          options.push({value: `frame:X:${line}`, label: `Structural Frame along Grid ${line} (X-Axis Frame)`});
+        });
+        orderedFrameCatalogEntries("Y").forEach(([line]) => {
+          options.push({value: `frame:Y:${line}`, label: `Structural Frame along Grid ${line} (Y-Axis Frame)`});
+        });
+        options.push({value: "level:-1", label: "Foundation"});
+        (data.levels || []).forEach((level, index) => {
+          options.push({value: `level:${index}`, label: frameLevelLabel(index + 1, data)});
+        });
+        return options;
+      }
+
+      function refreshMprShowOnlyControl(tableKey) {
+        const config = MPR_SHOW_ONLY_TABLES[tableKey];
+        const select = document.querySelector(`[data-mpr-show-only-select="${tableKey}"]`);
+        const wrapper = select?.closest(".mpr-show-only-control");
+        const button = wrapper?.querySelector(".mpr-show-only-button");
+        if (!config || !select || !wrapper || !button) return;
+        const requested = String(mprShowOnlyState[tableKey] || "all");
+        const options = mprShowOnlyOptions();
+        select.innerHTML = options.map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("");
+        const selected = options.some(option => option.value === requested) ? requested : "all";
+        mprShowOnlyState[tableKey] = selected;
+        select.value = selected;
+        const selectedLabel = options.find(option => option.value === selected)?.label || "ALL";
+        wrapper.classList.toggle("is-active", selected !== "all");
+        button.title = `${config.label}: ${selectedLabel}`;
+        button.setAttribute("aria-label", `Show only filter for ${config.label}. Current selection: ${selectedLabel}`);
+      }
+
+      function applyMprShowOnlyFilter(tableKey, announce = false) {
+        const config = MPR_SHOW_ONLY_TABLES[tableKey];
+        const table = config ? byId(config.tableId) : null;
+        if (!table) return;
+        const selection = String(mprShowOnlyState[tableKey] || "all");
+        const rows = Array.from(table.tBodies).flatMap(body => Array.from(body.rows)).filter(row => row.dataset.mprRowKey);
+        let visibleCount = 0;
+        rows.forEach(row => {
+          let visible = selection === "all";
+          if (selection === "axis-selected") visible = mprRowAppearsInSelectedAxisFrames(config.tableId, row);
+          else if (selection.startsWith("frame:")) {
+            const [, axis, ...lineParts] = selection.split(":");
+            visible = mprRowAppearsInFrame(config.tableId, row, axis, lineParts.join(":"));
+          } else if (selection.startsWith("level:")) {
+            visible = mprRowLevelIndex(config.tableId, row) === Number(selection.slice(6));
+          }
+          row.classList.toggle("mpr-show-only-filtered", !visible);
+          if (visible) visibleCount += 1;
+        });
+        refreshMprShowOnlyControl(tableKey);
+        if (announce && typeof status === "function") {
+          const selectedText = document.querySelector(`[data-mpr-show-only-select="${tableKey}"]`)?.selectedOptions?.[0]?.textContent || "selection";
+          status(`${config.label}: showing ${visibleCount} member${visibleCount === 1 ? "" : "s"} for ${selectedText}. This display filter does not change the structural model or calculations.`);
+        }
+      }
+
+      function applyMprShowOnlyFilters() {
+        Object.keys(MPR_SHOW_ONLY_TABLES).forEach(tableKey => applyMprShowOnlyFilter(tableKey));
+      }
+
+      function installMprShowOnlyControl(actions, label, tableKey, beforeElement = null) {
+        if (!actions || actions.querySelector(`[data-mpr-show-only-select="${tableKey}"]`)) return;
+        const wrapper = document.createElement("span");
+        wrapper.className = "mpr-show-only-control";
+        const button = document.createElement("button");
+        button.className = "mpr-show-only-button";
+        button.type = "button";
+        button.textContent = "Show only";
+        button.setAttribute("aria-expanded", "false");
+        const menu = document.createElement("span");
+        menu.className = "mpr-show-only-menu";
+        menu.hidden = true;
+        const menuLabel = document.createElement("label");
+        menuLabel.textContent = `${label} view filter`;
+        const select = document.createElement("select");
+        select.dataset.mprShowOnlySelect = tableKey;
+        select.setAttribute("aria-label", `${label} show only selection`);
+        menuLabel.appendChild(select);
+        menu.appendChild(menuLabel);
+        wrapper.append(button, menu);
+        actions.insertBefore(wrapper, beforeElement || actions.firstChild);
+        refreshMprShowOnlyControl(tableKey);
+        button.addEventListener("click", event => {
+          event.preventDefault();
+          event.stopPropagation();
+          refreshMprShowOnlyControl(tableKey);
+          const opening = menu.hidden;
+          document.querySelectorAll(".mpr-show-only-menu").forEach(other => { other.hidden = true; });
+          document.querySelectorAll(".mpr-show-only-button").forEach(other => other.setAttribute("aria-expanded", "false"));
+          menu.hidden = !opening;
+          button.setAttribute("aria-expanded", opening ? "true" : "false");
+          if (opening) window.setTimeout(() => select.focus(), 0);
+        });
+        select.addEventListener("change", () => {
+          mprShowOnlyState[tableKey] = select.value;
+          saveMprShowOnlyState();
+          applyMprShowOnlyFilter(tableKey, true);
+          menu.hidden = true;
+          button.setAttribute("aria-expanded", "false");
+        });
       }
 
       function installMprHideMembersDialog() {
@@ -44780,6 +45079,10 @@
                 ? `<span>first stirrup &le;${reinforcement.firstStirrupOffset} mm from each support face</span><span>D${reinforcement.stirrupDiameter} @${reinforcement.supportSpacing} mm within ${reinforcement.supportZone} mm end zones</span><span>central zone @${reinforcement.fieldSpacing} mm</span>`
                 : `<span>first stirrup &le;${reinforcement.firstStirrupOffset} mm from each support face</span><span>D${reinforcement.stirrupDiameter} @${reinforcement.fieldSpacing} mm throughout</span>`)
             : "";
+          const beamResultStatus = reinforcement
+            ? (reinforcement.pass ? "INCOMPLETE / NOT VERIFIED" : reinforcement.reason)
+            : "";
+          const beamResultStatusClass = reinforcement?.pass ? "warn" : "fail";
           const reinforcementCells = reinforcement
             ? `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><select class="design-input" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="longitudinalBarDiameter" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} longitudinal bar diameter">${mprDiameterOptions(MPR_COLUMN_BEAM_BAR_DIAMETERS, reinforcement.barDiameter)}</select></td>` +
               `<td class="rebar-location-cell" title="${escapeHtml(reinforcement.title)}"><span class="rebar-location-grid"><span>TOP</span><strong>${reinforcement.supportTop}</strong><span>BOT</span><strong>${reinforcement.supportBottom}</strong></span></td>` +
@@ -44787,7 +45090,7 @@
               `<td class="reinforcement-cell" title="${escapeHtml(reinforcement.title)}"><select class="design-input" data-beam-rebar-frame="${axis}" data-frame-line="${frameLineAttribute}" data-beam-rebar-member="${member.id}" data-beam-group="${groupAttribute}" data-field="stirrupDiameter" aria-label="${escapeHtml(resultTableMemberName(axis, displayMember))} stirrup diameter">${mprDiameterOptions(MPR_TIE_STIRRUP_BAR_DIAMETERS, reinforcement.stirrupDiameter)}</select></td>` +
               `<td class="stirrup-spacing-cell" title="${escapeHtml(reinforcement.title)}">` +
                 `${stirrupSchedule}</td>` +
-              `<td class="design-status ${reinforcement.pass ? "pass" : "fail"}" ${mprStatusAttributes("beam", reinforcement.pass ? "PASS" : reinforcement.reason, reinforcement.title)}>${reinforcement.pass ? "PASS" : escapeHtml(reinforcement.reason)}<br>F ${valueCell(reinforcement.flexureRatio)} / V ${valueCell(reinforcement.shearRatio)} / D ${valueCell(reinforcement.deflectionRatio)}</td>`
+              `<td class="design-status ${beamResultStatusClass}" ${mprStatusAttributes("beam", beamResultStatus, reinforcement.title)}>${escapeHtml(beamResultStatus)}<br>F ${valueCell(reinforcement.flexureRatio)} / V ${valueCell(reinforcement.shearRatio)} / D ${valueCell(reinforcement.deflectionRatio)}</td>`
             : '<td class="not-applicable-cell">-</td>'.repeat(6);
           return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-frame="${axis}" data-frame-line="${frameLineAttribute}" data-kind="member" data-sort-sequence="${startIndex + index}" data-sort-name="${escapeHtml(displayName)}" data-sort-level="${beamLevelIndex}" data-sort-type="${escapeHtml(beamType)}" data-sort-width="${Number(member.width) || 0}" data-sort-height="${Number(member.height) || 0}" data-sort-length="${Number(length) || 0}" data-sort-shear="${Number(displayedShear) || 0}" data-sort-moment="${Number(displayedMoment) || 0}" data-sort-rebar="${Number(reinforcement?.barDiameter) || 0}" data-estimate-support-top="${Number(reinforcement?.supportTop) || 0}" data-estimate-support-bottom="${Number(reinforcement?.supportBottom) || 0}" data-estimate-midspan-top="${Number(reinforcement?.midspanTop) || 0}" data-estimate-midspan-bottom="${Number(reinforcement?.midspanBottom) || 0}" data-estimate-stirrup-support-spacing="${Number(reinforcement?.supportSpacing) || 0}" data-estimate-stirrup-field-spacing="${Number(reinforcement?.fieldSpacing) || 0}" data-estimate-stirrup-support-zone="${Number(reinforcement?.supportZone) || 0}">` +
             `<td>${mprItemNumber(startIndex + index)}</td>` +
@@ -46234,6 +46537,11 @@
         if (isOpenSpace) {
           return {
             key,
+            levelIndex,
+            xStart: region.xStart,
+            xEnd: region.xEnd,
+            yStart: region.yStart,
+            yEnd: region.yEnd,
             level: levelLabel,
             slabId: slabRegionTableId(region, data),
             name: `${levelLabel} / ${slabRegionTableId(region, data)}`,
@@ -46401,6 +46709,11 @@
         }
         return {
           key,
+          levelIndex,
+          xStart: region.xStart,
+          xEnd: region.xEnd,
+          yStart: region.yStart,
+          yEnd: region.yEnd,
           level: levelLabel,
           slabId: slabRegionTableId(region, data),
           name: `${levelLabel} / ${slabRegionTableId(region, data)}`,
@@ -46517,7 +46830,7 @@
               bottomSpacingX: design.bottomSpacingX, bottomSpacingY: design.bottomSpacingY,
               minimumThickness: design.minimumThickness, shearRatio: valueCell(design.shearRatio)
             };
-          return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="slab-design" data-slab-key="${escapeHtml(design.key)}" data-slab-area="${Number(design.area || design.spanX * design.spanY).toFixed(6)}"><td>${mprItemNumber(index)}</td><td>${escapeHtml(design.level)}</td><td><input class="member-id-input" data-member-rename="slab" data-name-key="${escapeHtml(design.key)}" value="${escapeHtml(design.slabId)}" aria-label="${escapeHtml(design.level)} slab ID"></td><td><select class="slab-type-select" data-slab-type="${escapeHtml(design.key)}" aria-label="${escapeHtml(design.slabId)} slab type">${slabTypeOptions(design.slabType)}</select></td>` +
+          return `<tr ${mprVisibilityRowAttributes(visibilityKey)} data-kind="slab-design" data-slab-key="${escapeHtml(design.key)}" data-level-index="${Number(design.levelIndex)}" data-slab-x-start="${Number(design.xStart)}" data-slab-x-end="${Number(design.xEnd)}" data-slab-y-start="${Number(design.yStart)}" data-slab-y-end="${Number(design.yEnd)}" data-slab-area="${Number(design.area || design.spanX * design.spanY).toFixed(6)}"><td>${mprItemNumber(index)}</td><td>${escapeHtml(design.level)}</td><td><input class="member-id-input" data-member-rename="slab" data-name-key="${escapeHtml(design.key)}" value="${escapeHtml(design.slabId)}" aria-label="${escapeHtml(design.level)} slab ID"></td><td><select class="slab-type-select" data-slab-type="${escapeHtml(design.key)}" aria-label="${escapeHtml(design.slabId)} slab type">${slabTypeOptions(design.slabType)}</select></td>` +
           `<td>${valueCell(design.spanX)}</td><td>${valueCell(design.spanY)}</td><td>${designValues.thickness}</td>` +
           `${design.openSpace ? mprUnavailableLoadCell("Open Space is excluded from slab loads and design.") : mprLoadCell(design.deadLoad, "Area dead load used for this slab panel, excluding the separately listed Wall Tool pressure.")}` +
           `${design.openSpace ? mprUnavailableLoadCell("Open Space is excluded from slab loads and design.") : mprLoadCell(design.liveLoad, "Area live load used for this slab panel.")}` +
@@ -47183,6 +47496,7 @@
         });
         applyAllAdditionalMprSorts();
         updateMprVisibilityControls();
+        applyMprShowOnlyFilters();
         updateStructuralEstimates();
       }
 
@@ -47302,12 +47616,22 @@
           control.setAttribute("aria-pressed", "false");
           control.innerHTML = `<input type="checkbox" data-mpr-auto-pass="${tableKey}" aria-label="AUTO-PASS ${label}"${mprAutoPassEnabled(tableKey) ? " checked" : ""}><span>AUTO-PASS</span>`;
           actions.insertBefore(control, actions.firstChild);
+          installMprShowOnlyControl(actions, label, tableKey, control);
           control.querySelector("input")?.addEventListener("change", event => {
             setMprAutoPassEnabled(tableKey, event.target.checked, true);
             if (event.target.checked) window.setTimeout(() => byId("calculateBtn")?.click(), 0);
           });
         });
+        if (!document.body.dataset.mprShowOnlyOutsideReady) {
+          document.body.dataset.mprShowOnlyOutsideReady = "true";
+          document.addEventListener("click", event => {
+            if (event.target.closest(".mpr-show-only-control")) return;
+            document.querySelectorAll(".mpr-show-only-menu").forEach(menu => { menu.hidden = true; });
+            document.querySelectorAll(".mpr-show-only-button").forEach(button => button.setAttribute("aria-expanded", "false"));
+          });
+        }
         syncResultCalculationMode(byId("autoDesignEnabled")?.checked !== false);
+        applyMprShowOnlyFilters();
       }
 
       function setEconomicalDesignEnabled(enabled, announce = false) {
@@ -49592,7 +49916,7 @@
         });
         updateDefaultSectionLabels();
         [
-          "beamLongitudinalBarDiameter", "beamStirrupDiameter", "rebarYieldStrength", "beamClearCover",
+          "beamLongitudinalBarDiameter", "beamStirrupDiameter", "rebarYieldStrength", "beamClearCover", "beamMaximumAggregateSize", "beamRebarPlacementTolerance", "beamFrameClassification",
           "columnLongitudinalBarDiameter", "columnTieDiameter", "columnClearCover",
           "footingBarDiameter", "footingClearCover", "footingThickness", "soilAllowableBearing",
           "slabBarDiameter", "slabClearCover", "slabThickness"
