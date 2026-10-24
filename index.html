@@ -48377,17 +48377,6 @@
         return Number.isFinite(d) && d > 0 ? Math.PI * d * d / 4 : NaN;
       }
 
-      function academicRebarCounts(value) {
-        const text = String(value || "").replace(/\s+/g, " ").trim();
-        const top = text.match(/TOP\s*(\d+)/i);
-        const bottom = text.match(/BOT(?:TOM)?\s*(\d+)/i);
-        const numbers = Array.from(text.matchAll(/\d+(?:\.\d+)?/g)).map(match => Number(match[0]));
-        return {
-          top: Number(top?.[1]) || Number(numbers[0]) || 0,
-          bottom: Number(bottom?.[1]) || Number(numbers[1]) || Number(numbers[0]) || 0
-        };
-      }
-
       function academicStep(number, statement, equation, result = "") {
         return `<div class="mpr-solution-step"><span class="mpr-solution-step-number">${number}</span><div><span>${escapeOutputHtml(statement)}</span>${equation ? `<span class="mpr-solution-equation">${escapeOutputHtml(equation)}</span>` : ""}${result ? `<span class="mpr-solution-result">${escapeOutputHtml(result)}</span>` : ""}</div></div>`;
       }
@@ -48672,13 +48661,22 @@
           const b = mprRowNumber(row, 4), h = mprRowNumber(row, 5), length = mprRowNumber(row, 6);
           const area = mprRowNumber(row, 7), inertia = mprRowNumber(row, 8), elasticModulus = mprRowNumber(row, 9);
           const shear = mprRowNumber(row, 16), moment = mprRowNumber(row, 17);
-          const bar = mprRowNumber(row, 18), stirrup = mprRowNumber(row, 21), spacing = mprRowCellText(row, 22);
-          const statusText = mprRowCellText(row, 23);
+          const rebarControl = row.querySelector('[data-field="longitudinalBarDiameter"]');
+          const stirrupControl = row.querySelector('[data-field="stirrupDiameter"]');
+          const bar = Number(rebarControl?.value);
+          const stirrup = Number(stirrupControl?.value);
+          const spacing = String(row.querySelector(".stirrup-spacing-cell")?.textContent || "").replace(/\s+/g, " ").trim();
+          const statusText = String(row.querySelector(".design-status")?.textContent || "").replace(/\s+/g, " ").trim();
           const ratios = statusText.match(/F\s*([\d.]+)\s*\/\s*V\s*([\d.]+)\s*\/\s*D\s*([\d.]+)/i);
-          const supportBars = academicRebarCounts(mprRowCellText(row, 19));
-          const midspanBars = academicRebarCounts(mprRowCellText(row, 20));
+          const supportBars = {
+            top: Number(row.dataset.estimateSupportTop) || 0,
+            bottom: Number(row.dataset.estimateSupportBottom) || 0
+          };
+          const midspanBars = {
+            top: Number(row.dataset.estimateMidspanTop) || 0,
+            bottom: Number(row.dataset.estimateMidspanBottom) || 0
+          };
           const barArea = academicBarArea(bar);
-          const rebarControl = row.querySelector("[data-beam-rebar-member]");
           const beamAxis = String(rebarControl?.dataset?.beamRebarFrame || row.dataset.frame || "").toUpperCase();
           const beamFrameLine = String(rebarControl?.dataset?.frameLine || row.dataset.frameLine || "");
           const beamMemberId = String(rebarControl?.dataset?.beamRebarMember || "");
