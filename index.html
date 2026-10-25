@@ -2579,7 +2579,7 @@
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Upload Drawings</span><span class="msbm-index" aria-hidden="true">1</span>
         </button>
         <div class="sidebar-package-content" id="uploadCadPackageContent">
-          <p class="hint"><strong>Import AutoCAD DXF or DWF files, or image files in JPEG or PNG format.</strong> Import &amp; Analyze converts supported drawing geometry into editable native grids, members, slabs, footings, frame views, sidebar data, and a 3D view. DWF files are accepted and validated; vector conversion requires a configured Autodesk/W2D conversion service, so use ASCII DXF or a high-resolution PNG when that service is unavailable. Raster images are retained only as review thumbnails.</p>
+          <p class="hint"><strong>Import AutoCAD DXF or DWF files, or image files in JPEG or PNG format.</strong> Import &amp; Analyze converts supported drawing geometry into editable native grids, members, slabs, footings, frame views, sidebar data, and a 3D view. DWF files are accepted and validated; vector conversion requires a configured Autodesk/W2D conversion service. Raster images are retained only as review thumbnails.</p>
           <details class="cad-source-requirements">
             <summary>Required source-drawing format</summary>
             <ul>
@@ -2995,7 +2995,7 @@
                 <button id="isoFramesOnlyBtn" class="drawing-tool-btn iso-only-tool" type="button" title="Show only X &amp; Y Axis Frames" aria-label="Show only X and Y Axis Frames" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V5h8v15M13 20V3h8v17M3 12h8M13 9h8"></path><path d="M8 5h8M8 20h8" stroke-dasharray="2 2"></path></svg></button>
                 <label class="iso-only-tool iso-tilt-control" for="isoTiltInput" title="Set the 3D camera tilt angle; negative values tilt in the opposite direction">Tilt° <input id="isoTiltInput" type="number" min="-60" max="60" step="1" value="30" inputmode="numeric" aria-label="3D camera tilt angle in degrees"></label>
                 <label class="iso-only-tool iso-tilt-control" for="isoCameraHeightInput" title="Set perspective camera height above footing level">Camera H, m <input id="isoCameraHeightInput" type="number" min="0" max="100" step="0.1" value="4.5" inputmode="decimal" aria-label="Perspective camera height in metres"></label>
-                <span class="iso-only-tool iso-visibility-controls" role="group" aria-label="Show 3D structural objects"><label><input id="isoShowSlabs" type="checkbox" checked>Slabs</label><label><input id="isoShowFootings" type="checkbox" checked>Footings</label><label><input id="isoShowColumns" type="checkbox" checked>Columns</label><label><input id="isoShowBeams" type="checkbox" checked>Beams</label><label><input id="isoShowFrames" type="checkbox">X&amp;Y Axis Frames</label></span>
+                <span class="iso-only-tool iso-visibility-controls" role="group" aria-label="Show 3D structural objects"><label><input id="isoShowSlabs" type="checkbox" checked>Slabs</label><label><input id="isoShowFootings" type="checkbox" checked>Footings</label><label><input id="isoShowWallFootings" type="checkbox" checked>Wall Footings</label><label><input id="isoShowWalls" type="checkbox" checked>Walls</label><label><input id="isoShowColumns" type="checkbox" checked>Columns</label><label><input id="isoShowBeams" type="checkbox" checked>Beams</label><label><input id="isoShowFrames" type="checkbox">X&amp;Y Axis Frames</label></span>
                 <button id="planRenameToolBtn" class="drawing-tool-btn" type="button" title="Edit Member Name" aria-label="Edit Member Name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10.9-10.9a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"></path><path d="m14.8 6.4 2.8 2.8"></path></svg></button>
                 <button id="planLineToolBtn" class="drawing-tool-btn" type="button" title="Draw Line" aria-label="Draw Line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 20 5"></path><circle cx="4" cy="19" r="1.5"></circle><circle cx="20" cy="5" r="1.5"></circle></svg></button>
                 <button id="planEditLineToolBtn" class="drawing-tool-btn" type="button" title="Edit Line" aria-label="Edit Line"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 14 9"></path><path d="m13 18 6-6 2 2-6 6-3 1z"></path></svg></button>
@@ -27985,7 +27985,7 @@
     })();
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=84"></script>
+  <script src="app.js?v=85"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -28051,7 +28051,7 @@
         frameOnly: false,
         projection: "isometric",
         cameraHeight: 4.5,
-        visibility: {slabs: true, footings: true, columns: true, beams: true, frames: false},
+        visibility: {slabs: true, footings: true, wallFootings: true, walls: true, columns: true, beams: true, frames: false},
         dragging: false,
         dragMode: "pan",
         start: null,
@@ -28333,7 +28333,7 @@
           isometricView.frameOnly = Boolean(snapshot.isometricView?.frameOnly);
           isometricView.projection = snapshot.isometricView?.projection === "perspective" ? "perspective" : "isometric";
           isometricView.cameraHeight = Math.max(0, Math.min(100, Number(snapshot.isometricView?.cameraHeight) || 4.5));
-          isometricView.visibility = {...{slabs: true, footings: true, columns: true, beams: true, frames: false}, ...(snapshot.isometricView?.visibility || {})};
+          isometricView.visibility = {...{slabs: true, footings: true, wallFootings: true, walls: true, columns: true, beams: true, frames: false}, ...(snapshot.isometricView?.visibility || {})};
           if (snapshot.structuralEstimatePricing && typeof snapshot.structuralEstimatePricing === "object") {
             Object.assign(structuralEstimatePricingState, deepCopy(snapshot.structuralEstimatePricing));
             structuralEstimatePricingState.prices = {...(snapshot.structuralEstimatePricing.prices || {})};
@@ -28438,7 +28438,7 @@
         isometricView.frameOnly = false;
         isometricView.projection = "isometric";
         isometricView.cameraHeight = 4.5;
-        isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: false};
+        isometricView.visibility = {slabs: true, footings: true, wallFootings: true, walls: true, columns: true, beams: true, frames: false};
         try { lastAnalysisResult = null; } catch (error) {}
         workspaceHistory.length = 0;
         updateUndoControls();
@@ -29410,8 +29410,6 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const xScores = new Array(width).fill(0);
@@ -29460,12 +29458,9 @@
             const panelCanvas = document.createElement("canvas");
             panelCanvas.width = sourceWidth;
             panelCanvas.height = sourceHeight;
-            const panelContext = panelCanvas.getContext("2d");
-            panelContext.imageSmoothingEnabled = false;
-            panelContext.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
-            // Keep every source pixel losslessly. Recompressing uploaded PNG/JPEG
-            // panels as JPEG erased or fragmented thin structural lines before
-            // the native-member detector had a chance to inspect them.
+            panelCanvas.getContext("2d").drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+            // Do not recompress the cropped source drawing. JPEG recompression can
+            // erase fine source lines before the established grid detector reads it.
             const dataUrl = panelCanvas.toDataURL("image/png");
             const panelImage = await loadCadImage(dataUrl);
             const detectedRole = await detectImageDrawingRole(panelImage);
@@ -30030,7 +30025,7 @@
 
       function inferRasterPanelGridCoordinates(image, expectedX = 4, expectedY = 3) {
         if (!image || !image.naturalWidth || !image.naturalHeight) return null;
-        const maxSide = 1600;
+        const maxSide = 1200;
         const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const width = Math.max(1, Math.round(image.naturalWidth * scale));
         const height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -30038,8 +30033,6 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const sample = (x, y) => {
@@ -30048,7 +30041,6 @@
           const offset = (py * width + px) * 4;
           return (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3;
         };
-        const background = rasterCornerBackground(sample, width, height);
         const xProjection = new Array(width).fill(0);
         const yProjection = new Array(height).fill(0);
         const yStart = Math.round(height * 0.10);
@@ -30057,7 +30049,7 @@
         const xEnd = Math.round(width * 0.92);
         for (let y = yStart; y <= yEnd; y += 1) {
           for (let x = xStart; x <= xEnd; x += 1) {
-            if (rasterPixelIsInk(sample(x, y), background, 28)) {
+            if (sample(x, y) < 145) {
               xProjection[x] += 1;
               yProjection[y] += 1;
             }
@@ -30115,88 +30107,8 @@
         };
       }
 
-      function rasterCornerBackground(sample, width, height) {
-        // Sample the full sheet sparsely and use its dominant luminance band.
-        // A title block or border may occupy one or more corners, so averaging
-        // only the corner pixels can turn blank paper into a false dark stroke.
-        const samples = [];
-        const sampleCount = 11;
-        for (let row = 0; row < sampleCount; row += 1) {
-          const y = height * (0.03 + (0.94 * row) / (sampleCount - 1));
-          for (let column = 0; column < sampleCount; column += 1) {
-            const x = width * (0.03 + (0.94 * column) / (sampleCount - 1));
-            const value = sample(x, y);
-            if (Number.isFinite(value)) samples.push(value);
-          }
-        }
-        if (!samples.length) return 255;
-        const bands = new Map();
-        samples.forEach(value => {
-          const band = Math.max(0, Math.min(15, Math.floor(value / 16)));
-          if (!bands.has(band)) bands.set(band, []);
-          bands.get(band).push(value);
-        });
-        const dominant = Array.from(bands.values()).sort((a, b) => b.length - a.length)[0] || samples;
-        return medianNumber(dominant);
-      }
-
-      function rasterPixelIsInk(luminance, background, minimumContrast = 30) {
-        return Number.isFinite(luminance) && Number.isFinite(background)
-          && Math.abs(luminance - background) >= minimumContrast;
-      }
-
-      function rasterStrokeProfile(sample, background, x1, y1, x2, y2, bandRadius = 5) {
-        const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
-        const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
-        const flags = [];
-        for (let step = 0; step <= length; step += 1) {
-          const ratio = step / length;
-          const x = x1 + (x2 - x1) * ratio;
-          const y = y1 + (y2 - y1) * ratio;
-          let ink = false;
-          for (let offset = -bandRadius; offset <= bandRadius && !ink; offset += 1) {
-            const sx = x + (horizontal ? 0 : offset);
-            const sy = y + (horizontal ? offset : 0);
-            ink = rasterPixelIsInk(sample(sx, sy), background, 28);
-          }
-          flags.push(ink);
-        }
-        // Close one- and two-pixel JPEG/antialiasing gaps without joining a
-        // genuinely dashed hidden line.
-        for (let index = 1; index < flags.length - 1; index += 1) {
-          if (flags[index]) continue;
-          let end = index;
-          while (end < flags.length && !flags[end]) end += 1;
-          if (end - index <= 2 && flags[index - 1] && flags[end]) {
-            for (let gap = index; gap < end; gap += 1) flags[gap] = true;
-          }
-          index = end - 1;
-        }
-        let hits = 0;
-        let runs = 0;
-        let currentRunLength = 0;
-        let longestRunLength = 0;
-        flags.forEach(ink => {
-          if (ink) {
-            hits += 1;
-            currentRunLength += 1;
-            if (currentRunLength === 1) runs += 1;
-            longestRunLength = Math.max(longestRunLength, currentRunLength);
-          } else currentRunLength = 0;
-        });
-        const coverage = hits / flags.length;
-        const averageRunLength = hits / Math.max(1, runs);
-        const repeatedShortDashes = runs >= 4
-          && averageRunLength <= length * 0.16
-          && longestRunLength <= length * 0.30;
-        const hidden = coverage >= 0.12 && coverage < 0.82 && repeatedShortDashes;
-        const continuousSolid = coverage >= 0.38
-          || (coverage >= 0.28 && longestRunLength >= length * 0.34);
-        return {coverage, runs, averageRunLength, longestRunLength, hidden, present: continuousSolid && !hidden};
-      }
-
       function analyzeRasterPlan(image) {
-        const maxSide = 1600;
+        const maxSide = 1200;
         const scaleDown = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const width = Math.max(1, Math.round(image.naturalWidth * scaleDown));
         const height = Math.max(1, Math.round(image.naturalHeight * scaleDown));
@@ -30204,24 +30116,20 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const sample = (x, y) => {
-          const px = Math.max(0, Math.min(width - 1, Math.round(x)));
-          const py = Math.max(0, Math.min(height - 1, Math.round(y)));
-          const offset = (py * width + px) * 4;
+          const offset = (Math.max(0, Math.min(height - 1, y)) * width + Math.max(0, Math.min(width - 1, x))) * 4;
           return (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3;
         };
-        const background = rasterCornerBackground(sample, width, height);
+        const background = [sample(2, 2), sample(width - 3, 2), sample(2, height - 3), sample(width - 3, height - 3)].reduce((sum, value) => sum + value, 0) / 4;
         const xProjection = new Array(width).fill(0);
         const yProjection = new Array(height).fill(0);
         const stride = Math.max(1, Math.floor(Math.min(width, height) / 700));
         for (let y = 0; y < height; y += stride) {
           for (let x = 0; x < width; x += stride) {
             const contrast = Math.abs(sample(x, y) - background);
-            if (contrast > 28) {
+            if (contrast > 42) {
               xProjection[x] += contrast;
               yProjection[y] += contrast;
             }
@@ -30240,6 +30148,38 @@
           Math.max(8, height * 0.04)
         ), height);
         if (rawXCoordinates.length < 2 || rawYCoordinates.length < 2) throw new Error("At least two clear grid lines in each direction could not be detected. Use a cleaner high-contrast plan or import DXF.");
+        const strokeProfile = (x1, y1, x2, y2) => {
+          const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
+          const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+          let hits = 0;
+          let runs = 0;
+          let inRun = false;
+          for (let step = 0; step <= length; step += 1) {
+            const ratio = step / length;
+            const x = x1 + (x2 - x1) * ratio;
+            const y = y1 + (y2 - y1) * ratio;
+            let dark = false;
+            for (let offset = -3; offset <= 3 && !dark; offset += 1) {
+              const sx = Math.round(x + (horizontal ? 0 : offset));
+              const sy = Math.round(y + (horizontal ? offset : 0));
+              dark = sample(sx, sy) < 105;
+            }
+            if (dark) {
+              hits += 1;
+              if (!inRun) runs += 1;
+              inRun = true;
+            } else inRun = false;
+          }
+          const coverage = hits / (length + 1);
+          // A heavy solid member can be interrupted by column symbols or text and
+          // therefore appear as several *long* runs. Distinguish that from a true
+          // hidden line, whose repeated runs are individually short even when a
+          // Photoshop-thickened dash pattern has fairly high total coverage.
+          const averageRunLength = hits / Math.max(1, runs);
+          const repeatedShortDashes = runs >= 5 && coverage < 0.90 && averageRunLength <= length * 0.18;
+          const hidden = coverage >= 0.14 && runs >= 3 && (coverage < 0.55 || repeatedShortDashes);
+          return {coverage, runs, averageRunLength, hidden, present: coverage >= 0.55 && !hidden};
+        };
         const rawXGaps = rawXCoordinates.slice(0, -1).map((value, index) => rawXCoordinates[index + 1] - value);
         const rawYGaps = rawYCoordinates.slice(0, -1).map((value, index) => rawYCoordinates[index + 1] - value);
         const rawMinimumGap = Math.max(8, Math.min(medianNumber(rawXGaps), medianNumber(rawYGaps)) || 20);
@@ -30252,7 +30192,7 @@
           for (let py = Math.round(y - rawRadius); py <= Math.round(y + rawRadius); py += 1) {
             for (let px = Math.round(x - rawRadius); px <= Math.round(x + rawRadius); px += 1) {
               total += 1;
-              if (rasterPixelIsInk(sample(px, py), background, 32)) dark += 1;
+              if (sample(px, py) < 145) dark += 1;
             }
           }
           if (dark / Math.max(1, total) >= 0.025) rawColumnPoints.push({xIndex, yIndex});
@@ -30263,7 +30203,7 @@
             for (let thickness = -2; thickness <= 2; thickness += 1) {
               [[x + offset, y - footingRadius + thickness], [x + offset, y + footingRadius + thickness], [x - footingRadius + thickness, y + offset], [x + footingRadius + thickness, y + offset]].forEach(([px, py]) => {
                 edgeTotal += 1;
-                if (rasterPixelIsInk(sample(Math.round(px), Math.round(py)), background, 26)) edgeDark += 1;
+                if (sample(Math.round(px), Math.round(py)) < 170) edgeDark += 1;
               });
             }
           }
@@ -30282,13 +30222,13 @@
         const horizontalMembers = [];
         yCoordinates.forEach((y, yIndex) => {
           xCoordinates.slice(0, -1).forEach((x, xIndex) => {
-            horizontalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x + 5, y, xCoordinates[xIndex + 1] - 5, y)});
+            horizontalMembers.push({xIndex, yIndex, ...strokeProfile(x + 5, y, xCoordinates[xIndex + 1] - 5, y)});
           });
         });
         const verticalMembers = [];
         xCoordinates.forEach((x, xIndex) => {
           yCoordinates.slice(0, -1).forEach((y, yIndex) => {
-            verticalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x, y + 5, x, yCoordinates[yIndex + 1] - 5)});
+            verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)});
           });
         });
         const inferredGrid = inferRasterPanelGridCoordinates(image, 4, 3);
@@ -30396,7 +30336,7 @@
 
       function rebuildRasterDetectionAtGrid(image, detected, naturalXCoordinates, naturalYCoordinates) {
         if (naturalXCoordinates.length < 2 || naturalYCoordinates.length < 2) return detected;
-        const maxSide = 1600;
+        const maxSide = 1200;
         const scaleDown = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const width = Math.max(1, Math.round(image.naturalWidth * scaleDown));
         const height = Math.max(1, Math.round(image.naturalHeight * scaleDown));
@@ -30404,8 +30344,6 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const sample = (x, y) => {
@@ -30414,7 +30352,6 @@
           const offset = (py * width + px) * 4;
           return (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3;
         };
-        const background = rasterCornerBackground(sample, width, height);
         const xCoordinates = naturalXCoordinates.map(value => value * scaleDown);
         const yCoordinates = naturalYCoordinates.map(value => value * scaleDown);
         const gaps = [
@@ -30430,7 +30367,7 @@
           let total = 0;
           for (let py = y - radius; py <= y + radius; py += 1) for (let px = x - radius; px <= x + radius; px += 1) {
             total += 1;
-            if (rasterPixelIsInk(sample(px, py), background, 32)) dark += 1;
+            if (sample(px, py) < 145) dark += 1;
           }
           if (dark / Math.max(1, total) >= 0.025) columnPoints.push({xIndex, yIndex});
           const footingRadius = Math.max(radius + 4, Math.round(minimumGap * 0.18));
@@ -30439,15 +30376,39 @@
           for (let offset = -footingRadius; offset <= footingRadius; offset += 1) for (let thickness = -2; thickness <= 2; thickness += 1) {
             [[x + offset, y - footingRadius + thickness], [x + offset, y + footingRadius + thickness], [x - footingRadius + thickness, y + offset], [x + footingRadius + thickness, y + offset]].forEach(([px, py]) => {
               edgeTotal += 1;
-              if (rasterPixelIsInk(sample(px, py), background, 26)) edgeDark += 1;
+              if (sample(px, py) < 170) edgeDark += 1;
             });
           }
           if (edgeDark / Math.max(1, edgeTotal) >= 0.12) footingPoints.push({xIndex, yIndex});
         }));
+        const strokeProfile = (x1, y1, x2, y2) => {
+          const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
+          const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+          let hits = 0;
+          let runs = 0;
+          let inRun = false;
+          for (let step = 0; step <= length; step += 1) {
+            const ratio = step / length;
+            const x = x1 + (x2 - x1) * ratio;
+            const y = y1 + (y2 - y1) * ratio;
+            let dark = false;
+            for (let offset = -3; offset <= 3 && !dark; offset += 1) dark = sample(x + (horizontal ? 0 : offset), y + (horizontal ? offset : 0)) < 105;
+            if (dark) {
+              hits += 1;
+              if (!inRun) runs += 1;
+              inRun = true;
+            } else inRun = false;
+          }
+          const coverage = hits / (length + 1);
+          const averageRunLength = hits / Math.max(1, runs);
+          const repeatedShortDashes = runs >= 5 && coverage < 0.90 && averageRunLength <= length * 0.18;
+          const hidden = coverage >= 0.14 && runs >= 3 && (coverage < 0.55 || repeatedShortDashes);
+          return {coverage, runs, averageRunLength, hidden, present: coverage >= 0.55 && !hidden};
+        };
         const horizontalMembers = [];
-        yCoordinates.forEach((y, yIndex) => xCoordinates.slice(0, -1).forEach((x, xIndex) => horizontalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x + 5, y, xCoordinates[xIndex + 1] - 5, y)})));
+        yCoordinates.forEach((y, yIndex) => xCoordinates.slice(0, -1).forEach((x, xIndex) => horizontalMembers.push({xIndex, yIndex, ...strokeProfile(x + 5, y, xCoordinates[xIndex + 1] - 5, y)})));
         const verticalMembers = [];
-        xCoordinates.forEach((x, xIndex) => yCoordinates.slice(0, -1).forEach((y, yIndex) => verticalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x, y + 5, x, yCoordinates[yIndex + 1] - 5)})));
+        xCoordinates.forEach((x, xIndex) => yCoordinates.slice(0, -1).forEach((y, yIndex) => verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)})));
         // Detect structural members that intentionally fall between the primary
         // grid lines.  The previous conversion sampled only at A-D / 1-3 and
         // silently discarded intermediate beams, even when they were very bold.
@@ -30456,21 +30417,12 @@
         // not satisfy the coverage threshold.
         const solidCoverageAt = (x1, y1, x2, y2) => {
           const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
-          const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
           let hits = 0;
           for (let step = 0; step <= length; step += 1) {
             const ratio = step / length;
             const x = x1 + (x2 - x1) * ratio;
             const y = y1 + (y2 - y1) * ratio;
-            let ink = false;
-            for (let offset = -3; offset <= 3 && !ink; offset += 1) {
-              ink = rasterPixelIsInk(
-                sample(x + (horizontal ? 0 : offset), y + (horizontal ? offset : 0)),
-                background,
-                28
-              );
-            }
-            if (ink) hits += 1;
+            if (sample(x, y) < 125) hits += 1;
           }
           return hits / (length + 1);
         };
@@ -30496,7 +30448,7 @@
           for (let y = Math.ceil(yCoordinates[0]); y <= Math.floor(yCoordinates[yCoordinates.length - 1]); y += 1) {
             if (yCoordinates.some(primary => Math.abs(primary - y) <= primaryTolerance)) continue;
             const coverage = solidCoverageAt(x + 7, y, x2 - 7, y);
-            if (coverage >= 0.52) candidates.push({coordinate: y, coverage});
+            if (coverage >= 0.72) candidates.push({coordinate: y, coverage});
           }
           collapseRasterBands(candidates).forEach(candidate => offGridHorizontalMembers.push({
             xStartIndex: xIndex,
@@ -30513,7 +30465,7 @@
           for (let x = Math.ceil(xCoordinates[0]); x <= Math.floor(xCoordinates[xCoordinates.length - 1]); x += 1) {
             if (xCoordinates.some(primary => Math.abs(primary - x) <= primaryTolerance)) continue;
             const coverage = solidCoverageAt(x, y + 7, x, y2 - 7);
-            if (coverage >= 0.52) candidates.push({coordinate: x, coverage});
+            if (coverage >= 0.72) candidates.push({coordinate: x, coverage});
           }
           collapseRasterBands(candidates).forEach(candidate => offGridVerticalMembers.push({
             yStartIndex: yIndex,
@@ -30856,7 +30808,6 @@
           }
           return source;
         }
-        if (extension === "dwf") await unsupportedDwfConversionError(file);
         if (extension === "dxf") {
           const dxfText = await readFileAs(file, "text");
           const dxfLines = parseAsciiDxf(dxfText);
@@ -30873,6 +30824,7 @@
             titleDetected: inferCadDrawingRole(file.name) === targetRole
           };
         }
+        if (extension === "dwf") await unsupportedDwfConversionError(file);
         throw new Error(`${file?.name || "The selected file"} is not supported. Use AutoCAD DXF/DWF, JPEG, or PNG.`);
       }
 
@@ -31382,7 +31334,7 @@
         "Levels": "Review the generated foundation and floor level names in bottom-to-top order. Change the number of levels if this list does not match the project.",
         "Level Heights": "Input the floor-to-floor height in metres for every adjacent level pair, or accept the default values. Confirm these heights against the elevations before analysis.",
         "Frame Selection": "Choose the Y-grid line used for the X-axis frame and the X-grid line used for the Y-axis frame. Select lines that represent the frames you intend to inspect and design.",
-        "Drawing Source": "Choose one combined titled PNG/JPEG sheet or separate PNG, JPEG, ASCII DXF, or Autodesk DWF drawings. DWF selection is validated, but native W2D conversion requires a configured conversion service. Include FOUNDATION, consecutive LEVEL plans, and frame elevations where available.",
+        "Drawing Source": "Choose one combined titled PNG/JPEG sheet or separate PNG, JPEG, or ASCII DXF drawings. Include FOUNDATION, consecutive LEVEL plans, and frame elevations where available.",
         "Detection & Conversion": "Run Import & Analyze, review each detected drawing title and grid count, then convert the reviewed drawings into editable native structural plans and frames.",
         "Creation Modes": "Choose the active drawing tool, then click valid nodes, grid intersections, or members in the current view. Use Selection to work with existing objects.",
         "Column Shape & Placement": "Define or choose a column section, apply it to the Structural Plan, then click the required grid nodes. Verify dimensions and reinforcement before design.",
@@ -32859,7 +32811,7 @@
         byId("isoProjectionBtn")?.classList.toggle("is-active", perspective);
         byId("isoProjectionBtn")?.setAttribute("aria-pressed", perspective ? "true" : "false");
         byId("isoProjectionBtn")?.setAttribute("title", perspective ? "Switch to Isometric View" : "Switch to Perspective View");
-        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"], ["isoShowFrames", "frames"]].forEach(([id, key]) => {
+        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowWallFootings", "wallFootings"], ["isoShowWalls", "walls"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"], ["isoShowFrames", "frames"]].forEach(([id, key]) => {
           const input = byId(id);
           if (input) input.checked = isometricView.visibility[key] !== false;
         });
@@ -33615,7 +33567,7 @@
         ctx.textAlign = "center";
         ctx.fillText(cadImportState.sources.length
           ? "Source panels are ready in the sidebar. Choose Import & Analyze to create native drawings."
-          : "Import an AutoCAD DXF, DWF, JPEG, or PNG drawing in UPLOAD DRAWINGS", canvas.width / 2, canvas.height / 2);
+          : "Import an AutoCAD DXF, JPEG, or PNG drawing in UPLOAD DRAWINGS", canvas.width / 2, canvas.height / 2);
         drawAnnotationsForView("PLAN", ctx, annotation => ({x: transform.x(annotation.x), y: transform.y(annotation.y)}));
         ctx.restore();
         const planMode = byId("planUnifiedModeLabel");
@@ -34210,6 +34162,56 @@
             thickness
           };
         }).filter(Boolean);
+        const isoWallVolumes = Object.entries(planState.levelWalls || {}).flatMap(([levelKey, walls]) => {
+          const levelIndex = Math.max(0, Number(levelKey) || 0);
+          const z0 = Number(elevations[levelIndex]) || 0;
+          return (walls || []).map(wall => {
+            const start = {x: Number(wall?.startPoint?.x), y: Number(wall?.startPoint?.y)};
+            const end = {x: Number(wall?.endPoint?.x), y: Number(wall?.endPoint?.y)};
+            if (![start.x, start.y, end.x, end.y].every(Number.isFinite) || Math.hypot(end.x - start.x, end.y - start.y) < 1e-6) return null;
+            return {
+              name: wall.name || "Wall",
+              start,
+              end,
+              width: Math.max(0.08, Number(wall.width) || 0.15),
+              z0,
+              z1: z0 + Math.max(0.3, Number(wall.height) || 3)
+            };
+          }).filter(Boolean);
+        });
+        const isoWallFootingVolumes = (planState.wallFootings || []).map(footing => {
+          const start = {x: Number(footing?.startPoint?.x), y: Number(footing?.startPoint?.y)};
+          const end = {x: Number(footing?.endPoint?.x), y: Number(footing?.endPoint?.y)};
+          if (![start.x, start.y, end.x, end.y].every(Number.isFinite) || Math.hypot(end.x - start.x, end.y - start.y) < 1e-6) return null;
+          const design = footing.design || {};
+          const properties = footing.properties || {};
+          const z0 = Number.isFinite(Number(design.bottomElevationStart))
+            ? Number(design.bottomElevationStart)
+            : Math.max(0, Number(properties.heightAboveFooting) || 0.6);
+          return {
+            name: footing.name || "WF",
+            start,
+            end,
+            width: Math.max(0.2, Number(design.width) || Number(properties.width) || 0.4),
+            z0,
+            z1: z0 + Math.max(0.1, Number(design.thickness) || Number(properties.thickness) || 0.25)
+          };
+        }).filter(Boolean);
+        const segmentBounds = volume => {
+          const dx = volume.end.x - volume.start.x;
+          const dy = volume.end.y - volume.start.y;
+          const length = Math.hypot(dx, dy) || 1;
+          const nx = -dy / length * volume.width / 2;
+          const ny = dx / length * volume.width / 2;
+          return [
+            isoRaw(volume.start.x + nx, volume.start.y + ny, volume.z0),
+            isoRaw(volume.start.x - nx, volume.start.y - ny, volume.z0),
+            isoRaw(volume.end.x + nx, volume.end.y + ny, volume.z0),
+            isoRaw(volume.end.x - nx, volume.end.y - ny, volume.z0),
+            isoRaw(volume.start.x + nx, volume.start.y + ny, volume.z1),
+            isoRaw(volume.end.x - nx, volume.end.y - ny, volume.z1)
+          ];
+        };
         const footingBounds = isoFootings.flatMap(footing => [
           isoRaw(footing.x - footing.width / 2, footing.y - footing.length / 2, -footing.thickness),
           isoRaw(footing.x + footing.width / 2, footing.y - footing.length / 2, -footing.thickness),
@@ -34218,10 +34220,14 @@
           isoRaw(footing.x - footing.width / 2, footing.y - footing.length / 2, 0),
           isoRaw(footing.x + footing.width / 2, footing.y + footing.length / 2, 0)
         ]);
+        const wallBounds = isoWallVolumes.flatMap(segmentBounds);
+        const wallFootingBounds = isoWallFootingVolumes.flatMap(segmentBounds);
         const boundsPoints = [
           isoRaw(0, 0, 0), isoRaw(totalX, 0, 0), isoRaw(0, totalY, 0), isoRaw(totalX, totalY, 0),
           isoRaw(0, 0, totalZ), isoRaw(totalX, 0, totalZ), isoRaw(0, totalY, totalZ), isoRaw(totalX, totalY, totalZ),
-          ...footingBounds
+          ...footingBounds,
+          ...wallBounds,
+          ...wallFootingBounds
         ];
         const minU = Math.min(...boundsPoints.map(point => point.u));
         const maxU = Math.max(...boundsPoints.map(point => point.u));
@@ -34440,6 +34446,43 @@
             ctx.restore();
           });
         };
+        const drawIsoSegmentPrism = (volume, fill, stroke) => {
+          const dx = volume.end.x - volume.start.x;
+          const dy = volume.end.y - volume.start.y;
+          const length = Math.hypot(dx, dy);
+          if (length < 1e-6) return;
+          const nx = -dy / length * volume.width / 2;
+          const ny = dx / length * volume.width / 2;
+          const vertices = {
+            a0: point(volume.start.x + nx, volume.start.y + ny, volume.z0),
+            b0: point(volume.start.x - nx, volume.start.y - ny, volume.z0),
+            c0: point(volume.end.x - nx, volume.end.y - ny, volume.z0),
+            d0: point(volume.end.x + nx, volume.end.y + ny, volume.z0),
+            a1: point(volume.start.x + nx, volume.start.y + ny, volume.z1),
+            b1: point(volume.start.x - nx, volume.start.y - ny, volume.z1),
+            c1: point(volume.end.x - nx, volume.end.y - ny, volume.z1),
+            d1: point(volume.end.x + nx, volume.end.y + ny, volume.z1)
+          };
+          const faces = [
+            [vertices.a0, vertices.b0, vertices.b1, vertices.a1],
+            [vertices.b0, vertices.c0, vertices.c1, vertices.b1],
+            [vertices.c0, vertices.d0, vertices.d1, vertices.c1],
+            [vertices.d0, vertices.a0, vertices.a1, vertices.d1],
+            [vertices.a1, vertices.b1, vertices.c1, vertices.d1]
+          ].sort((a, b) => a.reduce((sum, item) => sum + item.y, 0) - b.reduce((sum, item) => sum + item.y, 0));
+          faces.forEach(face => {
+            ctx.save();
+            ctx.fillStyle = isometricPrintRender ? "rgba(150, 150, 150, 0.32)" : fill;
+            ctx.strokeStyle = isometricPrintRender ? "#000000" : stroke;
+            ctx.lineWidth = isometricPrintRender ? 1.75 : 1.2;
+            ctx.beginPath();
+            face.forEach((item, index) => index ? ctx.lineTo(item.x, item.y) : ctx.moveTo(item.x, item.y));
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+          });
+        };
         const isoBeamDimensions = (axis, frameLine, designGroupId) => {
           const entries = [engineeringState.frameCatalog?.[axis]?.[frameLine], frameModelCache[axis]?.get(frameLine)];
           const member = entries.flatMap(entry => entry?.model?.members || []).find(candidate =>
@@ -34451,6 +34494,21 @@
           };
         };
         if (isometricView.visibility.footings) isoFootings.filter(footing => !frameOnly || Math.abs(footing.y - frameY) < 1e-9 || Math.abs(footing.x - frameX) < 1e-9).forEach(drawIsoFooting);
+        const isoSegmentIsOnSelectedFrame = volume => !frameOnly || (
+          (Math.abs(volume.start.y - frameY) < 1e-9 && Math.abs(volume.end.y - frameY) < 1e-9) ||
+          (Math.abs(volume.start.x - frameX) < 1e-9 && Math.abs(volume.end.x - frameX) < 1e-9)
+        );
+        if (isometricView.visibility.wallFootings) isoWallFootingVolumes
+          .filter(isoSegmentIsOnSelectedFrame)
+          .forEach(volume => {
+            drawIsoSegmentPrism(volume, "rgba(39, 132, 79, 0.52)", "#6ff19a");
+            label3d(volume.name, {...volume.start, z: volume.z1}, {...volume.end, z: volume.z1}, "#a6ffbf", -6, 8);
+          });
+        // Walls are intentionally rendered before columns and beams so their
+        // semi-transparent surfaces show the complete structural frame inside.
+        if (isometricView.visibility.walls) isoWallVolumes
+          .filter(isoSegmentIsOnSelectedFrame)
+          .forEach(volume => drawIsoSegmentPrism(volume, "rgba(214, 196, 151, 0.32)", "#f5dc8a"));
         if (isometricView.visibility.columns) planState.columns.forEach(key => {
           const [xLabel, yLabel] = key.split("|");
           const xi = data.xLabels.indexOf(xLabel);
@@ -39966,7 +40024,7 @@
           redraw();
           if (typeof status === "function") status(`${isometricView.projection === "perspective" ? "Perspective" : "Isometric"} 3D view is active. Rotate, pan, zoom, and tilt remain available.`);
         });
-        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"], ["isoShowFrames", "frames"]].forEach(([id, key]) => {
+        [["isoShowSlabs", "slabs"], ["isoShowFootings", "footings"], ["isoShowWallFootings", "wallFootings"], ["isoShowWalls", "walls"], ["isoShowColumns", "columns"], ["isoShowBeams", "beams"], ["isoShowFrames", "frames"]].forEach(([id, key]) => {
           byId(id)?.addEventListener("change", event => {
             isometricView.visibility[key] = Boolean(event.target.checked);
             redraw();
@@ -40017,7 +40075,7 @@
           isometricView.mode = "pan";
           isometricView.projection = "isometric";
           isometricView.cameraHeight = 4.5;
-          isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: true};
+          isometricView.visibility = {slabs: true, footings: true, wallFootings: true, walls: true, columns: true, beams: true, frames: true};
           isometricView.dragging = false;
           canvas.classList.remove("is-panning");
           updateIsometricInteractionUi();
@@ -49643,7 +49701,7 @@
           isometricView.mode = "pan";
           isometricView.projection = "isometric";
           isometricView.cameraHeight = 4.5;
-          isometricView.visibility = {slabs: true, footings: true, columns: true, beams: true, frames: true};
+          isometricView.visibility = {slabs: true, footings: true, wallFootings: true, walls: true, columns: true, beams: true, frames: true};
           if (typeof draw === "function") draw();
           drawPlan(data);
         }

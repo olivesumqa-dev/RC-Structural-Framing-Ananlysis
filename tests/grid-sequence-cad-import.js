@@ -66,11 +66,11 @@ assert.match(html, /tesseract\.js@5\/dist\/tesseract\.min\.js/, "image imports m
 assert.match(html, /await releaseCadOcrWorker\(\)/, "the import-only OCR worker must be released after analysis");
 assert.match(html, /function auditCadDrawingAccuracy\(/, "a conversion accuracy audit must run before model creation");
 assert.match(html, /Conversion accuracy check failed/, "inconsistent imported views must be blocked before conversion");
-assert.match(html, /function rasterStrokeProfile\([\s\S]{0,2400}longestRunLength[\s\S]{0,1000}const hidden = coverage >= 0\.12 && coverage < 0\.82 && repeatedShortDashes/, "raster line classification must distinguish repeated short dashes from interrupted solid members by continuity");
-assert.match(html, /function rasterPixelIsInk\([\s\S]{0,260}Math\.abs\(luminance - background\)/, "raster member detection must use adaptive contrast instead of a fixed black-pixel threshold");
 assert.match(html, /panelCanvas\.toDataURL\("image\/png"\)/, "cropped uploaded panels must remain lossless so thin source lines are not erased by JPEG recompression");
 assert.doesNotMatch(html, /panelCanvas\.toDataURL\("image\/jpeg"/, "uploaded drawing panels must never be recompressed as lossy JPEG");
-assert.match(html, /const maxSide = 1600;/, "raster analysis must retain enough resolution for thin drawing lines");
+assert.doesNotMatch(html, /function rasterStrokeProfile\(/, "the withdrawn adaptive stroke profiler must not create false members or grids");
+assert.doesNotMatch(html, /function rasterPixelIsInk\(/, "the withdrawn adaptive contrast detector must not create false members or grids");
+assert.match(html, /const maxSide = 1200;/, "the established conservative raster-analysis scale must be retained");
 assert.match(html, /else if \(segment\.hidden\) planState\.deletedPlanMembers/, "uncertain raster strokes must not delete beams; only confirmed hidden lines may do so");
 assert.match(html, /function applyImportedDrawingTopology\(/, "hidden members must be excluded from the generated structural topology");
 assert.match(html, /function classifyRasterPlanCells\(/, "uploaded slab and earth-filled panel labels must be classified");
@@ -119,7 +119,7 @@ assert.match(html, /member-name-editable-hover/, "an exact member-name hover mus
 assert.doesNotMatch(html, /id="memberNameHoverInput"/, "member-name hover must no longer show the oversized inline editor");
 assert.match(html, /#memberNameDialog #memberNameDialogApply \{[^}]*background: #08766c;[^}]*color: #fff;/, "the Update Name action must have high-contrast text and background colors");
 assert.match(html, /#memberNameDialog input \{[^}]*background: #fff;[^}]*color: #070b0c;/, "the member-name field must remain legible against the dialog background");
-assert.match(html, /planState\.memberStart = endpoint;[\s\S]{0,220}Continue clicking aligned nodes/, "member creation must continue from the last clicked endpoint");
+assert.match(html, /planState\.memberStart = endpoint;[\s\S]{0,220}Continue clicking Plan nodes/, "member creation must continue from the last clicked endpoint");
 assert(html.includes('id="overlapObjectDialog"') && html.includes("Select object/s to delete"), "overlapping delete hits must open a multi-object chooser");
 assert.match(html, /window\.strucForgeOpenOverlapChooser/, "plan and frame tools must share the overlap chooser");
 assert.match(html, /id="overlapObjectDelete"[^>]*>Delete Selected</, "selection-tool overlap chooser must expose a Delete Selected action");

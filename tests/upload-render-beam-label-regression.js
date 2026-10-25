@@ -36,55 +36,14 @@ assert(html.includes('panelCanvas.toDataURL("image/png")'),
   "Split raster panels must preserve thin lines with lossless PNG encoding");
 assert(!html.includes('panelCanvas.toDataURL("image/jpeg"'),
   "Split raster panels must not be recompressed as JPEG");
-assert(html.includes("function rasterPixelIsInk(luminance, background, minimumContrast = 30)")
-  && html.includes("Math.abs(luminance - background) >= minimumContrast"),
-  "Raster line detection must use background-relative contrast");
-assert(html.includes("const sampleCount = 11;")
-  && html.includes("return medianNumber(dominant);"),
-  "Raster background detection must use the dominant sheet tone rather than vulnerable corner averaging");
-assert((html.match(/Math\.round\(x\)/g) || []).length >= 3
-  && (html.match(/Math\.round\(y\)/g) || []).length >= 3,
-  "Every raster sampler must round interpolated stroke coordinates to valid pixel offsets");
-assert(html.includes("function rasterStrokeProfile(sample, background")
-  && html.includes("longestRunLength")
-  && html.includes("present: continuousSolid && !hidden"),
-  "Raster line detection must preserve interrupted solid strokes while distinguishing repeated dashes");
-assert(html.includes('context.imageSmoothingQuality = "high"')
-  && (html.match(/const maxSide = 1600;/g) || []).length >= 3,
-  "Raster analysis must use high-quality scaling at a line-preserving resolution");
-assert(html.includes("coverage >= 0.52"),
-  "Off-grid members must use the repaired band-sampling threshold");
-
-const rasterAlgorithms = Function(
-  `"use strict";${extractedFunction("medianNumber")}${extractedFunction("rasterCornerBackground")}${extractedFunction("rasterPixelIsInk")}${extractedFunction("rasterStrokeProfile")};return {rasterCornerBackground,rasterStrokeProfile};`
-)();
-const mostlyLightBackground = rasterAlgorithms.rasterCornerBackground(
-  (x, y) => (x < 60 && y < 60 ? 5 : 246),
-  1000,
-  800
-);
-assert.strictEqual(mostlyLightBackground, 246,
-  "One dark border/title corner must not make blank white paper look like structural ink");
-const interruptedSolid = rasterAlgorithms.rasterStrokeProfile(
-  (x) => ([30, 31, 68, 69].includes(Math.round(x)) ? 255 : 0),
-  255,
-  0,
-  0,
-  100,
-  0
-);
-assert(interruptedSolid.present && !interruptedSolid.hidden,
-  "One- and two-pixel raster/compression gaps must not erase a solid member");
-const dashedHidden = rasterAlgorithms.rasterStrokeProfile(
-  (x) => (Math.round(x) % 12 < 5 ? 0 : 255),
-  255,
-  0,
-  0,
-  100,
-  0
-);
-assert(dashedHidden.hidden && !dashedHidden.present,
-  "Repeated short dashes must remain hidden-line geometry rather than becoming a beam");
+assert(!html.includes("function rasterPixelIsInk("),
+  "The withdrawn adaptive contrast detector must not create false members or grids");
+assert(!html.includes("function rasterStrokeProfile("),
+  "The withdrawn adaptive stroke profiler must not create false members or grids");
+assert((html.match(/const maxSide = 1200;/g) || []).length >= 3,
+  "Raster analysis must use the established conservative scale");
+assert(html.includes("coverage >= 0.72"),
+  "Off-grid members must continue to require strong native-line evidence");
 
 assert(html.includes('accept=".dxf,.dwf,application/x-dwf,model/vnd.dwf,image/png,image/jpeg,.png,.jpg,.jpeg" multiple'),
   "Upload Drawings must accept Autodesk DWF files");
@@ -96,4 +55,4 @@ assert(html.includes("async function validateAutodeskDwfFile(file)")
 assert(/byId\("newDesign"\)\?\.addEventListener\("click", \(\) => \{\s*resetCadUploadState\(\);/.test(html),
   "Confirmed Create New Design must clear uploaded files and their sidebar entries");
 
-console.log("Upload reliability, DWF intake, new-design cleanup, and beam-label regression checks passed.");
+console.log("Conservative raster upload, DWF intake, new-design cleanup, and beam-label regression checks passed.");
