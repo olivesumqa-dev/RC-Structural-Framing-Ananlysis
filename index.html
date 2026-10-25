@@ -2575,11 +2575,11 @@
       </div>
 
       <section class="sidebar-package is-collapsed" id="uploadCadPackage">
-        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (AutoCAD DXF, JPEG, or PNG files).">
+        <button class="sidebar-package-toggle" type="button" aria-expanded="false" aria-controls="uploadCadPackageContent" aria-label="Upload drawings (AutoCAD DXF, DWF, JPEG, or PNG files).">
           <span class="sidebar-package-triangle" aria-hidden="true"></span><span>Upload Drawings</span><span class="msbm-index" aria-hidden="true">1</span>
         </button>
         <div class="sidebar-package-content" id="uploadCadPackageContent">
-          <p class="hint"><strong>Import AutoCAD DXF files or image files in JPEG or PNG format.</strong> Import &amp; Analyze converts the detected sheet into editable native grids, members, slabs, footings, frame views, sidebar data, and a 3D view. The raster image is retained only as a review thumbnail.</p>
+          <p class="hint"><strong>Import AutoCAD DXF or DWF files, or image files in JPEG or PNG format.</strong> Import &amp; Analyze converts supported drawing geometry into editable native grids, members, slabs, footings, frame views, sidebar data, and a 3D view. DWF files are accepted and validated; vector conversion requires a configured Autodesk/W2D conversion service, so use ASCII DXF or a high-resolution PNG when that service is unavailable. Raster images are retained only as review thumbnails.</p>
           <details class="cad-source-requirements">
             <summary>Required source-drawing format</summary>
             <ul>
@@ -2593,8 +2593,8 @@
               <li>If any detected drawing is inaccurate—not only FOUNDATION—choose its title under Correct one detected drawing, then replace it with a clear crop that retains the title, grid bubbles, dimensions, and complete member extents.</li>
             </ul>
           </details>
-          <label>AutoCAD DXF or plan images</label>
-          <input id="cadUploadFile" type="file" accept=".dxf,image/png,image/jpeg,.png,.jpg,.jpeg" multiple />
+          <label>AutoCAD DXF, DWF, or plan images</label>
+          <input id="cadUploadFile" type="file" accept=".dxf,.dwf,application/x-dwf,model/vnd.dwf,image/png,image/jpeg,.png,.jpg,.jpeg" multiple />
           <div id="cadDrawingList" class="cad-drawing-list" aria-live="polite"></div>
           <div class="row">
             <button id="cadAnalyzeBtn" type="button">Import &amp; Analyze</button>
@@ -2607,7 +2607,7 @@
             </select>
             <button id="cadReplaceDetectedBtn" type="button" disabled>Replace Detected Drawing</button>
           </div>
-          <input id="cadReplacementFile" type="file" accept=".dxf,image/png,image/jpeg,.png,.jpg,.jpeg" hidden />
+          <input id="cadReplacementFile" type="file" accept=".dxf,.dwf,application/x-dwf,model/vnd.dwf,image/png,image/jpeg,.png,.jpg,.jpeg" hidden />
           <button id="cadRemoveUploadsBtn" type="button" disabled>Remove Uploads</button>
           <img id="cadUploadPreview" class="cad-upload-preview" alt="Imported CAD or plan preview" hidden />
           <div id="cadImportStatus" class="load-summary" role="status">Choose individual titled drawings or one combined drawing sheet. Import &amp; Analyze will separate, validate, and convert it directly into the app's native drawing format.</div>
@@ -3224,7 +3224,7 @@
         </div>
       </dialog>
 
-      <div id="uploadDrawingsHoverWarning" class="upload-drawings-hover-warning" hidden role="tooltip">Upload drawings (AutoCAD DXF, JPEG, or PNG files).</div>
+      <div id="uploadDrawingsHoverWarning" class="upload-drawings-hover-warning" hidden role="tooltip">Upload drawings (AutoCAD DXF, DWF, JPEG, or PNG files).</div>
 
       <div id="memberNameHoverEditor" class="member-name-hover-editor" hidden role="tooltip">
         <span id="memberNameHoverHint">Click a point on this Beam</span>
@@ -27985,7 +27985,7 @@
     })();
   </script>
   <script src="solver.js?v=16"></script>
-  <script src="app.js?v=83"></script>
+  <script src="app.js?v=84"></script>
   <script src="column-tool.js?v=11"></script>
   <script src="assets/templates/2-storey-storage-bldg.js?v=1"></script>
   <script>
@@ -29259,6 +29259,20 @@
         });
       }
 
+      async function validateAutodeskDwfFile(file) {
+        const buffer = await readFileAs(file, "arrayBuffer");
+        const bytes = new Uint8Array(buffer);
+        const header = new TextDecoder("ascii").decode(bytes.subarray(0, Math.min(80, bytes.length)));
+        const version = header.match(/^\(DWF\s+V([0-9.]+)\)/i)?.[1];
+        if (!version) throw new Error(`${file?.name || "The selected file"} is not a valid Autodesk DWF file.`);
+        return {version, byteLength: bytes.length};
+      }
+
+      async function unsupportedDwfConversionError(file) {
+        const details = await validateAutodeskDwfFile(file);
+        throw new Error(`${file.name} is a valid Autodesk DWF V${details.version} file and remains selected in Upload Drawings. This browser build cannot yet decode its W2D vector stream. Export it as ASCII DXF or a high-resolution PNG/JPEG, or configure an Autodesk/W2D conversion service.`);
+      }
+
       function loadCadImage(dataUrl) {
         return new Promise((resolve, reject) => {
           const image = new Image();
@@ -29396,6 +29410,8 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const xScores = new Array(width).fill(0);
@@ -29444,8 +29460,13 @@
             const panelCanvas = document.createElement("canvas");
             panelCanvas.width = sourceWidth;
             panelCanvas.height = sourceHeight;
-            panelCanvas.getContext("2d").drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
-            const dataUrl = panelCanvas.toDataURL("image/jpeg", 0.94);
+            const panelContext = panelCanvas.getContext("2d");
+            panelContext.imageSmoothingEnabled = false;
+            panelContext.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+            // Keep every source pixel losslessly. Recompressing uploaded PNG/JPEG
+            // panels as JPEG erased or fragmented thin structural lines before
+            // the native-member detector had a chance to inspect them.
+            const dataUrl = panelCanvas.toDataURL("image/png");
             const panelImage = await loadCadImage(dataUrl);
             const detectedRole = await detectImageDrawingRole(panelImage);
             const layoutRole = cadSheetLayoutRole(columnIndex, rowIndex, xIntervals.length, yIntervals.length);
@@ -30009,7 +30030,7 @@
 
       function inferRasterPanelGridCoordinates(image, expectedX = 4, expectedY = 3) {
         if (!image || !image.naturalWidth || !image.naturalHeight) return null;
-        const maxSide = 1200;
+        const maxSide = 1600;
         const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const width = Math.max(1, Math.round(image.naturalWidth * scale));
         const height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -30017,6 +30038,8 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const sample = (x, y) => {
@@ -30025,6 +30048,7 @@
           const offset = (py * width + px) * 4;
           return (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3;
         };
+        const background = rasterCornerBackground(sample, width, height);
         const xProjection = new Array(width).fill(0);
         const yProjection = new Array(height).fill(0);
         const yStart = Math.round(height * 0.10);
@@ -30033,7 +30057,7 @@
         const xEnd = Math.round(width * 0.92);
         for (let y = yStart; y <= yEnd; y += 1) {
           for (let x = xStart; x <= xEnd; x += 1) {
-            if (sample(x, y) < 145) {
+            if (rasterPixelIsInk(sample(x, y), background, 28)) {
               xProjection[x] += 1;
               yProjection[y] += 1;
             }
@@ -30091,8 +30115,88 @@
         };
       }
 
+      function rasterCornerBackground(sample, width, height) {
+        // Sample the full sheet sparsely and use its dominant luminance band.
+        // A title block or border may occupy one or more corners, so averaging
+        // only the corner pixels can turn blank paper into a false dark stroke.
+        const samples = [];
+        const sampleCount = 11;
+        for (let row = 0; row < sampleCount; row += 1) {
+          const y = height * (0.03 + (0.94 * row) / (sampleCount - 1));
+          for (let column = 0; column < sampleCount; column += 1) {
+            const x = width * (0.03 + (0.94 * column) / (sampleCount - 1));
+            const value = sample(x, y);
+            if (Number.isFinite(value)) samples.push(value);
+          }
+        }
+        if (!samples.length) return 255;
+        const bands = new Map();
+        samples.forEach(value => {
+          const band = Math.max(0, Math.min(15, Math.floor(value / 16)));
+          if (!bands.has(band)) bands.set(band, []);
+          bands.get(band).push(value);
+        });
+        const dominant = Array.from(bands.values()).sort((a, b) => b.length - a.length)[0] || samples;
+        return medianNumber(dominant);
+      }
+
+      function rasterPixelIsInk(luminance, background, minimumContrast = 30) {
+        return Number.isFinite(luminance) && Number.isFinite(background)
+          && Math.abs(luminance - background) >= minimumContrast;
+      }
+
+      function rasterStrokeProfile(sample, background, x1, y1, x2, y2, bandRadius = 5) {
+        const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
+        const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+        const flags = [];
+        for (let step = 0; step <= length; step += 1) {
+          const ratio = step / length;
+          const x = x1 + (x2 - x1) * ratio;
+          const y = y1 + (y2 - y1) * ratio;
+          let ink = false;
+          for (let offset = -bandRadius; offset <= bandRadius && !ink; offset += 1) {
+            const sx = x + (horizontal ? 0 : offset);
+            const sy = y + (horizontal ? offset : 0);
+            ink = rasterPixelIsInk(sample(sx, sy), background, 28);
+          }
+          flags.push(ink);
+        }
+        // Close one- and two-pixel JPEG/antialiasing gaps without joining a
+        // genuinely dashed hidden line.
+        for (let index = 1; index < flags.length - 1; index += 1) {
+          if (flags[index]) continue;
+          let end = index;
+          while (end < flags.length && !flags[end]) end += 1;
+          if (end - index <= 2 && flags[index - 1] && flags[end]) {
+            for (let gap = index; gap < end; gap += 1) flags[gap] = true;
+          }
+          index = end - 1;
+        }
+        let hits = 0;
+        let runs = 0;
+        let currentRunLength = 0;
+        let longestRunLength = 0;
+        flags.forEach(ink => {
+          if (ink) {
+            hits += 1;
+            currentRunLength += 1;
+            if (currentRunLength === 1) runs += 1;
+            longestRunLength = Math.max(longestRunLength, currentRunLength);
+          } else currentRunLength = 0;
+        });
+        const coverage = hits / flags.length;
+        const averageRunLength = hits / Math.max(1, runs);
+        const repeatedShortDashes = runs >= 4
+          && averageRunLength <= length * 0.16
+          && longestRunLength <= length * 0.30;
+        const hidden = coverage >= 0.12 && coverage < 0.82 && repeatedShortDashes;
+        const continuousSolid = coverage >= 0.38
+          || (coverage >= 0.28 && longestRunLength >= length * 0.34);
+        return {coverage, runs, averageRunLength, longestRunLength, hidden, present: continuousSolid && !hidden};
+      }
+
       function analyzeRasterPlan(image) {
-        const maxSide = 1200;
+        const maxSide = 1600;
         const scaleDown = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const width = Math.max(1, Math.round(image.naturalWidth * scaleDown));
         const height = Math.max(1, Math.round(image.naturalHeight * scaleDown));
@@ -30100,20 +30204,24 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const sample = (x, y) => {
-          const offset = (Math.max(0, Math.min(height - 1, y)) * width + Math.max(0, Math.min(width - 1, x))) * 4;
+          const px = Math.max(0, Math.min(width - 1, Math.round(x)));
+          const py = Math.max(0, Math.min(height - 1, Math.round(y)));
+          const offset = (py * width + px) * 4;
           return (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3;
         };
-        const background = [sample(2, 2), sample(width - 3, 2), sample(2, height - 3), sample(width - 3, height - 3)].reduce((sum, value) => sum + value, 0) / 4;
+        const background = rasterCornerBackground(sample, width, height);
         const xProjection = new Array(width).fill(0);
         const yProjection = new Array(height).fill(0);
         const stride = Math.max(1, Math.floor(Math.min(width, height) / 700));
         for (let y = 0; y < height; y += stride) {
           for (let x = 0; x < width; x += stride) {
             const contrast = Math.abs(sample(x, y) - background);
-            if (contrast > 42) {
+            if (contrast > 28) {
               xProjection[x] += contrast;
               yProjection[y] += contrast;
             }
@@ -30132,38 +30240,6 @@
           Math.max(8, height * 0.04)
         ), height);
         if (rawXCoordinates.length < 2 || rawYCoordinates.length < 2) throw new Error("At least two clear grid lines in each direction could not be detected. Use a cleaner high-contrast plan or import DXF.");
-        const strokeProfile = (x1, y1, x2, y2) => {
-          const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
-          const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
-          let hits = 0;
-          let runs = 0;
-          let inRun = false;
-          for (let step = 0; step <= length; step += 1) {
-            const ratio = step / length;
-            const x = x1 + (x2 - x1) * ratio;
-            const y = y1 + (y2 - y1) * ratio;
-            let dark = false;
-            for (let offset = -3; offset <= 3 && !dark; offset += 1) {
-              const sx = Math.round(x + (horizontal ? 0 : offset));
-              const sy = Math.round(y + (horizontal ? offset : 0));
-              dark = sample(sx, sy) < 105;
-            }
-            if (dark) {
-              hits += 1;
-              if (!inRun) runs += 1;
-              inRun = true;
-            } else inRun = false;
-          }
-          const coverage = hits / (length + 1);
-          // A heavy solid member can be interrupted by column symbols or text and
-          // therefore appear as several *long* runs. Distinguish that from a true
-          // hidden line, whose repeated runs are individually short even when a
-          // Photoshop-thickened dash pattern has fairly high total coverage.
-          const averageRunLength = hits / Math.max(1, runs);
-          const repeatedShortDashes = runs >= 5 && coverage < 0.90 && averageRunLength <= length * 0.18;
-          const hidden = coverage >= 0.14 && runs >= 3 && (coverage < 0.55 || repeatedShortDashes);
-          return {coverage, runs, averageRunLength, hidden, present: coverage >= 0.55 && !hidden};
-        };
         const rawXGaps = rawXCoordinates.slice(0, -1).map((value, index) => rawXCoordinates[index + 1] - value);
         const rawYGaps = rawYCoordinates.slice(0, -1).map((value, index) => rawYCoordinates[index + 1] - value);
         const rawMinimumGap = Math.max(8, Math.min(medianNumber(rawXGaps), medianNumber(rawYGaps)) || 20);
@@ -30176,7 +30252,7 @@
           for (let py = Math.round(y - rawRadius); py <= Math.round(y + rawRadius); py += 1) {
             for (let px = Math.round(x - rawRadius); px <= Math.round(x + rawRadius); px += 1) {
               total += 1;
-              if (sample(px, py) < 145) dark += 1;
+              if (rasterPixelIsInk(sample(px, py), background, 32)) dark += 1;
             }
           }
           if (dark / Math.max(1, total) >= 0.025) rawColumnPoints.push({xIndex, yIndex});
@@ -30187,7 +30263,7 @@
             for (let thickness = -2; thickness <= 2; thickness += 1) {
               [[x + offset, y - footingRadius + thickness], [x + offset, y + footingRadius + thickness], [x - footingRadius + thickness, y + offset], [x + footingRadius + thickness, y + offset]].forEach(([px, py]) => {
                 edgeTotal += 1;
-                if (sample(Math.round(px), Math.round(py)) < 170) edgeDark += 1;
+                if (rasterPixelIsInk(sample(Math.round(px), Math.round(py)), background, 26)) edgeDark += 1;
               });
             }
           }
@@ -30206,13 +30282,13 @@
         const horizontalMembers = [];
         yCoordinates.forEach((y, yIndex) => {
           xCoordinates.slice(0, -1).forEach((x, xIndex) => {
-            horizontalMembers.push({xIndex, yIndex, ...strokeProfile(x + 5, y, xCoordinates[xIndex + 1] - 5, y)});
+            horizontalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x + 5, y, xCoordinates[xIndex + 1] - 5, y)});
           });
         });
         const verticalMembers = [];
         xCoordinates.forEach((x, xIndex) => {
           yCoordinates.slice(0, -1).forEach((y, yIndex) => {
-            verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)});
+            verticalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x, y + 5, x, yCoordinates[yIndex + 1] - 5)});
           });
         });
         const inferredGrid = inferRasterPanelGridCoordinates(image, 4, 3);
@@ -30320,7 +30396,7 @@
 
       function rebuildRasterDetectionAtGrid(image, detected, naturalXCoordinates, naturalYCoordinates) {
         if (naturalXCoordinates.length < 2 || naturalYCoordinates.length < 2) return detected;
-        const maxSide = 1200;
+        const maxSide = 1600;
         const scaleDown = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const width = Math.max(1, Math.round(image.naturalWidth * scaleDown));
         const height = Math.max(1, Math.round(image.naturalHeight * scaleDown));
@@ -30328,6 +30404,8 @@
         surface.width = width;
         surface.height = height;
         const context = surface.getContext("2d", {willReadFrequently: true});
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
         context.drawImage(image, 0, 0, width, height);
         const pixels = context.getImageData(0, 0, width, height).data;
         const sample = (x, y) => {
@@ -30336,6 +30414,7 @@
           const offset = (py * width + px) * 4;
           return (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3;
         };
+        const background = rasterCornerBackground(sample, width, height);
         const xCoordinates = naturalXCoordinates.map(value => value * scaleDown);
         const yCoordinates = naturalYCoordinates.map(value => value * scaleDown);
         const gaps = [
@@ -30351,7 +30430,7 @@
           let total = 0;
           for (let py = y - radius; py <= y + radius; py += 1) for (let px = x - radius; px <= x + radius; px += 1) {
             total += 1;
-            if (sample(px, py) < 145) dark += 1;
+            if (rasterPixelIsInk(sample(px, py), background, 32)) dark += 1;
           }
           if (dark / Math.max(1, total) >= 0.025) columnPoints.push({xIndex, yIndex});
           const footingRadius = Math.max(radius + 4, Math.round(minimumGap * 0.18));
@@ -30360,39 +30439,15 @@
           for (let offset = -footingRadius; offset <= footingRadius; offset += 1) for (let thickness = -2; thickness <= 2; thickness += 1) {
             [[x + offset, y - footingRadius + thickness], [x + offset, y + footingRadius + thickness], [x - footingRadius + thickness, y + offset], [x + footingRadius + thickness, y + offset]].forEach(([px, py]) => {
               edgeTotal += 1;
-              if (sample(px, py) < 170) edgeDark += 1;
+              if (rasterPixelIsInk(sample(px, py), background, 26)) edgeDark += 1;
             });
           }
           if (edgeDark / Math.max(1, edgeTotal) >= 0.12) footingPoints.push({xIndex, yIndex});
         }));
-        const strokeProfile = (x1, y1, x2, y2) => {
-          const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
-          const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
-          let hits = 0;
-          let runs = 0;
-          let inRun = false;
-          for (let step = 0; step <= length; step += 1) {
-            const ratio = step / length;
-            const x = x1 + (x2 - x1) * ratio;
-            const y = y1 + (y2 - y1) * ratio;
-            let dark = false;
-            for (let offset = -3; offset <= 3 && !dark; offset += 1) dark = sample(x + (horizontal ? 0 : offset), y + (horizontal ? offset : 0)) < 105;
-            if (dark) {
-              hits += 1;
-              if (!inRun) runs += 1;
-              inRun = true;
-            } else inRun = false;
-          }
-          const coverage = hits / (length + 1);
-          const averageRunLength = hits / Math.max(1, runs);
-          const repeatedShortDashes = runs >= 5 && coverage < 0.90 && averageRunLength <= length * 0.18;
-          const hidden = coverage >= 0.14 && runs >= 3 && (coverage < 0.55 || repeatedShortDashes);
-          return {coverage, runs, averageRunLength, hidden, present: coverage >= 0.55 && !hidden};
-        };
         const horizontalMembers = [];
-        yCoordinates.forEach((y, yIndex) => xCoordinates.slice(0, -1).forEach((x, xIndex) => horizontalMembers.push({xIndex, yIndex, ...strokeProfile(x + 5, y, xCoordinates[xIndex + 1] - 5, y)})));
+        yCoordinates.forEach((y, yIndex) => xCoordinates.slice(0, -1).forEach((x, xIndex) => horizontalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x + 5, y, xCoordinates[xIndex + 1] - 5, y)})));
         const verticalMembers = [];
-        xCoordinates.forEach((x, xIndex) => yCoordinates.slice(0, -1).forEach((y, yIndex) => verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)})));
+        xCoordinates.forEach((x, xIndex) => yCoordinates.slice(0, -1).forEach((y, yIndex) => verticalMembers.push({xIndex, yIndex, ...rasterStrokeProfile(sample, background, x, y + 5, x, yCoordinates[yIndex + 1] - 5)})));
         // Detect structural members that intentionally fall between the primary
         // grid lines.  The previous conversion sampled only at A-D / 1-3 and
         // silently discarded intermediate beams, even when they were very bold.
@@ -30401,12 +30456,21 @@
         // not satisfy the coverage threshold.
         const solidCoverageAt = (x1, y1, x2, y2) => {
           const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
+          const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
           let hits = 0;
           for (let step = 0; step <= length; step += 1) {
             const ratio = step / length;
             const x = x1 + (x2 - x1) * ratio;
             const y = y1 + (y2 - y1) * ratio;
-            if (sample(x, y) < 125) hits += 1;
+            let ink = false;
+            for (let offset = -3; offset <= 3 && !ink; offset += 1) {
+              ink = rasterPixelIsInk(
+                sample(x + (horizontal ? 0 : offset), y + (horizontal ? offset : 0)),
+                background,
+                28
+              );
+            }
+            if (ink) hits += 1;
           }
           return hits / (length + 1);
         };
@@ -30432,7 +30496,7 @@
           for (let y = Math.ceil(yCoordinates[0]); y <= Math.floor(yCoordinates[yCoordinates.length - 1]); y += 1) {
             if (yCoordinates.some(primary => Math.abs(primary - y) <= primaryTolerance)) continue;
             const coverage = solidCoverageAt(x + 7, y, x2 - 7, y);
-            if (coverage >= 0.72) candidates.push({coordinate: y, coverage});
+            if (coverage >= 0.52) candidates.push({coordinate: y, coverage});
           }
           collapseRasterBands(candidates).forEach(candidate => offGridHorizontalMembers.push({
             xStartIndex: xIndex,
@@ -30449,7 +30513,7 @@
           for (let x = Math.ceil(xCoordinates[0]); x <= Math.floor(xCoordinates[xCoordinates.length - 1]); x += 1) {
             if (xCoordinates.some(primary => Math.abs(primary - x) <= primaryTolerance)) continue;
             const coverage = solidCoverageAt(x, y + 7, x, y2 - 7);
-            if (coverage >= 0.72) candidates.push({coordinate: x, coverage});
+            if (coverage >= 0.52) candidates.push({coordinate: x, coverage});
           }
           collapseRasterBands(candidates).forEach(candidate => offGridVerticalMembers.push({
             yStartIndex: yIndex,
@@ -30792,6 +30856,7 @@
           }
           return source;
         }
+        if (extension === "dwf") await unsupportedDwfConversionError(file);
         if (extension === "dxf") {
           const dxfText = await readFileAs(file, "text");
           const dxfLines = parseAsciiDxf(dxfText);
@@ -30808,7 +30873,7 @@
             titleDetected: inferCadDrawingRole(file.name) === targetRole
           };
         }
-        throw new Error(`${file?.name || "The selected file"} is not supported. Use AutoCAD DXF, JPEG, or PNG.`);
+        throw new Error(`${file?.name || "The selected file"} is not supported. Use AutoCAD DXF/DWF, JPEG, or PNG.`);
       }
 
       async function replaceDetectedCadDrawing(file) {
@@ -30860,7 +30925,7 @@
 
       async function analyzeCadUpload() {
         const files = Array.from(byId("cadUploadFile")?.files || []);
-        if (!files.length) return cadStatus("Choose an AutoCAD DXF file or JPEG/PNG plan image first.", true);
+        if (!files.length) return cadStatus("Choose an AutoCAD DXF/DWF file or JPEG/PNG plan image first.", true);
         clearCadAnalyzedSourceState();
         byId("cadRemoveUploadsBtn").disabled = false;
         cadStatus(`Reading ${files.length} source file${files.length === 1 ? "" : "s"} and separating titled drawings...`);
@@ -30910,13 +30975,15 @@
                 }
                 sources.push(source);
               }
+            } else if (extension === "dwf") {
+              await unsupportedDwfConversionError(file);
             } else if (extension === "dxf") {
               const dxfText = await readFileAs(file, "text");
               if (!role) role = inferCadDrawingRole(dxfText);
               const dxfLines = parseAsciiDxf(dxfText);
               sources.push({fileName: file.name, panelName: file.name, kind: "dxf", dataUrl: "", image: null, dxfLines, detected: analyzeDxfLines(dxfLines), role, titleDetected: !!role});
             } else {
-              throw new Error(`${file.name} is not supported. Import an AutoCAD DXF, JPEG, or PNG file.`);
+              throw new Error(`${file.name} is not supported. Import an AutoCAD DXF/DWF, JPEG, or PNG file.`);
             }
           }
           const coordinatedGrid = coordinateRasterPlanGrids(sources);
@@ -31302,7 +31369,7 @@
           renderCadDrawingList(files);
           if (byId("cadRemoveUploadsBtn")) byId("cadRemoveUploadsBtn").disabled = files.length === 0;
           if (files.length) cadStatus(`${files.length} source file${files.length === 1 ? "" : "s"} selected. Combined image sheets will be separated into titled panels automatically and scaled from their own drawn proportions. Choose Import & Analyze.`);
-          else cadStatus("Choose individual titled AutoCAD DXF, JPEG, or PNG drawings, or one combined image sheet.");
+          else cadStatus("Choose individual titled AutoCAD DXF, DWF, JPEG, or PNG drawings, or one combined image sheet.");
         });
       }
 
@@ -31315,7 +31382,7 @@
         "Levels": "Review the generated foundation and floor level names in bottom-to-top order. Change the number of levels if this list does not match the project.",
         "Level Heights": "Input the floor-to-floor height in metres for every adjacent level pair, or accept the default values. Confirm these heights against the elevations before analysis.",
         "Frame Selection": "Choose the Y-grid line used for the X-axis frame and the X-grid line used for the Y-axis frame. Select lines that represent the frames you intend to inspect and design.",
-        "Drawing Source": "Choose one combined titled PNG/JPEG sheet or separate PNG, JPEG, or ASCII DXF drawings. Include FOUNDATION, consecutive LEVEL plans, and frame elevations where available.",
+        "Drawing Source": "Choose one combined titled PNG/JPEG sheet or separate PNG, JPEG, ASCII DXF, or Autodesk DWF drawings. DWF selection is validated, but native W2D conversion requires a configured conversion service. Include FOUNDATION, consecutive LEVEL plans, and frame elevations where available.",
         "Detection & Conversion": "Run Import & Analyze, review each detected drawing title and grid count, then convert the reviewed drawings into editable native structural plans and frames.",
         "Creation Modes": "Choose the active drawing tool, then click valid nodes, grid intersections, or members in the current view. Use Selection to work with existing objects.",
         "Column Shape & Placement": "Define or choose a column section, apply it to the Structural Plan, then click the required grid nodes. Verify dimensions and reinforcement before design.",
@@ -31550,7 +31617,7 @@
           assignSelectedProps: "Precaution: review the selection before applying because the command changes member properties. What it is: assigns the current editable properties to the selected members."
         };
         const packageHelpBySectionId = {
-          uploadCadPackage: "Upload drawings (AutoCAD DXF, JPEG, or PNG files).",
+          uploadCadPackage: "Upload drawings (AutoCAD DXF, DWF, JPEG, or PNG files).",
           structuralPlanPackage: "Create your Structural Plans Here.",
           modelCreationPackage: "Finish you Structl Plans by creating Columns, Beams & Footings",
           saveLoadPackage: "Save / Open Project/s Here",
@@ -33548,7 +33615,7 @@
         ctx.textAlign = "center";
         ctx.fillText(cadImportState.sources.length
           ? "Source panels are ready in the sidebar. Choose Import & Analyze to create native drawings."
-          : "Import an AutoCAD DXF, JPEG, or PNG drawing in UPLOAD DRAWINGS", canvas.width / 2, canvas.height / 2);
+          : "Import an AutoCAD DXF, DWF, JPEG, or PNG drawing in UPLOAD DRAWINGS", canvas.width / 2, canvas.height / 2);
         drawAnnotationsForView("PLAN", ctx, annotation => ({x: transform.x(annotation.x), y: transform.y(annotation.y)}));
         ctx.restore();
         const planMode = byId("planUnifiedModeLabel");
@@ -33750,8 +33817,8 @@
             ctx.lineTo(b.x, b.y);
             ctx.stroke();
             const labelOptions = {
-              font: "700 9px Arial",
-              color: "#ff1744"
+              font: "700 10.8px Arial",
+              color: "#fff200"
             };
             const placement = drawNonOverlappingText(ctx, group.name, (a.x + b.x) / 2, (a.y + b.y) / 2 + 13, labelOptions, [{x: 26, y: 0}, {x: -26, y: 0}, {x: 0, y: 14}, {x: 0, y: -26}]);
             planNameLabelTargets.push({
@@ -33806,8 +33873,8 @@
             ctx.stroke();
             const side = (a.x + b.x) / 2 < canvas.width / 2 ? 1 : -1;
             const labelOptions = {
-              font: "700 9px Arial",
-              color: "#ff1744",
+              font: "700 10.8px Arial",
+              color: "#fff200",
               rotate: -Math.PI / 2
             };
             const placement = drawNonOverlappingText(ctx, group.name, (a.x + b.x) / 2 + side * 9, (a.y + b.y) / 2, labelOptions, [{x: 0, y: 0}, {x: -side * 18, y: 0}, {x: side * 4, y: 14}, {x: side * 4, y: -14}]);
@@ -33964,8 +34031,8 @@
           const diagonal = memberAxis === "D";
           const side = (a.x + b.x) / 2 < canvas.width / 2 ? 1 : -1;
           const labelOptions = {
-            font: "700 9px Arial",
-            color: "#ff1744",
+            font: "700 10.8px Arial",
+            color: "#fff200",
             rotate: diagonal ? Math.atan2(b.y - a.y, b.x - a.x) : (vertical ? -Math.PI / 2 : 0)
           };
           const placement = drawNonOverlappingText(ctx, member.name, (a.x + b.x) / 2 + (vertical ? side * 9 : 0), (a.y + b.y) / 2 + (vertical ? 0 : 13), labelOptions, vertical
@@ -39116,8 +39183,8 @@
               const columnSide = (ax + bx) / 2 < canvas.width / 2 ? 1 : -1;
               const memberLabel = member.name || `${member.type === "Column" ? "C" : "B"}${member.id}`;
               const labelOptions = {
-                font: "700 10px Arial",
-                color: member.type === "Column" ? "#00e676" : "#ff1744",
+                font: member.type === "Column" ? "700 10px Arial" : "700 12px Arial",
+                color: member.type === "Column" ? "#00e676" : "#fff200",
                 rotate: member.type === "Column" ? -Math.PI / 2 : 0
               };
               const placement = drawNonOverlappingText(ctx, memberLabel, (ax + bx) / 2 + (member.type === "Column" ? columnSide * 9 : 0), (ay + by) / 2 + (member.type === "Column" ? 0 : 13), labelOptions, member.type === "Column"
@@ -39145,8 +39212,8 @@
             const b = points[points.length - 1];
             const memberLabel = group.member.designGroupName || group.member.name;
             const labelOptions = {
-              font: "700 10px Arial",
-              color: "#ff1744"
+              font: "700 12px Arial",
+              color: "#fff200"
             };
             const placement = drawNonOverlappingText(ctx, memberLabel, (a.x + b.x) / 2, (a.y + b.y) / 2 + 13, labelOptions, [{x: 0, y: 0}, {x: 30, y: 0}, {x: -30, y: 0}, {x: 0, y: -26}]);
             yFrameNameLabelTargets.push({
@@ -50572,7 +50639,7 @@
           }
         });
         byId("newDesign")?.addEventListener("click", () => {
-          deactivateCadWorkspace(false);
+          resetCadUploadState();
           collapseDefaultSidebarPackages();
           planState.columns.clear();
           planState.deletedColumnStories.clear();

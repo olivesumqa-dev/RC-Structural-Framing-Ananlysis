@@ -20,7 +20,7 @@ assert.match(html, /<span>Member Properties<\/span><span class="msbm-index"[^>]*
 assert.match(html, /<span>Load Model &amp; Analysis<\/span><span class="msbm-index"[^>]*>5<\/span>/, "Load Model & Analysis must be MSBM item 5");
 assert.match(html, /<span>Save \/ Open Project<\/span><span class="msbm-index"[^>]*>6<\/span>/, "Save/Open Project must be the final MSBM item 6");
 assert.ok(html.indexOf('id="uploadCadPackage"') < html.indexOf('id="structuralPlanPackage"'), "Upload Drawings must precede Structural Plan");
-assert.match(html, /accept="\.dxf,image\/png,image\/jpeg,\.png,\.jpg,\.jpeg" multiple/, "CAD uploader must accept multiple DXF, PNG, and JPEG drawings");
+assert.match(html, /accept="\.dxf,\.dwf,application\/x-dwf,model\/vnd\.dwf,image\/png,image\/jpeg,\.png,\.jpg,\.jpeg" multiple/, "CAD uploader must accept multiple DXF, DWF, PNG, and JPEG drawings");
 assert.match(html, /id="cadRemoveUploadsBtn"[^>]*disabled>Remove Uploads<\/button>/, "Upload Drawings must provide an initially disabled Remove Uploads action");
 assert.match(html, /byId\("cadRemoveUploadsBtn"\)\?\.addEventListener\("click", removeCadUploads\)/, "Remove Uploads must be wired to clear the upload session");
 assert.match(html, /function clearCadAnalyzedSourceState\([\s\S]{0,1000}cadImportState[\s\S]{0,1000}preview\.removeAttribute\("src"\)/, "changing uploads must discard analyzed source state and its preview");
@@ -28,7 +28,9 @@ assert.match(html, /function resetCadUploadState\([\s\S]{0,700}clearCadAnalyzedS
 assert.doesNotMatch(html, /StrucForgeDwgConverter/, "the user-facing importer must not require a DWG converter");
 assert.doesNotMatch(html, /Overall outer-grid width, m|cadReferenceWidth/, "manual overall-width scaling must not be exposed");
 assert.match(html, /This will delete all existing drawings\. Are you sure you want to continue\?/, "the upload package must show the revised destructive-action warning");
-assert.match(html, /id="uploadDrawingsHoverWarning"[^>]*>Upload drawings \(AutoCAD DXF, JPEG, or PNG files\)\./, "the Upload Drawings package must advertise every supported format");
+assert.match(html, /id="uploadDrawingsHoverWarning"[^>]*>Upload drawings \(AutoCAD DXF, DWF, JPEG, or PNG files\)\./, "the Upload Drawings package must advertise every supported format");
+assert.match(html, /async function validateAutodeskDwfFile\(file\)/, "Autodesk DWF intake must validate the actual file signature");
+assert.match(html, /cannot yet decode its W2D vector stream/, "DWF intake must state the conversion limitation instead of silently rejecting or pretending to convert vector geometry");
 assert.doesNotMatch(html, /title="This will delete all drawings in the drawing window"/, "the overlapping native upload tooltip must not be used");
 assert.match(html, /id="uploadDrawingsConfirmDialog"[\s\S]{0,500}This will delete all existing drawings\. Are you sure you want to continue\?/, "the destructive-action confirmation dialog must remain available for drawing replacement actions");
 assert.doesNotMatch(html, /requestUploadDrawingsConfirmation\(toggle,/, "opening Upload Drawings must only expand its dropdown and must not invoke destructive confirmation");
@@ -64,7 +66,11 @@ assert.match(html, /tesseract\.js@5\/dist\/tesseract\.min\.js/, "image imports m
 assert.match(html, /await releaseCadOcrWorker\(\)/, "the import-only OCR worker must be released after analysis");
 assert.match(html, /function auditCadDrawingAccuracy\(/, "a conversion accuracy audit must run before model creation");
 assert.match(html, /Conversion accuracy check failed/, "inconsistent imported views must be blocked before conversion");
-assert.match(html, /const repeatedShortDashes = runs >= 5 && coverage < 0\.90 && averageRunLength <= length \* 0\.18;[\s\S]{0,160}const hidden = coverage >= 0\.14 && runs >= 3/, "dashed raster lines must be classified by repeated short runs even when their ink coverage exceeds one half");
+assert.match(html, /function rasterStrokeProfile\([\s\S]{0,2400}longestRunLength[\s\S]{0,1000}const hidden = coverage >= 0\.12 && coverage < 0\.82 && repeatedShortDashes/, "raster line classification must distinguish repeated short dashes from interrupted solid members by continuity");
+assert.match(html, /function rasterPixelIsInk\([\s\S]{0,260}Math\.abs\(luminance - background\)/, "raster member detection must use adaptive contrast instead of a fixed black-pixel threshold");
+assert.match(html, /panelCanvas\.toDataURL\("image\/png"\)/, "cropped uploaded panels must remain lossless so thin source lines are not erased by JPEG recompression");
+assert.doesNotMatch(html, /panelCanvas\.toDataURL\("image\/jpeg"/, "uploaded drawing panels must never be recompressed as lossy JPEG");
+assert.match(html, /const maxSide = 1600;/, "raster analysis must retain enough resolution for thin drawing lines");
 assert.match(html, /else if \(segment\.hidden\) planState\.deletedPlanMembers/, "uncertain raster strokes must not delete beams; only confirmed hidden lines may do so");
 assert.match(html, /function applyImportedDrawingTopology\(/, "hidden members must be excluded from the generated structural topology");
 assert.match(html, /function classifyRasterPlanCells\(/, "uploaded slab and earth-filled panel labels must be classified");
@@ -99,6 +105,7 @@ assert.doesNotMatch(html, /ctx\.drawImage\(source\.image, left, top, width, heig
 assert.match(html, /Required source-drawing format/, "users must receive precise source-sheet preparation requirements");
 assert.match(html, /Dashed\/hidden lines are read as no structural member/, "source requirements must document the hidden-line member rule");
 assert.match(html, /const cadAllowed = \["annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text"\]/, "CAD mode must limit editing to line/text/dimension annotations");
+assert.match(html, /byId\("newDesign"\)\?\.addEventListener\("click", \(\) => \{\s*resetCadUploadState\(\);/, "confirmed Create New Design must remove uploaded source files, previews, and the sidebar list");
 
 for (const id of ["uploadCadPackage", "structuralPlanPackage", "modelCreationPackage", "saveLoadPackage", "memberPropertiesPackage", "loadAnalysisPackage"]) {
   assert.match(html, new RegExp(`"${id}"`), `${id} must be included in the default collapsed package set`);

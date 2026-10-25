@@ -25,7 +25,7 @@ assert(!css.includes(".mpr-load-heading,.mpr-load-cell{background:"), "Load colu
 assert(css.includes(".mpr-load-cell.is-not-applied{opacity:1;color:inherit}"), "Empty load cells must retain their original column color");
 assert(html.includes('return `<td class="mpr-load-cell is-not-applied" title="${escapeHtml(title)}">&mdash;</td>`;'), "Unavailable load cells must show a dash");
 [
-  "Upload drawings (AutoCAD DXF, JPEG, or PNG files).",
+  "Upload drawings (AutoCAD DXF, DWF, JPEG, or PNG files).",
   "Create your Structural Plans Here.",
   "Finish you Structl Plans by creating Columns, Beams & Footings",
   "Save / Open Project/s Here",
@@ -38,8 +38,8 @@ assert(html.includes("installSidebarLearningHelp();"), "Sidebar learning help is
 assert(html.includes("const sidebarSubgroupHelp") && html.includes('"Level Heights": "Input the floor-to-floor height in metres for every adjacent level pair, or accept the default values.'), "Orange sidebar groups must provide task-specific hover guidance");
 assert(html.includes("attachSidebarSubgroupHelp(summary, title)"), "Generated orange sidebar headings must receive contextual hover guidance");
 assert(app.includes("window.strucForgeToggleTutorials"), "Tutorial button does not expose the repaired drawer control");
-assert(html.includes('app.js?v=83'), "The repaired drawing behavior must bypass the previous cached script");
-assert(html.includes('styles.css?v=66'), "The sticky MPR and drawing-tool styles must bypass the previous cached stylesheet");
+assert(html.includes('app.js?v=84'), "The repaired drawing behavior must bypass the previous cached script");
+assert(html.includes('styles.css?v=67'), "The sticky MPR and drawing-tool styles must bypass the previous cached stylesheet");
 assert(html.includes('"structural-wall-plan", "manual-wall-plan", "manual-wall"'), "All structural and assigned wall-load sources must be reported in MPR load records");
 assert(html.includes('`WALL ${wallLoad.toFixed(2)} | D ${deadLoad.toFixed(1)} | L ${liveLoad.toFixed(1)} kN/m`') && html.includes('`WALL ${wall.toFixed(2)} | D ${dead.toFixed(1)} | L ${live.toFixed(1)} kN/m`') && html.includes("immediateWallPointLoads"), "X/Y frame views must label wall-load values and positions");
 
