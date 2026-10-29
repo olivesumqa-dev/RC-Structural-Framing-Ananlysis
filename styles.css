@@ -269,7 +269,7 @@ body.mpr-column-resizing,body.mpr-column-resizing *{cursor:ew-resize!important;u
 
 .print-pages{display:none}
 @media print{
-  @page{size:landscape;margin:.28in}
+  @page{size:A4 landscape!important;margin:.28in!important}
   html,body{height:auto;background:#fff}
   body.print-ready .app{display:none!important} body.print-ready .tutorial-drawer{display:none!important}
   body.print-ready .print-pages{display:block;color:#000;font-family:Arial,Helvetica,sans-serif}

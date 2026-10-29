@@ -12,12 +12,12 @@ assert.match(source, /capture\("X-Axis Frame", xCanvas\);[\s\S]*?capture\("Y-Axi
   "X frame, Y frame, and 3D ISO must be included");
 assert.match(source, /\.drawing-page\{[^}]*break-after:page;page-break-after:always/,
   "each drawing view must print on a separate page");
-assert.match(source, /@page\{size:297mm 210mm;/,
-  "Structural Plan and MPR print output must explicitly use physical A4 landscape dimensions");
+assert.match(source, /@page\{size:A4 landscape!important;margin:5mm!important\}/,
+  "Structural Plan and MPR print output must explicitly request A4 landscape orientation");
 assert.match(source, /function monochromeDrawingDataUrl\([\s\S]*?const paper = alpha < 16 \|\| distance < 24;[\s\S]*?croppedContext\.drawImage\(output,[\s\S]*?return cropped\.toDataURL\("image\/png"\);/,
   "drawing canvases must be converted to a cropped white-background, black-object print image");
-assert.match(source, /@page\{size:297mm 210mm;margin:5mm\}/,
-  "combined view output must maximize the A4 landscape printable area");
+assert.match(source, /@media print\{@page\{size:A4 landscape!important;margin:5mm!important\}\}/,
+  "combined view output must reinforce A4 landscape orientation in the print medium");
 assert.match(source, /const trimInk = Math\.max\(1, Math\.floor\(totalInk \* 0\.0015\)\);[\s\S]*?lowerExtent\(columnInk\)[\s\S]*?upperExtent\(rowInk\)/,
   "drawing extents must ignore isolated edge pixels that make the printed drawing too small");
 assert.match(source, /ctx\.restore\(\);\s*if \(!isometricPrintRender\) \{\s*ctx\.save\(\);/,
@@ -30,8 +30,8 @@ assert.doesNotMatch(source, /function drawFixedFrameUdlBand[\s\S]{0,1600}ctx\.fi
   "frame load boxes must remain open so underlying drawing information stays visible");
 assert.match(source, /id="isoShowFrames" type="checkbox">X&amp;Y Axis Frames/,
   "3D ISO X and Y frame overlays must be off by default");
-assert.match(source, /visibility: \{slabs: true, footings: true, columns: true, beams: true, frames: false\}/,
-  "3D ISO state must default X and Y frame overlays to hidden");
+assert.match(source, /visibility: \{slabs: true, footings: true, wallFootings: true, walls: true, columns: true, beams: true, frames: false\}/,
+  "3D ISO state must default all structural objects visible while X and Y frame overlays remain hidden");
 assert.match(source, /ctx\.lineWidth = isometricPrintRender \? 2\.25 : 1;/,
   "3D member edges must use a print-specific plotted line thickness");
 assert.match(source, /ctx\.fillStyle = isometricPrintRender \? "rgba\(128, 128, 128, 0\.50\)" : fill;[\s\S]*?ctx\.strokeStyle = isometricPrintRender \? "#000000" : stroke;/,

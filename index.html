@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=68" />
+  <link rel="stylesheet" href="styles.css?v=69" />
   <!-- Authentication and premium gating are retained in the repository but paused during development. -->
   <style>
     .structural-sequence {
@@ -47291,31 +47291,31 @@
         "dpwh-batangas": {
           label: "Batangas / DPWH CMPD reference",
           location: "Batangas / CALABARZON",
-          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, chb4: 0, chb6: 0, rebarKg: 34.73},
+          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, chb4: 16, chb6: 21, rebarKg: 34.73},
           source: "DPWH CMPD Q3 2025; DPWH Quezon formwork DUPA; MWSS 2026 water tariff"
         },
         "metro-manila": {
           label: "Metro Manila 2026 indicative retail",
           location: "Metro Manila",
-          prices: {concrete: 6200, cement: 260, sand: 1000, gravel: 1250, water: 67.20, formwork: 837.05, tieWire: 90, chb4: 0, chb6: 0, rebarKg: 49},
+          prices: {concrete: 6200, cement: 260, sand: 1000, gravel: 1250, water: 67.20, formwork: 837.05, tieWire: 90, chb4: 16, chb6: 21, rebarKg: 49},
           source: "Q1 2026 indicative supplier ranges; MWSS 2026 water tariff; verify local quotations"
         },
         "general-santos": {
           label: "General Santos 2026 procurement",
           location: "General Santos City",
-          prices: {concrete: 8000, cement: 382.50, sand: 651.66, gravel: 1643.34, water: 70, formwork: 837.05, tieWire: 144.50, chb4: 0, chb6: 0, rebarKg: 77.93},
+          prices: {concrete: 8000, cement: 382.50, sand: 651.66, gravel: 1643.34, water: 70, formwork: 837.05, tieWire: 144.50, chb4: 16, chb6: 21, rebarKg: 77.93},
           source: "General Santos City procurement reference 2026; verify supplier and delivery scope"
         },
         custom: {
           label: "Custom / International location",
           location: "Enter country, region, province, city or municipality",
-          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, chb4: 0, chb6: 0, rebarKg: 34.73},
+          prices: {concrete: 5620.14, cement: 205.36, sand: 535.71, gravel: 642.86, water: 67.20, formwork: 837.05, tieWire: 62.50, chb4: 16, chb6: 21, rebarKg: 34.73},
           source: "User-adjusted local supplier quotation"
         }
       });
 
       const structuralEstimatePricingState = (() => {
-        const fallback = {preset: "dpwh-batangas", location: "Batangas / CALABARZON", currency: "PHP", phpPerCurrency: 1, concreteMode: "site", prices: {}, categoryPrices: {}};
+        const fallback = {preset: "dpwh-batangas", location: "Batangas / CALABARZON", currency: "PHP", phpPerCurrency: 1, concreteMode: "site", prices: {}, categoryPrices: {}, chbPriceDefaultsVersion: 0};
         try {
           const saved = JSON.parse(localStorage.getItem("strucforgeStructuralEstimatePricing") || "null");
           return saved && typeof saved === "object" ? {...fallback, ...saved, prices: {...(saved.prices || {})}, categoryPrices: {...(saved.categoryPrices || {})}} : fallback;
@@ -47346,8 +47346,19 @@
         structuralEstimatePricingState.currency = currency;
         structuralEstimatePricingState.phpPerCurrency = Math.max(0.000001, Number(structuralEstimatePricingState.phpPerCurrency) || STRUCTURAL_ESTIMATE_CURRENCIES[currency].phpPerUnit);
         structuralEstimatePricingState.concreteMode = structuralEstimatePricingState.concreteMode === "ready" ? "ready" : "site";
+        const defaults = structuralEstimatePresetPrices(structuralEstimatePricingState.preset, currency, structuralEstimatePricingState.phpPerCurrency);
         if (!Object.keys(structuralEstimatePricingState.prices).length) {
-          structuralEstimatePricingState.prices = structuralEstimatePresetPrices(structuralEstimatePricingState.preset, currency, structuralEstimatePricingState.phpPerCurrency);
+          structuralEstimatePricingState.prices = defaults;
+        }
+        // Upgrade the former zero-price CHB defaults once without overwriting
+        // later user edits saved with the current project.
+        if ((Number(structuralEstimatePricingState.chbPriceDefaultsVersion) || 0) < 1) {
+          ["chb4", "chb6"].forEach(key => {
+            if (!(Number(structuralEstimatePricingState.prices[key]) > 0)) {
+              structuralEstimatePricingState.prices[key] = Number(defaults[key]) || 0;
+            }
+          });
+          structuralEstimatePricingState.chbPriceDefaultsVersion = 1;
         }
         structuralEstimatePricingState.categoryPrices ||= {};
       }
@@ -47769,7 +47780,7 @@
         }).join("");
         saveStructuralEstimatePricing();
         const totalLabel = structuralEstimatePricingState.concreteMode === "ready" ? "PREMIX CONC. TOTAL" : "SITE-MIX CONCRETE TOTAL";
-        return `<section class="structural-estimate-block structural-estimate-overall-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</span></h4><div class="structural-estimate-content">${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Premix Conc. uses the concrete-volume row instead, preventing double counting. Edit every unit price as required. CHB prices start at zero until a local supplier price is entered; D10 wall rebar uses the selected location's D10 rebar reference price.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></div></section>`;
+        return `<section class="structural-estimate-block structural-estimate-overall-block"><h4 class="structural-estimate-heading"><button class="structural-estimate-toggle" type="button" data-estimate-toggle aria-expanded="true">Hide</button><span>OVER ALL TOTAL SUMMARY — QUANTITIES &amp; EDITABLE COSTS</span></h4><div class="structural-estimate-content">${pricingControls}<p class="structural-estimates-note">Choose one concrete supply method. Site Mixing includes cement, sand, gravel and water; Premix Conc. uses the concrete-volume row instead, preventing double counting. Philippine CHB defaults are ₱16.00 per 4-inch interior CHB and ₱21.00 per 6-inch exterior CHB; edit every unit price as required. D10 wall rebar uses the selected location's D10 rebar reference price.</p><div class="structural-estimates-scroll"><table class="structural-estimates-table structural-estimates-overall"><caption>Overall Structural Estimates and Costs</caption><thead><tr><th>Material</th><th>Unit</th>${categoryKeys.map(key => `<th>${escapeHtml(estimates[key].label)}</th>`).join("")}<th>OVER ALL TOTAL</th><th>UNIT PRICE<br>(${escapeHtml(currencySymbol)} ${escapeHtml(structuralEstimatePricingState.currency)})</th><th>ITEM TOTAL COST</th></tr></thead><tbody>${rowMarkup}<tr class="structural-estimate-cost-total"><td colspan="${categoryKeys.length + 4}">${totalLabel}</td><td data-estimate-selected-total>${structuralEstimateMoney(0)}</td></tr></tbody></table></div></div></section>`;
       }
 
       function resetStructuralEstimateDisclosureDefaults() {
@@ -49989,7 +50000,7 @@
         const outputBodyClass = content.includes('class="drawing-page"') ? "drawing-output" : "";
         printDocument.open();
         printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeOutputHtml(title)}</title><style>
-          @page{size:297mm 210mm;margin:5mm}*{box-sizing:border-box}html,body{width:287mm;min-width:287mm;background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+          @page{size:A4 landscape!important;margin:5mm!important}@media print{@page{size:A4 landscape!important;margin:5mm!important}}*{box-sizing:border-box}html,body{width:287mm;min-width:287mm;background:#fff!important;color:#000!important}body{margin:0;color:#000;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
           header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}body.drawing-output>header{display:none}
           h1{margin:0;font-size:18px;text-transform:uppercase}header p{margin:0;font-size:10px}.drawing{display:block;width:100%;height:auto;max-height:176mm;object-fit:contain}.drawing-page{width:287mm;height:200mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;break-after:page;page-break-after:always;overflow:hidden}.drawing-page:last-child{break-after:auto;page-break-after:auto}.drawing-sheet-header{flex:0 0 18mm;display:grid;grid-template-columns:56mm 1fr;align-items:center;border:1px solid #000;border-bottom:1.5px solid #000;background:#fff;color:#000;overflow:hidden}.drawing-sheet-logo-wrap{height:18mm;display:flex;align-items:center;padding:1.5mm 4mm;border-right:1px solid #000}.drawing-sheet-logo{display:block;max-width:47mm;max-height:14mm;object-fit:contain;filter:drop-shadow(.25mm 0 #000) drop-shadow(-.25mm 0 #000) drop-shadow(0 .25mm #000) drop-shadow(0 -.25mm #000)}.drawing-project-details{display:grid;grid-template-columns:1fr 1fr;gap:1.2mm 7mm;padding:1.5mm 4mm;font-size:8px}.drawing-project-field{display:grid;grid-template-columns:23mm minmax(0,1fr);align-items:center;gap:1.5mm}.drawing-project-field b{text-align:right;text-transform:uppercase}.drawing-project-field span{min-height:4.5mm;padding:.7mm 1.2mm;border:1px solid #222;background:#fff;color:#000;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.drawing-page h2{flex:0 0 6mm;margin:0;font-size:13px;line-height:6mm;text-align:left;text-transform:uppercase}.drawing-page .drawing{display:block;flex:1 1 auto;width:287mm;height:176mm;min-height:0;max-width:287mm;max-height:176mm;object-fit:contain;object-position:center center}
           .audit{font-size:9px;font-weight:700;margin:7px 0 0}.academic-walkthrough-output{max-width:190mm;margin:0 auto}.academic-walkthrough-subtitle{margin:0 0 8px;color:#000;font-size:10px;font-weight:700}.mpr-solution-section{break-inside:avoid;page-break-inside:avoid;margin:0 0 12px;padding:0 0 9px;border-bottom:1px dashed #555}.mpr-solution-section h4{margin:0 0 7px;color:#000;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.mpr-solution-step{display:grid;grid-template-columns:25px minmax(0,1fr);gap:7px;margin:6px 0;font-size:10px;line-height:1.4}.mpr-solution-step-number{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #000;border-radius:50%;color:#000;font-size:9px}.mpr-solution-equation{display:block;margin:2px 0;color:#000;font-size:10px;font-weight:700}.mpr-solution-result{display:block;color:#000;font-weight:700}.mpr-solution-note{margin:10px 0 0;padding:7px 9px;border-left:3px solid #000;background:#fff;color:#000;font-size:9px;line-height:1.35}.mpr-academic-figure{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;padding:10px 12px;border:1px solid #000;background:#fff;color:#000}.mpr-academic-figure figcaption{margin:0 0 8px;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400;letter-spacing:.05em}.mpr-academic-figure svg{display:block;width:100%;height:auto;min-height:62mm;overflow:visible;color:#000;background:#fff}.mpr-academic-figure svg text{fill:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:9px;font-weight:400}.academic-diagram-lines,.academic-force-block{fill:none;stroke:#151515;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}.academic-beam-outline{fill:#fff;stroke:#151515;stroke-width:1.55}.academic-compression-block{fill:#e4e0d5;stroke:#151515;stroke-width:1}.academic-stirrup{fill:none;stroke:#151515;stroke-width:1.5}.academic-diagram-lines circle{fill:#fff;stroke:#151515;stroke-width:1}.academic-dimension{fill:none;stroke:#151515;stroke-width:.8}.academic-neutral-axis{fill:none;stroke:#151515;stroke-width:.75;stroke-dasharray:5 4}.academic-baseline{fill:none;stroke:#151515;stroke-width:.75}.academic-rebar-mesh{fill:none;stroke:#151515;stroke-width:.65}.academic-cut-zone{fill:#eee;stroke:#151515;stroke-width:.8;stroke-dasharray:4 3}.academic-cut-bar{fill:none;stroke:#151515;stroke-width:2.5;stroke-linecap:round}.academic-cut-mark{fill:none;stroke:#151515;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.mpr-academic-figure p{margin:7px 0 0;color:#000;font-family:"Aptos Light",Aptos,Arial,sans-serif;font-size:8px;line-height:1.35}table{width:100%;border-collapse:collapse;background:#fff!important;color:#000!important;font-size:9.45px}caption{background:#fff!important;color:#000!important;font-weight:700;padding:4px;border:1px solid #000;border-top:2mm solid #fff}th,td{border:1px solid #000!important;background:#fff!important;color:#000!important;padding:3px;white-space:nowrap}th{font-weight:700}.design-status,.design-status.warn,.design-status.fail,.design-status.pass{background:#fff!important;color:#000!important}.mpr-output-table thead tr:last-child th{height:34px;padding:5px 4px;text-align:center!important;vertical-align:middle!important;line-height:1.2;white-space:normal;writing-mode:horizontal-tb;transform:none}.mpr-print-header-label{display:block;width:100%;border:0;background:transparent;color:#000;text-align:center}.mpr-output-table button,.mpr-output-table svg{display:none!important}.member-results-section-row td,.node-results-title th{background:#fff!important;color:#000!important;font-weight:700}

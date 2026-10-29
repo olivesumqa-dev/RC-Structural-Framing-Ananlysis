@@ -11,11 +11,17 @@ assert(html.includes("data-estimate-category-cost"), "Every member estimate tabl
 assert(html.includes("data-estimate-category-grand-total"), "Every member estimate table needs a grand total cost");
 assert(html.includes("categoryPrices"), "Per-member estimate prices must persist with pricing state");
 assert(html.includes("structuralEstimatePricing: deepCopy(structuralEstimatePricingState)"), "Estimate prices must save with the current STF project");
+const chbPresetPrices = Array.from(html.matchAll(/prices:\s*\{[^}]*?\bchb4:\s*(\d+(?:\.\d+)?),\s*chb6:\s*(\d+(?:\.\d+)?)/g));
+assert(chbPresetPrices.length >= 4 && chbPresetPrices.every(([, chb4, chb6]) => Number(chb4) === 16 && Number(chb6) === 21),
+  "Every Philippine SE preset must default 4-inch CHB to ₱16/pc and 6-inch CHB to ₱21/pc");
+assert(html.includes("chbPriceDefaultsVersion")
+  && html.includes('structuralEstimatePricingState.prices[key] = Number(defaults[key]) || 0;'),
+  "Former saved zero-price CHB values must migrate to the supplied editable defaults");
 assert(html.includes('id="isoProjectionBtn"'), "3D view needs an isometric/perspective toggle");
 assert(html.includes('isometricView.projection === "perspective"'), "Perspective projection must be selectable and rendered");
 assert(html.includes('"rgba(150, 166, 163, 0.50)"'), "3D beam solids need 50% opacity");
 assert(html.includes('"rgba(28, 138, 86, 0.50)", "#72f2ad"'), "3D columns need 50% green faces and light-green outlines");
-assert(html.includes('id="isoCameraHeightInput"') && html.includes('Number(isometricView.cameraHeight) || 4.5') && html.includes('relativeDepth * Math.cos(tiltRadians) - relativeHeight * Math.sin(tiltRadians)'), "Perspective camera height must be user-adjustable and positive tilt must bring higher levels toward the camera");
+assert(html.includes('id="isoCameraHeightInput"') && html.includes('Number(isometricView.cameraHeight) || 4.5') && html.includes('const depth = rotatedX + rotatedY;') && html.includes('const screenHeight = relativeHeight * Math.cos(tiltRadians) - depth * Math.sin(tiltRadians);'), "Perspective camera height must be user-adjustable and use the shared 3D depth axis");
 assert(html.includes('min="-60" max="60"') && html.includes("Math.max(-60, Math.min(60"), "Camera tilt must support both negative and positive values");
 assert(html.includes("cameraHeight: isometricView.cameraHeight"), "Perspective camera height must save with the current STF project");
 assert(html.includes('id="isoShowSlabs"') && html.includes('id="isoShowFootings"') && html.includes('id="isoShowColumns"') && html.includes('id="isoShowBeams"'), "3D view needs independent visibility checkboxes");
