@@ -14052,7 +14052,7 @@
           "value": "40"
         },
         "columnLongitudinalBarDiameter": {
-          "value": "25"
+          "value": "16"
         },
         "columnTieDiameter": {
           "value": "10"
@@ -46080,10 +46080,12 @@
       }
 
       function bestColumnCandidateForSection(key, storyIndex, width, height) {
-        let best = null;
-        const defaultBarDiameter = Math.max(16, detailingValue("columnLongitudinalBarDiameter", 16, 16));
+        // Keep the longitudinal steel selection predictable: exhaust the practical
+        // bar-count range at 16 mm before stepping up one standard diameter.
+        // This prevents a Member Properties preference or an apparent cost saving
+        // from causing AUTO-PASS to skip directly to a larger main bar.
         const defaultTieDiameter = Math.max(6, detailingValue("columnTieDiameter", 10, 6));
-        for (const barDiameter of Array.from(new Set([defaultBarDiameter, ...MPR_COLUMN_BEAM_BAR_DIAMETERS]))) {
+        for (const barDiameter of MPR_COLUMN_BEAM_BAR_DIAMETERS) {
           const barArea = Math.PI * barDiameter * barDiameter / 4;
           let count = Math.max(4, Math.ceil(COLUMN_MIN_STEEL_RATIO * width * height / barArea));
           if (count % 2) count += 1;
@@ -46094,12 +46096,11 @@
               if (candidate.pass && (!passingForCount || candidate.cost < passingForCount.cost - 1e-9)) passingForCount = candidate;
             }
             if (passingForCount) {
-              if (!best || passingForCount.cost < best.cost - 1e-9) best = passingForCount;
-              break;
+              return passingForCount;
             }
           }
         }
-        return best;
+        return null;
       }
 
       function optimizeColumnSections(preservePassing = false) {
