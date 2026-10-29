@@ -28322,6 +28322,7 @@
           planState.matchAnnotationSource = null;
           planState.selectedAnnotationIds = [];
           engineeringState.columnDesignOverrides = deepCopy(snapshot.columnDesignOverrides) || {};
+          migrateLegacyColumnRebarPriority();
           engineeringState.slabDesignOverrides = deepCopy(snapshot.slabDesignOverrides) || {};
           engineeringState.designEnvelopes = null;
           planState.memberStart = null;
@@ -45988,6 +45989,44 @@
 
       const COLUMN_MIN_STEEL_RATIO = 0.01;
       const COLUMN_MAX_STEEL_RATIO = 0.06;
+      // Stored with automatic column designs so pre-policy projects can be migrated
+      // once, without overriding a reinforcement choice that a user made manually.
+      const COLUMN_REBAR_PRIORITY_POLICY = "count-first-v2";
+
+      function migrateLegacyColumnRebarPriority() {
+        Object.values(engineeringState.columnDesignOverrides || {}).forEach(override => {
+          if (!override || override.manualReinforcement === true || override.rebarPriorityPolicy === COLUMN_REBAR_PRIORITY_POLICY) return;
+          const width = Math.max(columnMinimumDimension(), Number(override.width) || numericInput("columnWidth", 400));
+          const height = Math.max(columnMinimumDimension(), Number(override.height) || numericInput("columnHeight", 400));
+          const legacyDiameter = Math.max(16, Number(override.barDiameter) || 16);
+          const legacyCount = Math.max(4, Math.round(Number(override.barCount) || 4));
+          const legacySteelArea = legacyCount * Math.PI * legacyDiameter * legacyDiameter / 4;
+          const bar16Area = Math.PI * 16 * 16 / 4;
+          let bar16Count = Math.max(
+            4,
+            Math.ceil(Math.max(legacySteelArea, COLUMN_MIN_STEEL_RATIO * width * height) / bar16Area)
+          );
+          if (bar16Count % 2) bar16Count += 1;
+          // Legacy automatic designs started from 20 mm, even where more 16 mm
+          // bars were appropriate.  Preserve at least their steel area, then let
+          // the next deliberate AUTO-PASS calculation verify fit and capacity.
+          override.barDiameter = 16;
+          override.barCount = bar16Count;
+          override.rebarPriorityPolicy = COLUMN_REBAR_PRIORITY_POLICY;
+        });
+      }
+
+      function columnMaximumConstructibleBarCount(width, height, barDiameter, tieDiameter) {
+        const cover = detailingValue("columnClearCover", 40, 25);
+        const coverToCenter = cover + tieDiameter + barDiameter / 2;
+        const availablePerimeter = 2 * Math.max(0, width + height - 4 * coverToCenter);
+        const minimumClearSpacing = Math.max(40, 1.5 * barDiameter);
+        const maximumByClearSpacing = Math.floor(availablePerimeter / Math.max(1, barDiameter + minimumClearSpacing));
+        const barArea = Math.PI * barDiameter * barDiameter / 4;
+        const maximumBySteelRatio = Math.floor(COLUMN_MAX_STEEL_RATIO * width * height / barArea);
+        const maximum = Math.max(0, Math.min(maximumByClearSpacing, maximumBySteelRatio));
+        return maximum % 2 === 0 ? maximum : maximum - 1;
+      }
 
       function columnCandidateReason(details) {
         const failure = details.failure || {};
@@ -46227,13 +46266,15 @@
         // This prevents a Member Properties preference or an apparent cost saving
         // from causing AUTO-PASS to skip directly to a larger main bar.
         const defaultTieDiameter = Math.max(6, detailingValue("columnTieDiameter", 10, 6));
+        const permittedTieDiameters = Array.from(new Set([defaultTieDiameter, ...MPR_TIE_STIRRUP_BAR_DIAMETERS])).sort((a, b) => a - b);
         for (const barDiameter of MPR_COLUMN_BEAM_BAR_DIAMETERS) {
           const barArea = Math.PI * barDiameter * barDiameter / 4;
           let count = Math.max(4, Math.ceil(COLUMN_MIN_STEEL_RATIO * width * height / barArea));
           if (count % 2) count += 1;
-          for (; count <= 24 && count * barArea <= COLUMN_MAX_STEEL_RATIO * width * height + 1e-6; count += 2) {
+          const maximumCount = columnMaximumConstructibleBarCount(width, height, barDiameter, permittedTieDiameters[0]);
+          for (; count <= maximumCount; count += 2) {
             let passingForCount = null;
-            for (const tieDiameter of Array.from(new Set([defaultTieDiameter, ...MPR_TIE_STIRRUP_BAR_DIAMETERS]))) {
+            for (const tieDiameter of permittedTieDiameters) {
               const candidate = evaluateColumnCandidate(key, storyIndex, width, height, barDiameter, count, tieDiameter);
               if (candidate.pass && (!passingForCount || candidate.cost < passingForCount.cost - 1e-9)) passingForCount = candidate;
             }
@@ -46353,6 +46394,7 @@
                 barDiameter: best.barDiameter,
                 barCount: best.barCount,
                 tieDiameter: best.tieDiameter,
+                rebarPriorityPolicy: COLUMN_REBAR_PRIORITY_POLICY,
                 ...(runName ? {name: runName} : {})
               };
               propagateColumnDesignSection(overrideKey);

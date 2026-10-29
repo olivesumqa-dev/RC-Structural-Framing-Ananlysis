@@ -22,9 +22,12 @@ assert.match(
 assert(!body.includes("defaultBarDiameter"), "A Member Properties value must not reorder the AUTO-PASS bar sequence.");
 assert.match(
   body,
-  /for \(; count <= 24[\s\S]*?if \(passingForCount\) \{\s*return passingForCount;/,
+  /const maximumCount = columnMaximumConstructibleBarCount[\s\S]*?for \(; count <= maximumCount; count \+= 2\)[\s\S]*?if \(passingForCount\) \{\s*return passingForCount;/,
   "AUTO-PASS must add 16 mm bars through the permitted count range before increasing diameter."
 );
+assert(!body.includes("count <= 24"), "AUTO-PASS must not impose an arbitrary 24-bar limit before trying the next diameter.");
 assert(!body.includes("passingForCount.cost < best.cost"), "AUTO-PASS must not replace a passing smaller-diameter solution with a larger bar based on cost.");
+assert(html.includes("function migrateLegacyColumnRebarPriority()"), "Opening older projects must migrate non-manual column AUTO-PASS results to the 16 mm count-first policy.");
+assert(html.includes("rebarPriorityPolicy: COLUMN_REBAR_PRIORITY_POLICY"), "New AUTO-PASS column results must record the rebar-priority policy.");
 
 console.log("Column longitudinal rebar priority regression checks passed.");
