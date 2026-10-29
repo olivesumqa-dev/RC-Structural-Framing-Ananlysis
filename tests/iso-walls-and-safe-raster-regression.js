@@ -17,6 +17,16 @@ assert(html.includes("const isoWallVolumes = Object.entries(planState.levelWalls
 assert(html.includes("drawIsoSegmentPrism(volume, \"rgba(39, 132, 79, 0.52)\", \"#6ff19a\")")
   && html.includes("drawIsoSegmentPrism(volume, \"rgba(214, 196, 151, 0.32)\", \"#f5dc8a\")"),
   "3D ISO must render visible wall-footing and wall solids with their distinct styles");
+assert(html.includes("const isoWallFootingById = new Map(isoWallFootingVolumes.map(volume => [String(volume.id || \"\"), volume]));")
+  && html.includes("const linkedFooting = wall.wallFootingId")
+  && html.includes("const z0Start = linkedFooting ? linkedFooting.z1Start : levelElevation;"),
+  "A Wall Above WF must start at the top of its exact linked Wall Footing, not at the ordinary Level-1 datum");
+assert(html.includes("z0End = Number.isFinite(Number(volume.z0End))")
+  && html.includes("z1End = Number.isFinite(Number(volume.z1End))"),
+  "Sloping supporting footing elevations must be retained at both ends of ISO wall and WF solids");
+assert(html.includes("const isoAlphabeticLabels = data.xLabels.slice();")
+  && !html.includes("const isoAlphabeticLabels = data.xLabels.slice().reverse();"),
+  "ISO grid bubbles must use the same alphabetic grid-to-column mapping as the plan and perspective views");
 
 assert(html.includes('panelCanvas.toDataURL("image/png")'),
   "Raster panels must retain the source pixels without JPEG recompression");
@@ -40,4 +50,4 @@ assert(css.includes('.overlap-object-dialog{width:min(480px,calc(100vw - 32px));
   && css.includes('background:#F7CB8D!important;color:#000!important'),
   "The selection object dialog must use the requested background and button colors");
 
-console.log("3D walls/wall-footings, deletion, dialog styling, and safe raster rollback regression checks passed.");
+console.log("3D walls/wall-footings, shared grid mapping, deletion, dialog styling, and safe raster rollback regression checks passed.");

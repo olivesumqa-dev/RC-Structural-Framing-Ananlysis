@@ -34162,54 +34162,81 @@
             thickness
           };
         }).filter(Boolean);
-        const isoWallVolumes = Object.entries(planState.levelWalls || {}).flatMap(([levelKey, walls]) => {
-          const levelIndex = Math.max(0, Number(levelKey) || 0);
-          const z0 = Number(elevations[levelIndex]) || 0;
-          return (walls || []).map(wall => {
-            const start = {x: Number(wall?.startPoint?.x), y: Number(wall?.startPoint?.y)};
-            const end = {x: Number(wall?.endPoint?.x), y: Number(wall?.endPoint?.y)};
-            if (![start.x, start.y, end.x, end.y].every(Number.isFinite) || Math.hypot(end.x - start.x, end.y - start.y) < 1e-6) return null;
-            return {
-              name: wall.name || "Wall",
-              start,
-              end,
-              width: Math.max(0.08, Number(wall.width) || 0.15),
-              z0,
-              z1: z0 + Math.max(0.3, Number(wall.height) || 3)
-            };
-          }).filter(Boolean);
-        });
         const isoWallFootingVolumes = (planState.wallFootings || []).map(footing => {
           const start = {x: Number(footing?.startPoint?.x), y: Number(footing?.startPoint?.y)};
           const end = {x: Number(footing?.endPoint?.x), y: Number(footing?.endPoint?.y)};
           if (![start.x, start.y, end.x, end.y].every(Number.isFinite) || Math.hypot(end.x - start.x, end.y - start.y) < 1e-6) return null;
           const design = footing.design || {};
           const properties = footing.properties || {};
-          const z0 = Number.isFinite(Number(design.bottomElevationStart))
+          const z0Start = Number.isFinite(Number(design.bottomElevationStart))
             ? Number(design.bottomElevationStart)
             : Math.max(0, Number(properties.heightAboveFooting) || 0.6);
+          const z0End = Number.isFinite(Number(design.bottomElevationEnd))
+            ? Number(design.bottomElevationEnd)
+            : z0Start;
+          const thickness = Math.max(0.1, Number(design.thickness) || Number(properties.thickness) || 0.25);
           return {
+            id: footing.id,
             name: footing.name || "WF",
             start,
             end,
             width: Math.max(0.2, Number(design.width) || Number(properties.width) || 0.4),
-            z0,
-            z1: z0 + Math.max(0.1, Number(design.thickness) || Number(properties.thickness) || 0.25)
+            z0: z0Start,
+            z1: z0Start + thickness,
+            z0Start,
+            z0End,
+            z1Start: z0Start + thickness,
+            z1End: z0End + thickness
           };
         }).filter(Boolean);
+        const isoWallFootingById = new Map(isoWallFootingVolumes.map(volume => [String(volume.id || ""), volume]));
+        const isoWallVolumes = Object.entries(planState.levelWalls || {}).flatMap(([levelKey, walls]) => {
+          const levelIndex = Math.max(0, Number(levelKey) || 0);
+          const levelElevation = Number(elevations[levelIndex]) || 0;
+          return (walls || []).map(wall => {
+            const start = {x: Number(wall?.startPoint?.x), y: Number(wall?.startPoint?.y)};
+            const end = {x: Number(wall?.endPoint?.x), y: Number(wall?.endPoint?.y)};
+            if (![start.x, start.y, end.x, end.y].every(Number.isFinite) || Math.hypot(end.x - start.x, end.y - start.y) < 1e-6) return null;
+            // A Wall Above WF is not supported at the ordinary Level-1 datum.
+            // Its bottom follows the top of the exact linked Wall Footing so a
+            // user-entered height above the footing is visible in 3D as built.
+            const linkedFooting = wall.wallFootingId
+              ? isoWallFootingById.get(String(wall.wallFootingId))
+              : null;
+            const z0Start = linkedFooting ? linkedFooting.z1Start : levelElevation;
+            const z0End = linkedFooting ? linkedFooting.z1End : levelElevation;
+            const wallHeight = Math.max(0.3, Number(wall.height) || 3);
+            return {
+              name: wall.name || "Wall",
+              start,
+              end,
+              width: Math.max(0.08, Number(wall.width) || 0.15),
+              z0: z0Start,
+              z1: z0Start + wallHeight,
+              z0Start,
+              z0End,
+              z1Start: z0Start + wallHeight,
+              z1End: z0End + wallHeight
+            };
+          }).filter(Boolean);
+        });
         const segmentBounds = volume => {
           const dx = volume.end.x - volume.start.x;
           const dy = volume.end.y - volume.start.y;
           const length = Math.hypot(dx, dy) || 1;
           const nx = -dy / length * volume.width / 2;
           const ny = dx / length * volume.width / 2;
+          const z0Start = Number.isFinite(Number(volume.z0Start)) ? Number(volume.z0Start) : Number(volume.z0) || 0;
+          const z0End = Number.isFinite(Number(volume.z0End)) ? Number(volume.z0End) : z0Start;
+          const z1Start = Number.isFinite(Number(volume.z1Start)) ? Number(volume.z1Start) : Number(volume.z1) || z0Start;
+          const z1End = Number.isFinite(Number(volume.z1End)) ? Number(volume.z1End) : z1Start;
           return [
-            isoRaw(volume.start.x + nx, volume.start.y + ny, volume.z0),
-            isoRaw(volume.start.x - nx, volume.start.y - ny, volume.z0),
-            isoRaw(volume.end.x + nx, volume.end.y + ny, volume.z0),
-            isoRaw(volume.end.x - nx, volume.end.y - ny, volume.z0),
-            isoRaw(volume.start.x + nx, volume.start.y + ny, volume.z1),
-            isoRaw(volume.end.x - nx, volume.end.y - ny, volume.z1)
+            isoRaw(volume.start.x + nx, volume.start.y + ny, z0Start),
+            isoRaw(volume.start.x - nx, volume.start.y - ny, z0Start),
+            isoRaw(volume.end.x + nx, volume.end.y + ny, z0End),
+            isoRaw(volume.end.x - nx, volume.end.y - ny, z0End),
+            isoRaw(volume.start.x + nx, volume.start.y + ny, z1Start),
+            isoRaw(volume.end.x - nx, volume.end.y - ny, z1End)
           ];
         };
         const footingBounds = isoFootings.flatMap(footing => [
@@ -34453,15 +34480,19 @@
           if (length < 1e-6) return;
           const nx = -dy / length * volume.width / 2;
           const ny = dx / length * volume.width / 2;
+          const z0Start = Number.isFinite(Number(volume.z0Start)) ? Number(volume.z0Start) : Number(volume.z0) || 0;
+          const z0End = Number.isFinite(Number(volume.z0End)) ? Number(volume.z0End) : z0Start;
+          const z1Start = Number.isFinite(Number(volume.z1Start)) ? Number(volume.z1Start) : Number(volume.z1) || z0Start;
+          const z1End = Number.isFinite(Number(volume.z1End)) ? Number(volume.z1End) : z1Start;
           const vertices = {
-            a0: point(volume.start.x + nx, volume.start.y + ny, volume.z0),
-            b0: point(volume.start.x - nx, volume.start.y - ny, volume.z0),
-            c0: point(volume.end.x - nx, volume.end.y - ny, volume.z0),
-            d0: point(volume.end.x + nx, volume.end.y + ny, volume.z0),
-            a1: point(volume.start.x + nx, volume.start.y + ny, volume.z1),
-            b1: point(volume.start.x - nx, volume.start.y - ny, volume.z1),
-            c1: point(volume.end.x - nx, volume.end.y - ny, volume.z1),
-            d1: point(volume.end.x + nx, volume.end.y + ny, volume.z1)
+            a0: point(volume.start.x + nx, volume.start.y + ny, z0Start),
+            b0: point(volume.start.x - nx, volume.start.y - ny, z0Start),
+            c0: point(volume.end.x - nx, volume.end.y - ny, z0End),
+            d0: point(volume.end.x + nx, volume.end.y + ny, z0End),
+            a1: point(volume.start.x + nx, volume.start.y + ny, z1Start),
+            b1: point(volume.start.x - nx, volume.start.y - ny, z1Start),
+            c1: point(volume.end.x - nx, volume.end.y - ny, z1End),
+            d1: point(volume.end.x + nx, volume.end.y + ny, z1End)
           };
           const faces = [
             [vertices.a0, vertices.b0, vertices.b1, vertices.a1],
@@ -34502,7 +34533,7 @@
           .filter(isoSegmentIsOnSelectedFrame)
           .forEach(volume => {
             drawIsoSegmentPrism(volume, "rgba(39, 132, 79, 0.52)", "#6ff19a");
-            label3d(volume.name, {...volume.start, z: volume.z1}, {...volume.end, z: volume.z1}, "#a6ffbf", -6, 8);
+            label3d(volume.name, {...volume.start, z: volume.z1Start}, {...volume.end, z: volume.z1End}, "#a6ffbf", -6, 8);
           });
         // Walls are intentionally rendered before columns and beams so their
         // semi-transparent surfaces show the complete structural frame inside.
@@ -34627,13 +34658,12 @@
           });
         }
 
-        // Match the plan-view convention: alphabetic grids occupy one fixed outer
-        // side and numeric grids occupy the adjacent fixed outer side. Their
-        // leaders continue the projected column direction above the roof,
-        // with a short gap so the grid annotation cannot be mistaken for concrete.
+        // Match the plan-view convention: each bubble remains at the same model
+        // grid coordinate in every 3D projection. Do not reverse a label list
+        // only for ISO; that detaches the grid name from its actual columns.
         const xGridSideY = totalY;
         const yGridSideX = 0;
-        const isoAlphabeticLabels = data.xLabels.slice().reverse();
+        const isoAlphabeticLabels = data.xLabels.slice();
         const isoNumericLabels = data.yLabels.slice();
         let sharedCornerAlphabeticBubble = null;
         data.xPos.forEach((x, index) => {
