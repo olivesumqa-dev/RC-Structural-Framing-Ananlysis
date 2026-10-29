@@ -21,6 +21,14 @@ assert(html.includes("const isoWallFootingById = new Map(isoWallFootingVolumes.m
   && html.includes("const linkedFooting = wall.wallFootingId")
   && html.includes("const z0Start = linkedFooting ? linkedFooting.z1Start : levelElevation;"),
   "A Wall Above WF must start at the top of its exact linked Wall Footing, not at the ordinary Level-1 datum");
+assert(html.includes('id="wfToolCreateWall" type="checkbox" checked disabled')
+  && html.includes("Wall Above WF (required)")
+  && html.includes("function ensureWallFootingWallStandard(data = makePlanData())")
+  && html.includes("const needsLinkedWall = !levelOneWalls.some(wall => String(wall?.wallFootingId || \"\") === String(footing.id));")
+  && html.includes("const createFooting = true;")
+  && html.includes("const createWall = true;")
+  && html.includes("const repairedWallFootingWalls = ensureWallFootingWallStandard(restoredPlanData);"),
+  "Every WF must include a linked wall above it when created and when older project data is loaded");
 assert(html.includes("const levelElevation = Number(elevations[Math.min(levelIndex + 1, elevations.length - 1)]) || 0;")
   && html.includes("using levelIndex placed every ordinary wall one storey too low"),
   "A wall on Level-N must start at Level-N rather than at the storey below");
