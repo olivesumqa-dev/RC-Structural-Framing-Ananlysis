@@ -34658,12 +34658,14 @@
           });
         }
 
-        // Match the plan-view convention: each bubble remains at the same model
-        // grid coordinate in every 3D projection. Do not reverse a label list
-        // only for ISO; that detaches the grid name from its actual columns.
+        // In the shared 3D camera orientation, the plan's alphabetic axis is
+        // viewed from its opposite side: Grid C is the rear/top line and Grid A
+        // is the front/left line. Keep that same physical convention in both
+        // Isometric and Perspective views so switching projection never moves a
+        // column grid name to the opposite side of the building.
         const xGridSideY = totalY;
         const yGridSideX = 0;
-        const isoAlphabeticLabels = data.xLabels.slice();
+        const isoAlphabeticLabels = data.xLabels.slice().reverse();
         const isoNumericLabels = data.yLabels.slice();
         let sharedCornerAlphabeticBubble = null;
         data.xPos.forEach((x, index) => {
