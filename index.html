@@ -34132,17 +34132,21 @@
           const u = (rotatedX - rotatedY) * Math.cos(tiltRadians);
           const v = (rotatedX + rotatedY) * Math.sin(tiltRadians) - z * 1.18;
           if (isometricView.projection !== "perspective") return {u, v};
-          // True pinhole camera: the eye sits in front of the building at a
-          // realistic mid-storey height and looks toward the footprint. Depth
-          // lines therefore converge away from the viewer toward the horizon.
+          // Perspective must use the very same lateral and depth axes as the
+          // isometric projection above. Previously Perspective used rotatedX
+          // and rotatedY directly while ISO used their sum/difference; that
+          // made a grid bubble appear attached to the opposite side whenever
+          // users switched view modes. The pinhole scale below adds convergence
+          // only — it does not change the building or grid orientation.
           const cameraHeight = Math.max(0, Math.min(100, Number(isometricView.cameraHeight) || 4.5));
           const cameraDistance = Math.max(12, Math.max(totalX, totalY, totalZ) * 2.8);
-          const relativeDepth = rotatedY + cameraDistance;
           const relativeHeight = z - cameraHeight;
-          const cameraDepth = Math.max(0.5, relativeDepth * Math.cos(tiltRadians) - relativeHeight * Math.sin(tiltRadians));
-          const screenHeight = relativeHeight * Math.cos(tiltRadians) + relativeDepth * Math.sin(tiltRadians);
+          const lateral = rotatedX - rotatedY;
+          const depth = rotatedX + rotatedY;
+          const cameraDepth = Math.max(0.5, cameraDistance - depth * Math.cos(tiltRadians) - relativeHeight * Math.sin(tiltRadians));
+          const screenHeight = relativeHeight * Math.cos(tiltRadians) - depth * Math.sin(tiltRadians);
           const focalLength = cameraDistance * 0.92;
-          return {u: rotatedX * focalLength / cameraDepth, v: -screenHeight * focalLength / cameraDepth};
+          return {u: lateral * focalLength / cameraDepth, v: -screenHeight * focalLength / cameraDepth};
         };
         const isoFootings = Object.entries(planState.footings || {}).map(([key, footing]) => {
           const [xLabel, yLabel] = String(footing?.key || key).split("|");

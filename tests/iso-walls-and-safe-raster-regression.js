@@ -27,6 +27,10 @@ assert(html.includes("z0End = Number.isFinite(Number(volume.z0End))")
 assert(html.includes("const isoAlphabeticLabels = data.xLabels.slice().reverse();")
   && /Grid C is the rear\/top line and Grid A\s*\/\/ is the front\/left line\.[\s\S]*?Isometric and Perspective views/.test(html),
   "ISO and Perspective grid bubbles must share the rear/top-to-front/left alphabetic orientation");
+assert(html.includes("const lateral = rotatedX - rotatedY;")
+  && html.includes("const depth = rotatedX + rotatedY;")
+  && html.includes("return {u: lateral * focalLength / cameraDepth, v: -screenHeight * focalLength / cameraDepth};"),
+  "Perspective must use the same lateral and depth axes as Isometric before adding convergence");
 
 assert(html.includes('panelCanvas.toDataURL("image/png")'),
   "Raster panels must retain the source pixels without JPEG recompression");
