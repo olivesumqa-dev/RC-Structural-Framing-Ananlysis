@@ -21,6 +21,9 @@ assert(html.includes("const isoWallFootingById = new Map(isoWallFootingVolumes.m
   && html.includes("const linkedFooting = wall.wallFootingId")
   && html.includes("const z0Start = linkedFooting ? linkedFooting.z1Start : levelElevation;"),
   "A Wall Above WF must start at the top of its exact linked Wall Footing, not at the ordinary Level-1 datum");
+assert(html.includes("const levelElevation = Number(elevations[Math.min(levelIndex + 1, elevations.length - 1)]) || 0;")
+  && html.includes("using levelIndex placed every ordinary wall one storey too low"),
+  "A wall on Level-N must start at Level-N rather than at the storey below");
 assert(html.includes("z0End = Number.isFinite(Number(volume.z0End))")
   && html.includes("z1End = Number.isFinite(Number(volume.z1End))"),
   "Sloping supporting footing elevations must be retained at both ends of ISO wall and WF solids");

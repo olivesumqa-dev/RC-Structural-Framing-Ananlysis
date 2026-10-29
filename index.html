@@ -34196,7 +34196,10 @@
         const isoWallFootingById = new Map(isoWallFootingVolumes.map(volume => [String(volume.id || ""), volume]));
         const isoWallVolumes = Object.entries(planState.levelWalls || {}).flatMap(([levelKey, walls]) => {
           const levelIndex = Math.max(0, Number(levelKey) || 0);
-          const levelElevation = Number(elevations[levelIndex]) || 0;
+          // A wall drawn on Level-N rests on that level's beam/slab elevation,
+          // then rises to the next storey. `elevations[0]` is Foundation, so
+          // using levelIndex placed every ordinary wall one storey too low.
+          const levelElevation = Number(elevations[Math.min(levelIndex + 1, elevations.length - 1)]) || 0;
           return (walls || []).map(wall => {
             const start = {x: Number(wall?.startPoint?.x), y: Number(wall?.startPoint?.y)};
             const end = {x: Number(wall?.endPoint?.x), y: Number(wall?.endPoint?.y)};
