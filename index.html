@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RC Structural Frame Analysis</title>
   <link rel="icon" type="image/svg+xml" href="assets/SF-LOGO.svg" />
-  <link rel="stylesheet" href="styles.css?v=67" />
+  <link rel="stylesheet" href="styles.css?v=68" />
   <!-- Authentication and premium gating are retained in the repository but paused during development. -->
   <style>
     .structural-sequence {
@@ -37039,6 +37039,32 @@
         return nearest?.wall || null;
       }
 
+      function nearestPlanWallFooting(canvasPoint, data = makePlanData()) {
+        if (planState.activeLevelIndex !== -1) return null;
+        const canvas = byId("structuralPlanCanvas");
+        if (!canvas) return null;
+        const totalX = data.xPos[data.xPos.length - 1] || 1;
+        const totalY = data.yPos[data.yPos.length - 1] || 1;
+        const transform = fitDrawingTransform(canvas, {minX: 0, maxX: totalX, minY: 0, maxY: totalY});
+        const local = {
+          x: (canvasPoint.x - planView.pan.x) / planView.zoom,
+          y: (canvasPoint.y - planView.pan.y) / planView.zoom
+        };
+        let nearest = null;
+        (planState.wallFootings || []).forEach(footing => {
+          const start = footing?.startPoint;
+          const end = footing?.endPoint;
+          if (![start?.x, start?.y, end?.x, end?.y].every(Number.isFinite)) return;
+          const a = {x: transform.x(Number(start.x)), y: transform.y(Number(start.y))};
+          const b = {x: transform.x(Number(end.x)), y: transform.y(Number(end.y))};
+          const width = Math.max(0.30, Number(footing.design?.width) || Number(footing.properties?.width) || Number(footing.properties?.startingWidth) || 0.40);
+          const distance = distanceToSegment(local.x, local.y, a, b);
+          const tolerance = Math.max(12 / planView.zoom, width * transform.scale / 2 + 6 / planView.zoom);
+          if (distance <= tolerance && (!nearest || distance < nearest.distance)) nearest = {footing, distance};
+        });
+        return nearest?.footing || null;
+      }
+
       function isolatedFootingTopAtEndpoint(endpoint, data = makePlanData()) {
         let nearest = null;
         Object.entries(planState.footings || {}).forEach(([key, footing]) => {
@@ -37900,7 +37926,7 @@
         return nearest;
       }
 
-      function planOverlapCandidates(canvasPoint, data = makePlanData()) {
+      function planOverlapCandidates(canvasPoint, data = makePlanData(), includeWallFootings = false) {
         const candidates = planMemberHits(canvasPoint, data).map(hit => ({
           kind: "member",
           label: `${hit.member.type || "Member"} ${hit.member.name || hit.member.id}`,
@@ -37914,6 +37940,14 @@
             value: column
           });
         }
+        if (includeWallFootings) {
+          const footing = nearestPlanWallFooting(canvasPoint, data);
+          if (footing) candidates.push({
+            kind: "wall-footing",
+            label: `Wall Footing ${footing.name || footing.id}`,
+            value: footing
+          });
+        }
         return candidates;
       }
 
@@ -37921,7 +37955,26 @@
         (selected || []).forEach(candidate => {
           if (candidate?.kind === "column") deletePlanColumn(candidate.value, makePlanData());
           else if (candidate?.kind === "member") deletePlanMemberObject(candidate.value, makePlanData());
+          else if (candidate?.kind === "wall-footing") deletePlanWallFooting(candidate.value, makePlanData());
         });
+      }
+
+      function deletePlanWallFooting(footing, data = makePlanData()) {
+        if (!footing?.id || !(planState.wallFootings || []).some(item => item.id === footing.id)) return false;
+        pushWorkspaceHistory();
+        planState.wallFootings = planState.wallFootings.filter(item => item.id !== footing.id);
+        let removedWallCount = 0;
+        Object.keys(planState.levelWalls || {}).forEach(levelKey => {
+          const walls = Array.isArray(planState.levelWalls[levelKey]) ? planState.levelWalls[levelKey] : [];
+          const retained = walls.filter(wall => wall?.wallFootingId !== footing.id);
+          removedWallCount += walls.length - retained.length;
+          planState.levelWalls[levelKey] = retained;
+        });
+        planState.wallFootingStart = null;
+        synchronizeStructuralWallOutputs(data);
+        updatePlanMemberTable();
+        if (typeof status === "function") status(`Wall Footing ${footing.name || footing.id} deleted${removedWallCount ? ` together with its ${removedWallCount} linked wall${removedWallCount === 1 ? "" : "s"}` : ""}. Undo is available.`);
+        return true;
       }
 
       function deletePlanColumn(column, data = makePlanData(), storyIndexOverride = null) {
@@ -38187,12 +38240,14 @@
             if (typeof status === "function") status("Point load deleted. Recalculate to update the analysis. Undo is available.");
             return;
           }
-          const overlappingObjects = planOverlapCandidates(canvasPoint, data);
+          const overlappingObjects = planOverlapCandidates(canvasPoint, data, true);
           if (overlappingObjects.length > 1 && typeof window.strucForgeOpenOverlapChooser === "function" && window.strucForgeOpenOverlapChooser({
             mode: "delete",
             candidates: overlappingObjects,
             onApply: selected => deletePlanOverlapCandidates(selected, makePlanData())
           })) return;
+          const wallFooting = nearestPlanWallFooting(canvasPoint, data);
+          if (wallFooting) return deletePlanWallFooting(wallFooting, data);
           const auxiliaryGrid = auxiliaryGridAtPoint(canvasPoint, data);
           if (auxiliaryGrid) {
             pushWorkspaceHistory();

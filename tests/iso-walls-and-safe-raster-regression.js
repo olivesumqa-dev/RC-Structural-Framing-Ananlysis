@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const css = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
 
 assert(html.includes('id="isoShowWalls"') && html.includes('id="isoShowWallFootings"'),
   "The 3D ISO toolbar must provide Walls and Wall Footings visibility controls");
@@ -26,4 +27,17 @@ assert(html.includes('if (extension === "dwf") await unsupportedDwfConversionErr
 assert(/byId\("newDesign"\)\?\.addEventListener\("click", \(\) => \{\s*resetCadUploadState\(\);/.test(html),
   "Create New Design must clear the upload list");
 
-console.log("3D walls/wall-footings and safe raster rollback regression checks passed.");
+assert(html.includes("function nearestPlanWallFooting(canvasPoint, data = makePlanData())")
+  && html.includes("if (planState.activeLevelIndex !== -1) return null;"),
+  "Wall Footings must be detected only on the FOUNDATION plan");
+assert(html.includes("function deletePlanWallFooting(footing, data = makePlanData())")
+  && html.includes('planState.wallFootings = planState.wallFootings.filter(item => item.id !== footing.id);'),
+  "The delete tool must remove the selected Wall Footing");
+assert(html.includes('wall?.wallFootingId !== footing.id')
+  && html.includes('const overlappingObjects = planOverlapCandidates(canvasPoint, data, true);'),
+  "Deleting a Wall Footing must remove its linked wall and offer it in an overlapping-object chooser");
+assert(css.includes('.overlap-object-dialog{width:min(480px,calc(100vw - 32px));background:#948B8A!important;color:#000!important}')
+  && css.includes('background:#F7CB8D!important;color:#000!important'),
+  "The selection object dialog must use the requested background and button colors");
+
+console.log("3D walls/wall-footings, deletion, dialog styling, and safe raster rollback regression checks passed.");
