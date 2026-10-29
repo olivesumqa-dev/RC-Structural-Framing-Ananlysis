@@ -2654,7 +2654,7 @@
         </button>
         <div class="sidebar-package-content" id="modelCreationPackageContent">
         <p class="hint">
-          Create Node can place a junction directly on a girder. Plan columns: choose Create Column, then click a plan grid intersection. In Create Beams mode, click any two Plan nodes to create horizontal, vertical, or diagonal beams. Use the Wall icon in the drawing toolbar to create continuous slab-supported walls between structural or grid nodes.
+          Create Node can place a junction directly on a girder. Plan columns: choose Create Column, then click a plan grid intersection. In Create Beams mode, click any two Plan nodes to create horizontal, vertical, or diagonal beams. Use the Slab on Fill Tool to close an independent Level-1 slab outline without creating tie beams. Use the Wall icon in the drawing toolbar to create continuous slab-supported walls between structural or grid nodes.
         </p>
         <label>Editing Frame</label>
         <select id="activeFrameEditor">
@@ -3004,6 +3004,7 @@
                 <button id="planDimensionToolBtn" class="drawing-tool-btn" type="button" title="Dimension" aria-label="Create Dimension"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6v12M19 6v12M5 12h14"></path><path d="m9 9-4 3 4 3M15 9l4 3-4 3"></path></svg></button>
                 <button id="planWallToolBtn" class="drawing-tool-btn" type="button" title="Structural Wall Tool" aria-label="Create Structural Wall"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18" stroke="#ff3131" stroke-width="3" stroke-dasharray="3 2"></path><path d="M3 12h18" stroke="#ffffff" stroke-width="1"></path><path d="M3 17h18" stroke="#ff3131" stroke-width="3" stroke-dasharray="3 2"></path></svg></button>
                 <button id="planWallFootingToolBtn" class="drawing-tool-btn" type="button" title="WF Tool" aria-label="Create Wall Footing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18" stroke="#00c853" stroke-width="3" stroke-dasharray="3 2"></path><path d="M3 17h18" stroke="#00c853" stroke-width="3" stroke-dasharray="3 2"></path></svg></button>
+                <button id="planSlabOnFillToolBtn" class="drawing-tool-btn" type="button" title="Slab on Fill Tool" aria-label="Create Slab on Fill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z" fill="#a37871" fill-opacity=".45"></path><path d="M4 5h16v14H4zM8 9h8M8 13h8" stroke="#fff" stroke-width="1.2"></path></svg></button>
                 <button id="planAuxGridToolBtn" class="drawing-tool-btn" type="button" title="Aux. Grid Tool" aria-label="Aux. Grid Tool"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"></path><path d="M2 2h4v4H2z"></path></svg></button>
                 <button id="buildingGridToolBtn" class="drawing-tool-btn" type="button" title="Bldg. Grid Tool" aria-label="Bldg. Grid Tool" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zM7.5 3v18M12 3v18M16.5 3v18M3 7.5h18M3 12h18M3 16.5h18"></path><path d="M1.5 1.5h5v5h-5z" fill="#154f32"></path></svg></button>
                 <button id="planMatchPropertiesToolBtn" class="drawing-tool-btn" type="button" title="Match Properties" aria-label="Match Properties"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 15 8-8 4 4-8 8H5z"></path><path d="m14 6 2-2 4 4-2 2M4 21h8"></path></svg></button>
@@ -28010,6 +28011,8 @@
         wallFootings: [],
         wallFootingStart: null,
         pendingWallFootingProperties: null,
+        customSlabs: [],
+        slabOutlinePoints: [],
         wallBeamLoads: [],
         pointLoads: [],
         mode: "pan",
@@ -28216,6 +28219,7 @@
           planBuildingGrid: deepCopy(planState.buildingGrid),
           planLevelWalls: deepCopy(planState.levelWalls),
           planWallFootings: deepCopy(planState.wallFootings),
+          planCustomSlabs: deepCopy(planState.customSlabs),
           planWallBeamLoads: deepCopy(planState.wallBeamLoads),
           planPointLoads: deepCopy(planState.pointLoads),
           planActiveView: planState.activeView,
@@ -28295,6 +28299,8 @@
           planState.pendingAuxiliaryGrid = null;
           planState.levelWalls = deepCopy(snapshot.planLevelWalls) || {};
           planState.wallFootings = deepCopy(snapshot.planWallFootings) || [];
+          planState.customSlabs = deepCopy(snapshot.planCustomSlabs) || [];
+          planState.slabOutlinePoints = [];
           planState.wallBeamLoads = deepCopy(snapshot.planWallBeamLoads) || [];
           planState.pointLoads = deepCopy(snapshot.planPointLoads) || [];
           planState.wallStart = null;
@@ -28395,6 +28401,8 @@
         planState.pendingAuxiliaryGrid = null;
         planState.levelWalls = {};
         planState.wallFootings = [];
+        planState.customSlabs = [];
+        planState.slabOutlinePoints = [];
         planState.wallBeamLoads = [];
         planState.pointLoads = [];
         planState.wallStart = null;
@@ -31135,6 +31143,8 @@
         planState.pendingAuxiliaryGrid = null;
         planState.levelWalls = {};
         planState.wallFootings = [];
+        planState.customSlabs = [];
+        planState.slabOutlinePoints = [];
         planState.wallStart = null;
         planState.pendingWallProperties = null;
         planState.wallFootingStart = null;
@@ -32432,6 +32442,7 @@
         if (planState.mode === "aux_grid_insert") return "Place Auxiliary Grid";
         if (planState.mode === "wall") return "Create Structural Wall";
         if (planState.mode === "wall_footing") return "Create Wall Footing";
+        if (planState.mode === "slab_on_fill") return "Create Slab on Fill";
         if (planState.mode === "annotation_edit_line") return "Edit Line";
         if (planState.mode === "annotation_text") return "Text";
         if (planState.mode === "annotation_edit_text") return "Edit Text";
@@ -32467,6 +32478,7 @@
       }
 
       function slabRegionCode(region, data = makePlanData()) {
+        if (region?.customSlab) return `SOF-${Number(region.auxiliaryIndex) || 1}`;
         if (region?.auxiliary) return `AUX-${Number(region.auxiliaryIndex) || 1}`;
         return `${data.xLabels[region.xStart] || ""}${data.xLabels[region.xEnd] || ""}-${data.yLabels[region.yStart] || ""}${data.yLabels[region.yEnd] || ""}`;
       }
@@ -32478,6 +32490,7 @@
 
       function slabRegionPlanLabel(region, data = makePlanData()) {
         if (region.open) return "OPEN SPACE";
+        if (region.customSlab) return "SLAB ON FILL";
         if (region.earthFilled) return "EARTH FILLED";
         // MPR slab IDs are editable, but plan drawings retain their stable
         // coordinate-based designation so an MPR rename cannot alter plans.
@@ -32788,9 +32801,46 @@
         return regions;
       }
 
+      function polygonArea(points) {
+        return Math.abs((points || []).reduce((sum, pointValue, index) => {
+          const next = points[(index + 1) % points.length] || pointValue;
+          return sum + Number(pointValue.x) * Number(next.y) - Number(next.x) * Number(pointValue.y);
+        }, 0) / 2);
+      }
+
+      function customSlabRegions(levelIndex, data = makePlanData()) {
+        const primaryIndexAt = (value, positions) => {
+          for (let index = 0; index < positions.length - 1; index += 1) {
+            if (value >= Number(positions[index]) - 1e-6 && value <= Number(positions[index + 1]) + 1e-6) return index;
+          }
+          return 0;
+        };
+        return (planState.customSlabs || [])
+          .filter(slab => Number(slab?.levelIndex) === Number(levelIndex) && Array.isArray(slab?.points) && slab.points.length >= 3)
+          .map((slab, index) => {
+            const polygon = slab.points.map(pointValue => ({x: Number(pointValue.x), y: Number(pointValue.y)}));
+            const bounds = {
+              minX: Math.min(...polygon.map(pointValue => pointValue.x)), maxX: Math.max(...polygon.map(pointValue => pointValue.x)),
+              minY: Math.min(...polygon.map(pointValue => pointValue.y)), maxY: Math.max(...polygon.map(pointValue => pointValue.y))
+            };
+            const xStart = primaryIndexAt((bounds.minX + bounds.maxX) / 2, data.xPos);
+            const yStart = primaryIndexAt((bounds.minY + bounds.maxY) / 2, data.yPos);
+            const key = `slab-outline|${slab.id}`;
+            return {
+              key, levelIndex, xStart, xEnd: xStart + 1, yStart, yEnd: yStart + 1,
+              cells: [{key, xIndex: xStart, yIndex: yStart, ...bounds, polygon}],
+              bounds, polygon, area: polygonArea(polygon), rectangular: polygon.length === 4,
+              customSlab: true, slabOnFill: true, auxiliary: true, auxiliaryIndex: index + 1,
+              open: planState.deletedSlabs.has(key),
+              earthFilled: !planState.deletedSlabs.has(key)
+            };
+          });
+      }
+
       function slabRegions(levelIndex, data = makePlanData()) {
+        const outlinedSlabs = customSlabRegions(levelIndex, data);
         const coordinateRegions = coordinateSlabRegions(levelIndex, data);
-        if (coordinateRegions) return coordinateRegions;
+        if (coordinateRegions) return coordinateRegions.concat(outlinedSlabs);
         const range = slabPanelRange(levelIndex, data);
         const visited = new Set();
         const regions = [];
@@ -32849,7 +32899,7 @@
             });
           }
         }
-        return regions;
+        return regions.concat(outlinedSlabs);
       }
 
       function updateUnifiedToolbarLabels(view) {
@@ -33805,6 +33855,30 @@
         const memberType = isGroundPlan ? "Tie Beam" : "Beam";
         const memberPrefix = isGroundPlan ? "TB1" : `B${activeLevelIndex + 1}`;
         if (!isFoundationPlan) {
+          const drawSlabOutline = (points, options = {}) => {
+            if (!Array.isArray(points) || points.length < 2) return;
+            ctx.save();
+            ctx.fillStyle = options.fill || "rgba(163,120,113,.18)";
+            ctx.strokeStyle = options.stroke || "#a37871";
+            ctx.lineWidth = options.width || 2.2;
+            ctx.setLineDash(options.dash || []);
+            ctx.beginPath();
+            points.forEach((pointValue, index) => {
+              const screen = point(Number(pointValue.x), Number(pointValue.y));
+              if (index === 0) ctx.moveTo(screen.x, screen.y); else ctx.lineTo(screen.x, screen.y);
+            });
+            if (options.closed) {
+              ctx.closePath();
+              ctx.fill();
+            }
+            ctx.stroke();
+            ctx.restore();
+          };
+          customSlabRegions(activeLevelIndex, data).forEach(region => drawSlabOutline(region.polygon, {closed: true}));
+          if (planState.mode === "slab_on_fill" && planState.slabOutlinePoints?.length) {
+            const preview = planState.slabOutlinePoints;
+            drawSlabOutline(preview, {stroke: "#f7cb8d", dash: [6, 4], width: 2});
+          }
           slabRegions(activeLevelIndex, data).forEach(region => {
             const centroid = slabRegionCentroid(region, data);
             const centerX = t.x(centroid.x);
@@ -36598,6 +36672,57 @@
         return custom || building || auxiliary || planGridEndpoint(intersection, data);
       }
 
+      function slabOutlineEndpointAt(canvasPoint, data = makePlanData()) {
+        return wallEndpointAt(canvasPoint, data);
+      }
+
+      function samePlanPoint(left, right) {
+        return Boolean(left && right) && Math.hypot(Number(left.x) - Number(right.x), Number(left.y) - Number(right.y)) <= 1e-6;
+      }
+
+      function createSlabOnFillOutlineAt(canvasPoint, data = makePlanData()) {
+        if (Number(planState.activeLevelIndex) !== 0) {
+          if (typeof status === "function") status("Slab on Fill Tool is available on Level-1 only. It creates ground-supported slab without Level-1 tie beams.");
+          return;
+        }
+        const endpoint = slabOutlineEndpointAt(canvasPoint, data);
+        if (!endpoint) {
+          if (typeof status === "function") status("Slab outline points are magnetic: click a plan node, main-grid intersection, building-grid intersection, or auxiliary-grid intersection.");
+          return;
+        }
+        const points = planState.slabOutlinePoints || (planState.slabOutlinePoints = []);
+        if (points.length >= 3 && samePlanPoint(points[0], endpoint)) {
+          const area = polygonArea(points);
+          if (area <= 0.01) {
+            if (typeof status === "function") status("The closed slab outline has no usable area. Select at least three non-collinear points.");
+            return;
+          }
+          pushWorkspaceHistory();
+          const id = `SOF-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          planState.customSlabs.push({id, levelIndex: 0, points: deepCopy(points)});
+          engineeringState.slabDesignOverrides[`slab-outline|${id}`] = {
+            ...(engineeringState.slabDesignOverrides[`slab-outline|${id}`] || {}),
+            type: "SLAB_ON_FILL"
+          };
+          planState.slabOutlinePoints = [];
+          engineeringState.designEnvelopes = null;
+          setCalculationDirty(true);
+          drawPlan(data);
+          updatePlanMemberTable();
+          if (typeof status === "function") status("Slab on Fill created from the closed outline. No Level-1 tie-beam boundary was added.");
+          return;
+        }
+        if (points.some(pointValue => samePlanPoint(pointValue, endpoint))) {
+          if (typeof status === "function") status("That outline point is already selected. Click a new point, or click the first point to close the slab.");
+          return;
+        }
+        points.push(deepCopy(endpoint));
+        drawPlan(data);
+        if (typeof status === "function") status(points.length < 3
+          ? `${endpoint.label} added. Select at least ${3 - points.length} more point${points.length === 1 ? "s" : ""}, then click the first point to close the Slab on Fill.`
+          : `${endpoint.label} added. Click the first point (${points[0].label}) to close the Slab on Fill outline, or add another point.`);
+      }
+
       function wallPathHasSlab(start, end, data = makePlanData()) {
         const levelIndex = Number(planState.activeLevelIndex);
         if (levelIndex < 0) return false;
@@ -38291,6 +38416,10 @@
           createPlanWallFootingAt(canvasPoint, data);
           return;
         }
+        if (planState.mode === "slab_on_fill") {
+          createSlabOnFillOutlineAt(canvasPoint, data);
+          return;
+        }
         if (planState.mode === "annotation_edit_line") {
           selectAnnotationForEditAt("PLAN", canvasPoint, canvas.getContext("2d"), projectPoint, "LINE");
           return;
@@ -38383,6 +38512,16 @@
           const slab = slabPanelAt(canvasPoint, data);
           if (slab) {
             pushWorkspaceHistory();
+            if (slab.customSlab) {
+              const slabId = String(slab.key || "").replace(/^slab-outline\|/, "");
+              planState.customSlabs = (planState.customSlabs || []).filter(item => String(item?.id) !== slabId);
+              delete engineeringState.slabDesignOverrides[slab.key];
+              engineeringState.designEnvelopes = null;
+              drawPlan(data);
+              updatePlanMemberTable();
+              if (typeof status === "function") status("Slab on Fill outline deleted. No beams were affected.");
+              return;
+            }
             slab.cells.forEach(cell => {
               planState.deletedSlabs.add(cell.key);
               planState.earthFilledSlabs.delete(cell.key);
@@ -38515,7 +38654,7 @@
       }
 
       function setPlanCreationMode(mode) {
-        const allowed = ["column", "node", "member", "wall", "wall_footing", "delete", "rename", "aux_grid_insert", "annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text", "annotation_match"];
+        const allowed = ["column", "node", "member", "wall", "wall_footing", "slab_on_fill", "delete", "rename", "aux_grid_insert", "annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text", "annotation_match"];
         const cadAllowed = ["annotation_line", "annotation_dimension", "annotation_edit_line", "annotation_text", "annotation_edit_text"];
         if (mode !== "pan") activateExclusiveDrawingTool(mode === "delete" ? "delete" : "plan");
         planState.mode = cadImportState.active && !cadAllowed.includes(mode)
@@ -38531,6 +38670,7 @@
           planState.wallFootingStart = null;
           planState.pendingWallFootingProperties = null;
         }
+        if (planState.mode !== "slab_on_fill") planState.slabOutlinePoints = [];
         if (planState.mode !== "delete") planState.pendingGirderNode = null;
         if (planState.mode !== "delete") planState.pendingColumnNodeDeletion = null;
         if (!["annotation_line", "annotation_dimension"].includes(planState.mode)) planState.annotationStart = null;
@@ -38544,6 +38684,7 @@
         byId("modeWall")?.classList.toggle("is-active", planState.mode === "wall");
         byId("planWallToolBtn")?.classList.toggle("is-active", planState.mode === "wall");
         byId("planWallFootingToolBtn")?.classList.toggle("is-active", planState.mode === "wall_footing");
+        byId("planSlabOnFillToolBtn")?.classList.toggle("is-active", planState.mode === "slab_on_fill");
         byId("modeAnnotationLine")?.classList.toggle("is-active", planState.mode === "annotation_line");
         byId("modeAnnotationEditLine")?.classList.toggle("is-active", planState.mode === "annotation_edit_line");
         byId("modeAnnotationText")?.classList.toggle("is-active", planState.mode === "annotation_text");
@@ -38566,13 +38707,14 @@
           ["planDimensionToolBtn", "annotation_dimension"],
           ["planWallToolBtn", "wall"],
           ["planWallFootingToolBtn", "wall_footing"],
+          ["planSlabOnFillToolBtn", "slab_on_fill"],
           ["planAuxGridToolBtn", "aux_grid_insert"],
           ["planMatchPropertiesToolBtn", "annotation_match"]
         ].forEach(([id, toolMode]) => byId(id)?.setAttribute("aria-pressed", planState.mode === toolMode ? "true" : "false"));
         byId("structuralPlanCanvas")?.classList.toggle("column-creation-active", planState.mode === "column");
         byId("structuralPlanCanvas")?.classList.toggle("node-creation-active", planState.mode === "node");
         byId("structuralPlanCanvas")?.classList.toggle("member-creation-active", planState.mode === "member");
-        byId("structuralPlanCanvas")?.classList.toggle("wall-creation-active", ["wall", "wall_footing"].includes(planState.mode));
+        byId("structuralPlanCanvas")?.classList.toggle("wall-creation-active", ["wall", "wall_footing", "slab_on_fill"].includes(planState.mode));
         ["canvas", "yAxisCanvas", "structuralPlanCanvas"].forEach(id => byId(id)?.classList.toggle("name-editing-active", planState.mode === "rename"));
         ["canvas", "yAxisCanvas", "structuralPlanCanvas"].forEach(id => byId(id)?.classList.toggle("annotation-creation-active", planState.mode.startsWith("annotation_")));
         redrawAnnotationView(planState.activeView);
@@ -46894,7 +47036,7 @@
         const shortSpan = Math.max(0.001, Math.min(spanX, spanY));
         const longSpan = Math.max(spanX, spanY);
         const aspectRatio = longSpan / shortSpan;
-        const slabType = region.open ? "OPEN_SPACE" : normalizedSlabType(override.type, levelIndex, spanX, spanY);
+        const slabType = region.open ? "OPEN_SPACE" : (region.slabOnFill ? "SLAB_ON_FILL" : normalizedSlabType(override.type, levelIndex, spanX, spanY));
         const isOpenSpace = slabType === "OPEN_SPACE";
         if (isOpenSpace) {
           return {
@@ -47048,7 +47190,7 @@
           ? !!topX && !!topY && [topSteelX, topSteelY].every(Number.isFinite)
           : !!topX && !!topY && !!bottomX && !!bottomY && [topSteelX, topSteelY, bottomSteelX, bottomSteelY].every(Number.isFinite);
         const typeGeometryPass = isSlabOnFill ? levelIndex === 0 : !isTwoWay || aspectRatio < 2;
-        const topologyPass = region.rectangular !== false;
+        const topologyPass = isSlabOnFill || region.rectangular !== false;
         const wallSupportFailures = slabWallSupportFailures(region, data);
         const wallSupportPass = wallSupportFailures.length === 0;
         const governingWallFailure = wallSupportFailures[0] || null;
@@ -47193,6 +47335,7 @@
       }
 
       function hasCoordinatedSlabSupport(levelIndex = null) {
+        if (Number(levelIndex) === 0 && (planState.customSlabs || []).some(slab => Number(slab?.levelIndex) === 0 && Array.isArray(slab?.points) && slab.points.length >= 3)) return true;
         const xSupports = new Set();
         const ySupports = new Set();
         planState.columns.forEach(key => {
@@ -50711,6 +50854,18 @@
           const dialog = byId("wallFootingToolDialog");
           if (dialog && !dialog.open) dialog.showModal();
         });
+        byId("planSlabOnFillToolBtn")?.addEventListener("click", () => {
+          if (workspaceDeleteMode) setWorkspaceDeleteMode(false);
+          if (byId("activeFrameEditor")) byId("activeFrameEditor").value = "PLAN";
+          planState.activeLevelIndex = 0;
+          showUnifiedDrawingView("PLAN");
+          renderPlanLevelTabs(makePlanData());
+          setPlanCreationMode(planState.mode === "slab_on_fill" ? "pan" : "slab_on_fill");
+          drawPlan(makePlanData());
+          if (typeof status === "function") status(planState.mode === "slab_on_fill"
+            ? "Slab on Fill Tool active on Level-1. Click nodes or grid intersections around the fill area, then click the first point to close it. No tie beams will be created."
+            : "Slab on Fill Tool off.");
+        });
         byId("planAuxGridToolBtn")?.addEventListener("click", () => {
           activateExclusiveDrawingTool("plan");
           if (planState.activeLevelIndex < 0) planState.activeLevelIndex = 0;
@@ -50877,6 +51032,8 @@
           planState.pendingAuxiliaryGrid = null;
           planState.levelWalls = {};
           planState.wallFootings = [];
+          planState.customSlabs = [];
+          planState.slabOutlinePoints = [];
           planState.wallBeamLoads = [];
           planState.pointLoads = [];
           setPlanPointLoadPlacementActive(false);
