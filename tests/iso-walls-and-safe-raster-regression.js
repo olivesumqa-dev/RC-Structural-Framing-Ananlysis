@@ -24,9 +24,10 @@ assert(html.includes("const isoWallFootingById = new Map(isoWallFootingVolumes.m
 assert(html.includes("z0End = Number.isFinite(Number(volume.z0End))")
   && html.includes("z1End = Number.isFinite(Number(volume.z1End))"),
   "Sloping supporting footing elevations must be retained at both ends of ISO wall and WF solids");
-assert(html.includes("const isoAlphabeticLabels = data.xLabels.slice().reverse();")
-  && /Grid C is the rear\/top line and Grid A\s*\/\/ is the front\/left line\.[\s\S]*?Isometric and Perspective views/.test(html),
-  "ISO and Perspective grid bubbles must share the rear/top-to-front/left alphabetic orientation");
+assert(html.includes("const isoAlphabeticLabels = data.xLabels.slice();")
+  && /alphabetic and numeric grids meet at A\/1[\s\S]*?must never remap a grid bubble/.test(html)
+  && !html.includes("const isoAlphabeticLabels = data.xLabels.slice().reverse();"),
+  "ISO and Perspective grid bubbles must preserve the actual A/1, B/2 and C/3 plan intersections");
 assert(html.includes("const lateral = rotatedX - rotatedY;")
   && html.includes("const depth = rotatedX + rotatedY;")
   && html.includes("return {u: lateral * focalLength / cameraDepth, v: -screenHeight * focalLength / cameraDepth};"),

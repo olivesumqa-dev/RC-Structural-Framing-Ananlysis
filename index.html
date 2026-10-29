@@ -34662,14 +34662,13 @@
           });
         }
 
-        // In the shared 3D camera orientation, the plan's alphabetic axis is
-        // viewed from its opposite side: Grid C is the rear/top line and Grid A
-        // is the front/left line. Keep that same physical convention in both
-        // Isometric and Perspective views so switching projection never moves a
-        // column grid name to the opposite side of the building.
+        // Preserve actual plan intersections in every 3D projection: the first
+        // alphabetic and numeric grids meet at A/1, then B/2 and C/3 remain on
+        // their real grid lines. Camera perspective may converge visually, but
+        // it must never remap a grid bubble to a different column intersection.
         const xGridSideY = totalY;
         const yGridSideX = 0;
-        const isoAlphabeticLabels = data.xLabels.slice().reverse();
+        const isoAlphabeticLabels = data.xLabels.slice();
         const isoNumericLabels = data.yLabels.slice();
         let sharedCornerAlphabeticBubble = null;
         data.xPos.forEach((x, index) => {
