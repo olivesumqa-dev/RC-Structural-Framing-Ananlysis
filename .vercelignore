@@ -1,0 +1,32 @@
+# Local references, media, exports, and archived deployment copies are not app source.
+.XENDIT/
+02-Reference/
+03-Media/
+05-Generated/
+BACKGROUND/
+CAD/
+CAD UPLOAD/
+DIRECTUS/
+MARKETING/
+PDF/
+STF/
+STRCTL-IMAGES/
+StrucForge-site/
+StrucForge-site-prebuilt-20261020/
+StrucForge-site-vercel-deploy-732e1c0/
+SUPABASE/
+_NEW IMAGES/
+_SCRN/
+_VERCEL INFO/
+for PDF/
+output/
+vercel-deploy-20261020-a/
+vercel-deploy-20261020-b/
+
+# Loose local files that are not required by the RC Designer deployment.
+001.jpg
+001garage.jpg
+.env.example
+desktop.ini
+FOLDER_STRUCTURE.md
+StrucForge-site-vercel-deploy-732e1c0.zip
