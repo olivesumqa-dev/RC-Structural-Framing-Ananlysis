@@ -42,8 +42,14 @@ assert(!html.includes("function rasterStrokeProfile("),
   "The withdrawn adaptive stroke profiler must not create false members or grids");
 assert((html.match(/const maxSide = 1200;/g) || []).length >= 3,
   "Raster analysis must use the established conservative scale");
-assert(html.includes("coverage >= 0.72"),
-  "Off-grid members must continue to require strong native-line evidence");
+assert(html.includes("const fallbackX = chooseAxisFallback(xCoordinates, inferredGrid?.x, 4);")
+  && html.includes("const fallbackY = chooseAxisFallback(yCoordinates, inferredGrid?.y, 3);")
+  && !html.includes("hasEmptyEdgeBay("),
+  "A false empty edge bay must not suppress the conservative 4×3 grid fallback");
+assert(!html.includes("offGridHorizontalMembers.push(")
+  && !html.includes("offGridVerticalMembers.push(")
+  && !html.includes("CAD-L${levelIndex + 1}-OFFGRID"),
+  "Raster image conversion must not invent off-grid AUX beams from text, borders, or dimension lines");
 
 assert(html.includes('accept=".dxf,.dwf,application/x-dwf,model/vnd.dwf,image/png,image/jpeg,.png,.jpg,.jpeg" multiple'),
   "Upload Drawings must accept Autodesk DWF files");
@@ -55,4 +61,4 @@ assert(html.includes("async function validateAutodeskDwfFile(file)")
 assert(/byId\("newDesign"\)\?\.addEventListener\("click", \(\) => \{\s*resetCadUploadState\(\);/.test(html),
   "Confirmed Create New Design must clear uploaded files and their sidebar entries");
 
-console.log("Conservative raster upload, DWF intake, new-design cleanup, and beam-label regression checks passed.");
+console.log("Conservative raster upload, primary-grid-only conversion, DWF intake, new-design cleanup, and beam-label regression checks passed.");

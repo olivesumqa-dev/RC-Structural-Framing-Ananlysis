@@ -30255,21 +30255,13 @@
           if (current.length !== expectedCount) return inferredRatio <= 1.25 ? inferred : null;
           return currentRatio > 1.25 && inferredRatio + 0.12 < currentRatio ? inferred : null;
         };
-        const bayPresence = (members, count, indexField) => Array.from({length: count - 1}, (_, bayIndex) => {
-          const segments = members.filter(member => member[indexField] === bayIndex);
-          return segments.length ? segments.filter(member => member.present).length / segments.length : 0;
-        });
-        const xBayPresence = bayPresence(horizontalMembers, xCoordinates.length, "xIndex");
-        const yBayPresence = bayPresence(verticalMembers, yCoordinates.length, "yIndex");
-        const hasEmptyEdgeBay = values => values.length >= 2
-          && ((values[0] < 0.25 && values.slice(1).some(value => value > 0.60))
-            || (values[values.length - 1] < 0.25 && values.slice(0, -1).some(value => value > 0.60)));
-        // An inferred regular sequence can extend toward the wrong side when the
-        // raw detector actually found B-C-D plus an annotation. Preserve that
-        // evidence for the cross-level coordinator, which can prepend the missing
-        // grid by observing which edge bay contains no connecting members.
-        const fallbackX = hasEmptyEdgeBay(xBayPresence) ? null : chooseAxisFallback(xCoordinates, inferredGrid?.x, 4);
-        const fallbackY = hasEmptyEdgeBay(yBayPresence) ? null : chooseAxisFallback(yCoordinates, inferredGrid?.y, 3);
+        // A projection peak at the sheet edge is usually a border, title leader or
+        // dimension mark — not an extra structural grid. Prefer the independently
+        // inferred regular grid whenever it corrects an inconsistent raw sequence.
+        // In particular, do not retain a blank edge bay merely because it has no
+        // members: doing so created false grids such as A–E from an A–D drawing.
+        const fallbackX = chooseAxisFallback(xCoordinates, inferredGrid?.x, 4);
+        const fallbackY = chooseAxisFallback(yCoordinates, inferredGrid?.y, 3);
         const detectedResult = {
           xCoordinates,
           yCoordinates,
@@ -30420,72 +30412,13 @@
         yCoordinates.forEach((y, yIndex) => xCoordinates.slice(0, -1).forEach((x, xIndex) => horizontalMembers.push({xIndex, yIndex, ...strokeProfile(x + 5, y, xCoordinates[xIndex + 1] - 5, y)})));
         const verticalMembers = [];
         xCoordinates.forEach((x, xIndex) => yCoordinates.slice(0, -1).forEach((y, yIndex) => verticalMembers.push({xIndex, yIndex, ...strokeProfile(x, y + 5, x, yCoordinates[yIndex + 1] - 5)})));
-        // Detect structural members that intentionally fall between the primary
-        // grid lines.  The previous conversion sampled only at A-D / 1-3 and
-        // silently discarded intermediate beams, even when they were very bold.
-        // Scan every primary bay, collapse a thick stroke to its centreline, and
-        // keep only long solid bands; short text and dashed construction lines do
-        // not satisfy the coverage threshold.
-        const solidCoverageAt = (x1, y1, x2, y2) => {
-          const length = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1)));
-          let hits = 0;
-          for (let step = 0; step <= length; step += 1) {
-            const ratio = step / length;
-            const x = x1 + (x2 - x1) * ratio;
-            const y = y1 + (y2 - y1) * ratio;
-            if (sample(x, y) < 125) hits += 1;
-          }
-          return hits / (length + 1);
-        };
-        const collapseRasterBands = candidates => {
-          const bands = [];
-          candidates.sort((a, b) => a.coordinate - b.coordinate).forEach(candidate => {
-            const previous = bands[bands.length - 1];
-            if (previous && candidate.coordinate <= previous.end + 2) {
-              previous.end = candidate.coordinate;
-              previous.items.push(candidate);
-            } else bands.push({start: candidate.coordinate, end: candidate.coordinate, items: [candidate]});
-          });
-          return bands.map(band => band.items.sort((a, b) => b.coverage - a.coverage)[0]);
-        };
-        // Keep the whole visual width of a heavy primary member inside the
-        // primary-grid exclusion zone.  Using only 4.5% of a bay treated the
-        // two edges of a Photoshop-thickened beam as separate off-grid beams.
-        const primaryTolerance = Math.max(10, Math.min(28, Math.round(minimumGap * 0.14)));
+        // Raster images are not a reliable source for intermediate members: text,
+        // dimension leaders, borders and scan artifacts can look like a beam when
+        // sampled line-by-line. Keep image conversion conservative and create
+        // only members on verified primary grids. Users can add true off-grid
+        // members with the editable drawing tools after import.
         const offGridHorizontalMembers = [];
-        xCoordinates.slice(0, -1).forEach((x, xIndex) => {
-          const x2 = xCoordinates[xIndex + 1];
-          const candidates = [];
-          for (let y = Math.ceil(yCoordinates[0]); y <= Math.floor(yCoordinates[yCoordinates.length - 1]); y += 1) {
-            if (yCoordinates.some(primary => Math.abs(primary - y) <= primaryTolerance)) continue;
-            const coverage = solidCoverageAt(x + 7, y, x2 - 7, y);
-            if (coverage >= 0.72) candidates.push({coordinate: y, coverage});
-          }
-          collapseRasterBands(candidates).forEach(candidate => offGridHorizontalMembers.push({
-            xStartIndex: xIndex,
-            xEndIndex: xIndex + 1,
-            yCoordinate: candidate.coordinate,
-            coverage: candidate.coverage,
-            present: true
-          }));
-        });
         const offGridVerticalMembers = [];
-        yCoordinates.slice(0, -1).forEach((y, yIndex) => {
-          const y2 = yCoordinates[yIndex + 1];
-          const candidates = [];
-          for (let x = Math.ceil(xCoordinates[0]); x <= Math.floor(xCoordinates[xCoordinates.length - 1]); x += 1) {
-            if (xCoordinates.some(primary => Math.abs(primary - x) <= primaryTolerance)) continue;
-            const coverage = solidCoverageAt(x, y + 7, x, y2 - 7);
-            if (coverage >= 0.72) candidates.push({coordinate: x, coverage});
-          }
-          collapseRasterBands(candidates).forEach(candidate => offGridVerticalMembers.push({
-            yStartIndex: yIndex,
-            yEndIndex: yIndex + 1,
-            xCoordinate: candidate.coordinate,
-            coverage: candidate.coverage,
-            present: true
-          }));
-        });
         const columnPointKeys = new Set(columnPoints.map(point => `${point.xIndex}|${point.yIndex}`));
         xCoordinates.forEach((_, xIndex) => yCoordinates.forEach((__, yIndex) => {
           const horizontalConnection = horizontalMembers.some(member => member.yIndex === yIndex && (member.xIndex === xIndex || member.xIndex + 1 === xIndex) && member.present);
@@ -31054,58 +30987,6 @@
               const ordered = [topLabel, bottomLabel].sort((a, b) => planData.yLabels.indexOf(a) - planData.yLabels.indexOf(b));
               planState.deletedPlanMembers.add(planMemberDeletionKey(levelIndex, `${prefix}-${xLabel}-${ordered.join("")}`));
             }
-          });
-          const rasterCoordinateToModel = (coordinate, rasterCoordinates, modelCoordinates) => {
-            const value = Number(coordinate);
-            if (!Number.isFinite(value) || rasterCoordinates.length < 2 || modelCoordinates.length !== rasterCoordinates.length) return NaN;
-            for (let index = 0; index < rasterCoordinates.length - 1; index += 1) {
-              const first = Number(rasterCoordinates[index]);
-              const second = Number(rasterCoordinates[index + 1]);
-              if (value < Math.min(first, second) - 1e-6 || value > Math.max(first, second) + 1e-6) continue;
-              const ratio = Math.abs(second - first) < 1e-9 ? 0 : (value - first) / (second - first);
-              return Number(modelCoordinates[index]) + ratio * (Number(modelCoordinates[index + 1]) - Number(modelCoordinates[index]));
-            }
-            return NaN;
-          };
-          const addOffGridMember = (axis, start, end, importIndex) => {
-            if (![start.x, start.y, end.x, end.y].every(Number.isFinite)) return;
-            const length = Math.hypot(end.x - start.x, end.y - start.y);
-            if (!(length > 0.02)) return;
-            const member = {
-              id: `CAD-L${levelIndex + 1}-OFFGRID-${axis}-${importIndex + 1}`,
-              levelIndex,
-              x1: null,
-              y1: null,
-              x2: null,
-              y2: null,
-              startPoint: {...start, label: `CAD-${axis}${importIndex + 1}A`},
-              endPoint: {...end, label: `CAD-${axis}${importIndex + 1}B`},
-              name: `${prefix}-AUX-${axis}${importIndex + 1}`,
-              type: levelIndex === 0 ? "Tie Beam" : "Beam",
-              level: frameLevelLabel(levelIndex + 1, planData),
-              grid: `Imported intermediate ${axis}-member`,
-              length,
-              generated: false,
-              imported: true,
-              axis,
-              frameCoordinate: axis === "X" ? start.y : start.x,
-              offGrid: true
-            };
-            const signature = planMemberSignature(member, planData);
-            if (!planLevelMembers(levelIndex).some(existing => planMemberSignature(existing, planData) === signature)) planLevelMembers(levelIndex).push(member);
-          };
-          const modelYBySourceIndex = yLabelsTopDown.map(label => Number(planData.yPos[planData.yLabels.indexOf(label)]));
-          (source.detected.offGridHorizontalMembers || []).forEach((segment, importIndex) => {
-            const x1 = Number(planData.xPos[segment.xStartIndex]);
-            const x2 = Number(planData.xPos[segment.xEndIndex]);
-            const y = rasterCoordinateToModel(segment.yCoordinate, source.detected.yCoordinates || [], modelYBySourceIndex);
-            addOffGridMember("X", {x: x1, y}, {x: x2, y}, importIndex);
-          });
-          (source.detected.offGridVerticalMembers || []).forEach((segment, importIndex) => {
-            const y1 = Number(modelYBySourceIndex[segment.yStartIndex]);
-            const y2 = Number(modelYBySourceIndex[segment.yEndIndex]);
-            const x = rasterCoordinateToModel(segment.xCoordinate, source.detected.xCoordinates || [], planData.xPos);
-            addOffGridMember("Y", {x, y: y1}, {x, y: y2}, importIndex);
           });
           const expectedColumnCount = xLabels.length * yLabelsTopDown.length;
           const reliableColumnSymbols = (source.detected.columnPoints?.length || 0) >= Math.max(2, Math.ceil(expectedColumnCount * 0.85));
